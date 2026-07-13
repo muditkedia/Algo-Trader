@@ -71,6 +71,29 @@
         }
     ],
 
+    // --- Algo Trader framework configuration ---
+    // Every value below is an OPTIONAL override of the defaults defined in
+    // algo_core/settings.py (the single source of truth). Unknown keys are
+    // ignored. The subset shown here mirrors the defaults; add any field from
+    // IndicatorParams / EngineParams / RiskParams to tune it.
+    "algo_trader": {
+        "active_profile": "trend_following",
+        "indicators": {
+            "base_ema_fast": 9,
+            "base_ema_slow": 21
+        },
+        "engine": {
+            "min_score": 0.60,
+            "adx_min_1h": 22,
+            "adx_min_15m": 20
+        },
+        "risk": {
+            "enable_risk_sizing": false,
+            "risk_per_trade": 0.01,
+            "hard_stop_pct": 0.06
+        }
+    },
+
     // Telegram and the REST API server are intentionally omitted while
     // disabled (an empty api_server.jwt_secret_key fails schema validation).
     // Enable them later via FREQTRADE__TELEGRAM__* / FREQTRADE__API_SERVER__*
