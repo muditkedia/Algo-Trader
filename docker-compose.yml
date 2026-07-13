@@ -22,6 +22,11 @@ services:
     container_name: freqtrade
     volumes:
       - "./user_data:/freqtrade/user_data"
+    # Inject secrets from .env when present (git-ignored, optional for dry-run).
+    # Variables use the FREQTRADE__ prefix - see .env.example.
+    env_file:
+      - path: .env
+        required: false
     # Expose api on port 8080 (localhost only)
     # Please read the https://www.freqtrade.io/en/stable/rest-api/ documentation
     # for more information.
