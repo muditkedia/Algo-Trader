@@ -4,11 +4,15 @@ _Last updated: 2026-07-14_
 
 ## Current Phase
 
-**Phase 2 - Strategy Framework (revised post-audit, NOT committed).**
-The adaptive trading architecture is built, independently audited, revised
-against that audit, and re-validated offline. No historical data downloaded,
-no backtests, no hyperopt - deferred by instruction. Awaiting approval to
-commit.
+**Phase 3 - Validation Protocol (FROZEN).**
+The strategy framework is committed (`f974226`). The historical-data and
+backtesting validation methodology has been designed, revised across three
+approval rounds, and is now **frozen and approved** as the official project
+methodology: see `architecture/VALIDATION_RULES.md`.
+
+No data has been downloaded. No backtests have been run. No companion
+tooling has been built. The smoke test has NOT started - it awaits explicit
+approval.
 
 ## Environment
 
@@ -16,69 +20,67 @@ commit.
 - Docker Desktop 4.82.0, Compose v5.3.0
 - Exchange: **Binance Spot**, pairs BTC/USDT + ETH/USDT (StaticPairList)
 - Mode: **DRY-RUN only** (`dry_run: true`). Live trading NOT enabled.
-- GitHub remote renamed to `Algo-Trader` (case); local origin still old-cased,
-  works via redirect. Update when convenient.
+- GitHub remote renamed to `Algo-Trader` (case); local origin still
+  old-cased, works via redirect. Update when convenient.
 
 ## Architecture (see architecture/ARCHITECTURE.md)
 
 - `AdaptiveTrendStrategy` (thin orchestrator) -> `algo_core/`:
-  - `settings.py` - **single source of truth**; `AlgoSettings.from_config`
-    builds frozen IndicatorParams / EngineParams / RiskParams. Every threshold
-    configurable via `config.algo_trader`; unknown keys ignored.
-  - `indicators.py` - canonical indicator set for 5m/15m/1h/4h
-  - `regime.py` - `RegimeDetector` (classifies TREND for now; extension point
-    for RANGE/VOLATILE without changing the strategy interface)
-  - `decision_engine.py` - GO/NO-GO split into **mandatory gates** (trend,
-    market_structure, liquidity, risk) and **advisory** (RSI, volume,
-    volatility). Only advisory feeds the conviction score (`min_score` 0.60).
-    Rejections recorded to `user_data/logs/trade_rejections.jsonl`.
-  - `risk_engine.py` - ATR/structure stop, 6% hard cap, profit-lock tiers,
-    risk sizing (opt-in via `enable_risk_sizing`, clamps to max not proposed)
-  - `trade_manager.py` - monotonic stop ratchet + objective exits (floors from
-    RiskParams); NO time exits
-  - `profiles/` - StrategyProfile interface + registry; uniform
-    `(settings, trade_manager)` constructor; `supported_regimes`;
-    trend_following ACTIVE, four inactive scaffolds
+  settings.py (single source of truth for every threshold, configurable via
+  `config.algo_trader`), indicators.py, regime.py (RegimeDetector: enum
+  TREND/RANGE/HIGH_VOLATILITY/LOW_VOLATILITY/UNKNOWN, classifies TREND for
+  now), decision_engine.py (mandatory gates + advisory-only conviction
+  score, JSONL rejection audit), risk_engine.py (ATR/structure stop, 6%
+  hard cap, opt-in risk sizing), trade_manager.py (monotonic stop ratchet,
+  objective exits), profiles/ (trend_following ACTIVE + 4 scaffolds).
+- Offline validation harness: `user_data/scripts/validate_strategy.py`
+  (49+ checks, all passing at last run).
 
-## Post-audit revisions applied (all 7)
+## Validation Protocol (frozen 2026-07-14)
 
-1. `startup_candle_count` derived from indicator periods -> **3600** (warms 4h EMA50).
-2. Risk sizing corrected (clamps to max_stake) and gated by `enable_risk_sizing`
-   (default off -> honest fixed-stake behaviour; no inert code).
-3. Duplicated thresholds eliminated - profile reads settings; verified no
-   profile-local threshold constants remain.
-4. Every threshold configurable via `config.algo_trader` (IndicatorParams /
-   EngineParams / RiskParams), demonstrated in config.json.
-5. GO/NO-GO redesigned: mandatory hard gates vs advisory-only conviction score.
-6. RegimeDetector introduced, wired into `confirm_trade_entry` routing.
-7. Documentation updated (ARCHITECTURE.md, this file).
+`architecture/VALIDATION_RULES.md` - 25 sections. Key decisions:
 
-## Validation Completed
+- Binance spot; design pairs BTC/ETH; **8 unseen pairs** (SOL, BNB, XRP,
+  ADA, DOGE, LINK, AVAX, LTC) for cross-pair generalization.
+- Timeframes 1m/5m/15m/1h/4h/1d; corpus 2020-01 -> 2026-06 (+1-month
+  pre-roll for the 3600-candle warmup).
+- Partitioning: dev corpus 2020-01->2025-06; walk-forward IS 12mo / OOS 3mo
+  / step 3mo (~18 folds); locked holdout 2025-07->2026-06 (one look);
+  cross-pair OOS on the holdout window.
+- **Risk-adjusted acceptance** (no CAGR gate): PF/Sharpe/Sortino/Recovery/
+  Expectancy/MaxDD with Monte-Carlo CI bounds, regime stability, >=6/8
+  unseen pairs, holding-time IQR 30-120 min.
+- Gate 0: lookahead-analysis (0 findings) + recursive-analysis (stable at
+  startup 3600) before any performance is trusted.
+- **Pipeline Smoke Test first**: BTC-only small sample proves download ->
+  integrity -> bias gates -> backtest -> report before the full download.
+- Regime reporting (Bull/Bear/Range/High-Vol/Low-Vol via objective daily
+  EMA50/ADX + trailing ATR% percentiles); holding-time distribution
+  (median/IQR gates, bimodality flag); sensitivity at +/-5/10/20% per
+  threshold (plateau vs cliff); Monte-Carlo CIs (10k resamples) gating on
+  lower/upper bounds; 5 explicit stress tests; **portfolio-level battery**
+  (worst-case simultaneous-stop <=15%, reject >20%); Mode B
+  retraining-cadence study (Monthly/Quarterly/Semi-annual, quarterly prior).
+- Standardized 18-section Markdown report per backtest.
+- Companion tooling required (8 scripts, NOT yet built - separate approved
+  tasks): regime bucketing, sensitivity sweep, Monte-Carlo CI, stress
+  harness, report generator, portfolio analysis, cadence harness,
+  RegimeDetector metrics.
 
-- `list-strategies`: AdaptiveTrendStrategy **OK** (config incl. `algo_trader`
-  block validates cleanly).
-- `validate_strategy.py`: **49/49 checks PASS** - resolver load + safety attrs,
-  startup>=2400, MTF pipeline, 8 mandatory + 3 advisory checks, advisory-only
-  conviction NO-GO, mandatory-failure NO-GO, hard-cap + spread NO-GO, sizing
-  clamps to max, stop monotonicity, registry rules, single-source (no leaked
-  constants + config override + gate follows settings), regime = TREND.
+## Completed Work
+
+- Phase 1: verified Freqtrade dry-run environment (`c4024cd`).
+- Phase 2: adaptive strategy framework, audited + revised (`f974226`).
+- Phase 3: validation protocol frozen (this commit).
 
 ## Open Blockers
 
 - None.
 
-## Remaining Placeholders
+## Next Recommended Task (pending approval)
 
-- Four inactive strategy profiles (explicit scaffolds).
-- `RegimeDetector._classify` returns TREND only (RANGE/VOLATILE deferred).
-- All thresholds are initial values - uncalibrated until the first backtest.
-- Empty docs: architecture/{SYSTEM_OVERVIEW,ROADMAP,CODING_STANDARDS,
-  VALIDATION_RULES}, docs/{DECISIONS,LEARNINGS}, prompts/*.
-
-## Next Recommended Task
-
-1. Commit the revised framework (pending approval).
-2. First backtest vertical slice: download bounded historical data, backtest
-   trend_following, run lookahead-analysis / recursive-analysis bias checks,
-   calibrate thresholds, document in LEARNINGS.md. Consider `stoploss_on_exchange`
-   + protections before any live step.
+1. Build the companion tooling (report generator first - the smoke test
+   needs it), or run the smoke test with Freqtrade-native output and add
+   tooling incrementally (owner's choice, per VALIDATION_RULES §24-25).
+2. Execute Phase A (Pipeline Smoke Test) per VALIDATION_RULES §22.
+3. Full download + Gate 0 + Mode A walk-forward.
