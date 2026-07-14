@@ -4,15 +4,31 @@ _Last updated: 2026-07-14_
 
 ## Current Phase
 
-**Phase 3 - Validation Protocol (FROZEN).**
-The strategy framework is committed (`f974226`). The historical-data and
-backtesting validation methodology has been designed, revised across three
-approval rounds, and is now **frozen and approved** as the official project
-methodology: see `architecture/VALIDATION_RULES.md`.
+**Phase 3 - Validation Tooling + Phase A Smoke Test (done, NOT committed).**
+The validation protocol is frozen (`1b9a139`); the companion tooling it
+requires (VALIDATION_RULES SS24) is BUILT and self-tested
+(`user_data/scripts/validation/` - 12 modules + `run_validation.py` + README;
+self-test 84/84 PASS), and the **Pipeline Smoke Test (SS18) has PASSED**
+end-to-end on a minimal BTC/USDT window.
 
-No data has been downloaded. No backtests have been run. No companion
-tooling has been built. The smoke test has NOT started - it awaits explicit
-approval.
+Phase A results (2024-03-01->2024-06-30, BTC/USDT only):
+- Gate 0 CLEARED: lookahead-analysis "no bias detected" (20 signals);
+  recursive-analysis indicator drift 0.000% at startup 199 vs 3600.
+- Smoke backtest ran (25 trades); coordinator metrics match Freqtrade
+  exactly (net -6.577 USDT, win 32%, DD 0.85%, mean hold 218 min).
+- 18-section report generated; verdict FAIL - EXPECTED (uncalibrated
+  defaults, 4-month window; SS18 says smoke is plumbing-only, not a
+  strategy judgment).
+
+No full historical dataset downloaded. No trading logic modified. No
+parameters tuned. Full validation NOT started - awaits approval.
+
+Implementation fix during Phase A: added `user_data/config_analysis.json`
+overlay (entry/exit `price_side: "other"`) required because
+lookahead/recursive-analysis force market orders internally; applied only to
+those two analysis commands, not to trading or backtesting. Also extended
+`run_validation.py` with optional `--daily-dir/--pairs` to load 1d OHLCV for
+the regime breakdown. No strategy/algo_core changes.
 
 ## Environment
 
@@ -67,11 +83,29 @@ approval.
   harness, report generator, portfolio analysis, cadence harness,
   RegimeDetector metrics.
 
+## Validation Tooling (built, uncommitted)
+
+- Coordinator pipeline: load -> metrics -> holding-time -> portfolio ->
+  Monte Carlo -> stress -> regime (when daily OHLCV supplied) -> 18-section
+  report; structured JSONL logs per step in user_data/logs/.
+- Deliberate placeholders (per protocol phase): stress.delayed_exits needs
+  candle data (interface frozen); walkforward Mode B Optimizer raises
+  NotImplementedError (separate approved task); loader JSON fallback
+  verified on a synthetic fixture - real export format exercised at the
+  smoke test; regime step activates when daily OHLCV exists.
+- Sensitivity grid: 228 one-at-a-time points over every configurable
+  threshold at x{0.80,0.90,0.95,1.05,1.10,1.20}; plans backtest commands,
+  executes nothing.
+- Walk-forward: monthly=54 / quarterly=18 / semiannual=9 folds over the dev
+  corpus verified; Mode A planning + aggregation + WFE + SS10.1 cadence
+  parsimony scoring implemented.
+
 ## Completed Work
 
 - Phase 1: verified Freqtrade dry-run environment (`c4024cd`).
 - Phase 2: adaptive strategy framework, audited + revised (`f974226`).
-- Phase 3: validation protocol frozen (this commit).
+- Phase 3a: validation protocol frozen (`1b9a139`).
+- Phase 3b: validation tooling built + self-tested (uncommitted).
 
 ## Open Blockers
 
@@ -79,8 +113,7 @@ approval.
 
 ## Next Recommended Task (pending approval)
 
-1. Build the companion tooling (report generator first - the smoke test
-   needs it), or run the smoke test with Freqtrade-native output and add
-   tooling incrementally (owner's choice, per VALIDATION_RULES §24-25).
-2. Execute Phase A (Pipeline Smoke Test) per VALIDATION_RULES §22.
+1. Commit the validation tooling.
+2. Execute Phase A (Pipeline Smoke Test) per VALIDATION_RULES SS22 - the
+   report generator it needs now exists.
 3. Full download + Gate 0 + Mode A walk-forward.

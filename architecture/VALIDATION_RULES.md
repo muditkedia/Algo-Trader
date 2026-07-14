@@ -395,6 +395,14 @@ number is trusted:
   indicators (ADX and EMA have unstable warmups). Confirms
   `startup_candle_count = 3600` is genuinely sufficient (values converged).
 
+**Required overlay (Phase A discovery, 2026-07-14).** Both commands MUST be
+run with an additional `--config user_data/config_analysis.json` appended
+after the base config. These two tools force market orders internally, which
+Freqtrade rejects unless `entry_pricing`/`exit_pricing` `price_side` is
+`"other"`; the overlay sets only that and applies to these analysis commands
+alone. It does not affect trading, backtesting, the methodology, the
+acceptance criteria, or any threshold.
+
 Failure voids all downstream numbers until the code is fixed and both re-run
 clean. Both are re-run after any strategy-layer change.
 
@@ -524,11 +532,13 @@ MSYS_NO_PATHCONV=1 docker compose run --rm freqtrade download-data \
   --pairs BTC/USDT --timeframes 1m 5m 15m 1h 4h 1d --timerange 20240201-20240630
 
 MSYS_NO_PATHCONV=1 docker compose run --rm freqtrade lookahead-analysis \
-  --config user_data/config.json --strategy AdaptiveTrendStrategy \
+  --config user_data/config.json --config user_data/config_analysis.json \
+  --strategy AdaptiveTrendStrategy \
   --timerange 20240301-20240630 --targeted-trade-amount 50
 
 MSYS_NO_PATHCONV=1 docker compose run --rm freqtrade recursive-analysis \
-  --config user_data/config.json --strategy AdaptiveTrendStrategy \
+  --config user_data/config.json --config user_data/config_analysis.json \
+  --strategy AdaptiveTrendStrategy \
   --timerange 20240301-20240401 --startup-candle 199 999 3600
 
 MSYS_NO_PATHCONV=1 docker compose run --rm freqtrade backtesting \
@@ -545,11 +555,13 @@ MSYS_NO_PATHCONV=1 docker compose run --rm freqtrade download-data \
 
 # ── Phase C: GATE 0 on real windows ──
 MSYS_NO_PATHCONV=1 docker compose run --rm freqtrade lookahead-analysis \
-  --config user_data/config.json --strategy AdaptiveTrendStrategy \
+  --config user_data/config.json --config user_data/config_analysis.json \
+  --strategy AdaptiveTrendStrategy \
   --timerange 20220101-20221231 --targeted-trade-amount 200
 
 MSYS_NO_PATHCONV=1 docker compose run --rm freqtrade recursive-analysis \
-  --config user_data/config.json --strategy AdaptiveTrendStrategy \
+  --config user_data/config.json --config user_data/config_analysis.json \
+  --strategy AdaptiveTrendStrategy \
   --timerange 20240101-20240401 --startup-candle 199 499 999 1999 3600
 
 # ── Phase D: baseline + walk-forward Mode A ──

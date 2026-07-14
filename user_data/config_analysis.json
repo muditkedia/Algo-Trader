@@ -1,0 +1,13 @@
+{
+    // Overlay config for freqtrade lookahead-analysis / recursive-analysis ONLY.
+    // Those tools force market orders internally, which require
+    // price_side "other" (market buys fill at the ask). This overlay is
+    // appended after config.json (--config config.json --config this file)
+    // for analysis runs; it does NOT affect trading or backtesting configs.
+    "entry_pricing": {
+        "price_side": "other"
+    },
+    "exit_pricing": {
+        "price_side": "other"
+    }
+}
