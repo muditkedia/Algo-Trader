@@ -2,11 +2,17 @@
 __pycache__/
 *.pyc
 
-# Environment
+# Environment / packaging
 .env
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
 
-# Freqtrade data
+# Runtime data (local only)
 user_data/data/
+user_data/evidence/
 user_data/backtest_results/
 user_data/hyperopt_results/
 user_data/plot/

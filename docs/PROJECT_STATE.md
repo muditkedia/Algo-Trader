@@ -1,119 +1,105 @@
 # Project State
 
-_Last updated: 2026-07-14_
+_Last updated: 2026-07-15_
 
 ## Current Phase
 
-**Phase 3 - Validation Tooling + Phase A Smoke Test (done, NOT committed).**
-The validation protocol is frozen (`1b9a139`); the companion tooling it
-requires (VALIDATION_RULES SS24) is BUILT and self-tested
-(`user_data/scripts/validation/` - 12 modules + `run_validation.py` + README;
-self-test 84/84 PASS), and the **Pipeline Smoke Test (SS18) has PASSED**
-end-to-end on a minimal BTC/USDT window.
+**Equities pivot — Phase 1 (platform foundation) COMPLETE, uncommitted.**
 
-Phase A results (2024-03-01->2024-06-30, BTC/USDT only):
-- Gate 0 CLEARED: lookahead-analysis "no bias detected" (20 signals);
-  recursive-analysis indicator drift 0.000% at startup 199 vs 3600.
-- Smoke backtest ran (25 trades); coordinator metrics match Freqtrade
-  exactly (net -6.577 USDT, win 32%, DD 0.85%, mean hold 218 min).
-- 18-section report generated; verdict FAIL - EXPECTED (uncalibrated
-  defaults, 4-month window; SS18 says smoke is plumbing-only, not a
-  strategy judgment).
+The project has pivoted from the crypto/Freqtrade system to a research-first
+quantitative platform for **Indian equities** (owner-approved 2026-07-15). Phase
+1 built the reusable, market-agnostic foundation only. There are deliberately
+**no strategies, brokers, market data, paper trading, or live trading yet** —
+those are later phases. Everything below is in the working tree, awaiting owner
+approval to commit.
 
-No full historical dataset downloaded. No trading logic modified. No
-parameters tuned. Full validation NOT started - awaits approval.
+## What Phase 1 delivered (`src/algo/`, editable-installed package)
 
-Implementation fix during Phase A: added `user_data/config_analysis.json`
-overlay (entry/exit `price_side: "other"`) required because
-lookahead/recursive-analysis force market orders internally; applied only to
-those two analysis commands, not to trading or backtesting. Also extended
-`run_validation.py` with optional `--daily-dir/--pairs` to load 1d OHLCV for
-the regime breakdown. No strategy/algo_core changes.
+- **core** — `config` (frozen-dataclass pattern + `MarketConfig` with NSE
+  defaults), `logging`, `enums` (shared vocabularies), `calendar`
+  (`TradingCalendar` interface + `StaticCalendar`), `costs` (`CostModel`
+  interface + `FlatCostModel`). All market-agnostic; no NSE rules hardcoded.
+- **evidence** — the SQLite evidence database: `schema` (10 tables), `database`
+  (`EvidenceDB` lifecycle + versioning), `models` (typed rows), `logger`
+  (`EvidenceLogger` — records **every** signal, outcome, trade, evaluation,
+  regime label, and run lineage). This is the upgrade of the crypto
+  `RejectionRecorder` into a full evidence store.
+- **strategies** — `StrategyProfile` plugin interface (entry signal + declarative
+  metadata; no per-strategy exits) and a multi-active `StrategyRegistry` with
+  package discovery.
+- **universe** — `Filter` framework (`ColumnRangeFilter`, `MembershipFilter`) +
+  `Universe` orchestrator with per-symbol drop attribution. Framework only.
+- **scanner** — `Scanner` interface + `Opportunity` + pure `rank_opportunities`.
+  No broker, no data, no loop.
+- **research** — `ResearchEngine` skeleton (evidence → validation battery →
+  `evaluations`; league table) with explicit Phase-2 `NotImplementedError`
+  placeholders for market-data-dependent edge measurement/labeling; and the
+  **relocated validation package** (metrics, Monte Carlo, walk-forward,
+  sensitivity, stress, portfolio, regime, report, coordinator).
+
+## Reused / adapted (maximum reuse mandate)
+
+- The **validation package** moved `user_data/scripts/validation/` →
+  `src/algo/research/validation/`. Internal imports made relative;
+  `sensitivity.build_grid` decoupled from `algo_core` (now takes the params to
+  perturb); self-test decoupled from `user_data`. It passes its full self-test
+  unchanged in substance under the new Freqtrade-free venv (pandas 3.0/numpy 2.4).
+- The equity annualization change (252-day, session-aware returns) is
+  **deliberately deferred to Phase 2** — doing it before a calendar exists would
+  make it inconsistent with the daily-resample. Documented in `metrics.py`.
+
+## Archived (preserved, not deleted) — `archive/crypto-freqtrade/`
+
+Freqtrade strategies (v1/v2/v3), `algo_core`, the Phase D/E/F research scripts,
+`config.json`/`config_analysis.json`, `docker-compose.yml`, the hyperopt/notebook
+samples. The archive README flags the market-agnostic reuse candidates
+(`indicators`, `risk_engine`, `trade_manager`, `decision_engine`) for
+**promotion in Phase 2**, adapted not rewritten.
+
+## Validation performed
+
+- `pytest`: **32 passed** (core, evidence + FK enforcement, strategies + plugin
+  loading, universe, scanner, research engine, and the validation self-test).
+- Validation package self-test: **all checks PASS** as an installed module.
+- Import graph: every `algo.*` module imports cleanly.
+- On-disk startup smoke: DB file creation, schema install, end-to-end
+  registry→logger→research wiring, and persisted-DB reopen all green.
 
 ## Environment
 
-- Freqtrade **2026.6** (`freqtradeorg/freqtrade:stable`), CCXT 4.5.61
-- Docker Desktop 4.82.0, Compose v5.3.0
-- Exchange: **Binance Spot**, pairs BTC/USDT + ETH/USDT (StaticPairList)
-- Mode: **DRY-RUN only** (`dry_run: true`). Live trading NOT enabled.
-- GitHub remote renamed to `Algo-Trader` (case); local origin still
-  old-cased, works via redirect. Update when convenient.
+- **Python 3.11** virtualenv (`.venv`), package editable-installed via
+  `pyproject.toml` (src layout). pandas 3.0.3 / numpy 2.4.6.
+- **Freqtrade and Docker are no longer required** by the platform.
+- Local runtime data lives under `user_data/` (gitignored): market data store,
+  `user_data/evidence/` for the DB, logs. Crypto feathers retained locally, unused.
 
-## Architecture (see architecture/ARCHITECTURE.md)
+## Crypto phase (now archived history)
 
-- `AdaptiveTrendStrategy` (thin orchestrator) -> `algo_core/`:
-  settings.py (single source of truth for every threshold, configurable via
-  `config.algo_trader`), indicators.py, regime.py (RegimeDetector: enum
-  TREND/RANGE/HIGH_VOLATILITY/LOW_VOLATILITY/UNKNOWN, classifies TREND for
-  now), decision_engine.py (mandatory gates + advisory-only conviction
-  score, JSONL rejection audit), risk_engine.py (ATR/structure stop, 6%
-  hard cap, opt-in risk sizing), trade_manager.py (monotonic stop ratchet,
-  objective exits), profiles/ (trend_following ACTIVE + 4 scaffolds).
-- Offline validation harness: `user_data/scripts/validate_strategy.py`
-  (49+ checks, all passing at last run).
+v1/v2/v3 all FAILED Mode A. The decisive finding (L-006/L-009, D-007): the entry
+edge was ~3 bps gross/trade vs a ~20 bps round-trip fee — under-powered, not
+mis-calibrated. Strategy iteration was stopped. Those lessons are the reason the
+new platform is measurement-first. Full detail preserved in `docs/LEARNINGS.md`,
+`docs/DECISIONS.md`, and `architecture/VALIDATION_RULES.md`.
 
-## Validation Protocol (frozen 2026-07-14)
+## Next (Phase 2 — pending owner approval)
 
-`architecture/VALIDATION_RULES.md` - 25 sections. Key decisions:
+1. **Market foundations**: concrete NSE `TradingCalendar` (holiday list), the
+   Indian equity `CostModel` (brokerage + STT + exchange + GST + stamp + SEBI,
+   intraday vs delivery), instruments master.
+2. **Data layer**: EOD ingest + corporate-action adjustment + quality gates +
+   the static daily universe.
+3. **Research engine port**: promote the edge lab from the archive
+   (`measure_entry_edge`/`entry_edge_lab`), the outcome labeler, the trade
+   simulator (promoting `trade_manager`/`risk_engine`), and equity-parameterize
+   the validation package.
 
-- Binance spot; design pairs BTC/ETH; **8 unseen pairs** (SOL, BNB, XRP,
-  ADA, DOGE, LINK, AVAX, LTC) for cross-pair generalization.
-- Timeframes 1m/5m/15m/1h/4h/1d; corpus 2020-01 -> 2026-06 (+1-month
-  pre-roll for the 3600-candle warmup).
-- Partitioning: dev corpus 2020-01->2025-06; walk-forward IS 12mo / OOS 3mo
-  / step 3mo (~18 folds); locked holdout 2025-07->2026-06 (one look);
-  cross-pair OOS on the holdout window.
-- **Risk-adjusted acceptance** (no CAGR gate): PF/Sharpe/Sortino/Recovery/
-  Expectancy/MaxDD with Monte-Carlo CI bounds, regime stability, >=6/8
-  unseen pairs, holding-time IQR 30-120 min.
-- Gate 0: lookahead-analysis (0 findings) + recursive-analysis (stable at
-  startup 3600) before any performance is trusted.
-- **Pipeline Smoke Test first**: BTC-only small sample proves download ->
-  integrity -> bias gates -> backtest -> report before the full download.
-- Regime reporting (Bull/Bear/Range/High-Vol/Low-Vol via objective daily
-  EMA50/ADX + trailing ATR% percentiles); holding-time distribution
-  (median/IQR gates, bimodality flag); sensitivity at +/-5/10/20% per
-  threshold (plateau vs cliff); Monte-Carlo CIs (10k resamples) gating on
-  lower/upper bounds; 5 explicit stress tests; **portfolio-level battery**
-  (worst-case simultaneous-stop <=15%, reject >20%); Mode B
-  retraining-cadence study (Monthly/Quarterly/Semi-annual, quarterly prior).
-- Standardized 18-section Markdown report per backtest.
-- Companion tooling required (8 scripts, NOT yet built - separate approved
-  tasks): regime bucketing, sensitivity sweep, Monte-Carlo CI, stress
-  harness, report generator, portfolio analysis, cadence harness,
-  RegimeDetector metrics.
+## Open decisions needed from owner
 
-## Validation Tooling (built, uncommitted)
+- Approve committing Phase 1 as it stands.
+- Phase 2 kickoff; intraday data source / broker account (Zerodha/Dhan/Upstox).
+- Holding-horizon scope (recommend: let the research engine measure MIS + CNC).
+- Authorize drafting `architecture/VALIDATION_RULES_EQ.md` (equity thresholds).
 
-- Coordinator pipeline: load -> metrics -> holding-time -> portfolio ->
-  Monte Carlo -> stress -> regime (when daily OHLCV supplied) -> 18-section
-  report; structured JSONL logs per step in user_data/logs/.
-- Deliberate placeholders (per protocol phase): stress.delayed_exits needs
-  candle data (interface frozen); walkforward Mode B Optimizer raises
-  NotImplementedError (separate approved task); loader JSON fallback
-  verified on a synthetic fixture - real export format exercised at the
-  smoke test; regime step activates when daily OHLCV exists.
-- Sensitivity grid: 228 one-at-a-time points over every configurable
-  threshold at x{0.80,0.90,0.95,1.05,1.10,1.20}; plans backtest commands,
-  executes nothing.
-- Walk-forward: monthly=54 / quarterly=18 / semiannual=9 folds over the dev
-  corpus verified; Mode A planning + aggregation + WFE + SS10.1 cadence
-  parsimony scoring implemented.
+## Open blockers
 
-## Completed Work
-
-- Phase 1: verified Freqtrade dry-run environment (`c4024cd`).
-- Phase 2: adaptive strategy framework, audited + revised (`f974226`).
-- Phase 3a: validation protocol frozen (`1b9a139`).
-- Phase 3b: validation tooling built + self-tested (uncommitted).
-
-## Open Blockers
-
-- None.
-
-## Next Recommended Task (pending approval)
-
-1. Commit the validation tooling.
-2. Execute Phase A (Pipeline Smoke Test) per VALIDATION_RULES SS22 - the
-   report generator it needs now exists.
-3. Full download + Gate 0 + Mode A walk-forward.
+- None. Phase 1 is self-contained and validated.
