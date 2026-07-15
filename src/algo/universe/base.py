@@ -81,3 +81,30 @@ class MembershipFilter(Filter):
         member = frame.index.isin(self.symbols)
         keep = ~member if self.exclude else member
         return pd.Series(keep, index=frame.index)
+
+
+class CategoryFilter(Filter):
+    """Keep rows whose ``column`` value is in ``allowed`` and not in ``blocked``.
+
+    Generic membership on any column (e.g. sector). Both sets optional and
+    supplied by config, so no market category is hardcoded.
+    """
+
+    def __init__(self, column: str, *, allowed: Optional[Iterable[str]] = None,
+                 blocked: Optional[Iterable[str]] = None,
+                 name: Optional[str] = None) -> None:
+        self.column = column
+        self.allowed = frozenset(allowed) if allowed is not None else None
+        self.blocked = frozenset(blocked) if blocked is not None else frozenset()
+        self.name = name or f"category:{column}"
+
+    def mask(self, frame: pd.DataFrame) -> pd.Series:
+        if self.column not in frame.columns:
+            raise KeyError(f"{self.name}: column '{self.column}' not in frame")
+        values = frame[self.column]
+        keep = pd.Series(True, index=frame.index)
+        if self.allowed is not None:
+            keep &= values.isin(self.allowed)
+        if self.blocked:
+            keep &= ~values.isin(self.blocked)
+        return keep.fillna(False).astype(bool)

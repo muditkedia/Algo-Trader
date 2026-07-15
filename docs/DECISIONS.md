@@ -4,6 +4,28 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-013 — Source-agnostic data layer; parquet store; NSE provider deferred (2026-07-15)
+
+Market data flows through a single `DataProvider` interface, so NSE bhavcopy, a
+broker API, a vendor, a CSV export, or the synthetic generator are
+interchangeable and nothing downstream knows the source. Candles are stored in
+**parquet** (per symbol×timeframe, upsert-dedup), never in the evidence SQLite
+(consistent with D-010). The concrete live-feed `NseProvider` is a documented
+wiring point, NOT implemented: it needs an owner source decision and credentials
+(never handled by the assistant). `SyntheticDataProvider` + `CsvDataProvider`
+exercise the entire pipeline offline in the meantime — the same "one real
+testable implementation + honest stub" discipline used for brokers in Phase 1.
+
+## D-012 — Phase 2 data & scanning layer built (2026-07-15)
+
+Built the market-data ingestion (full + incremental, idempotent, quarantine on
+bad data), the parquet market-data store, universe management + configurable
+filters, the scanner engine (processes every eligible stock, unified ranked
+opportunity interface, records every candidate to evidence), and the scheduling
+jobs (full/daily/intraday). Reuses Phase 1 wholesale (filters, Scanner ABC,
+Opportunity, StrategyProfile, EvidenceLogger, calendar, config). 64 tests +
+an end-to-end integration smoke pass. No brokers/strategies/trading (by design).
+
 ## D-011 — Phase 1 platform foundation built (2026-07-15)
 
 Built the reusable, market-agnostic foundation under `src/algo/` (see

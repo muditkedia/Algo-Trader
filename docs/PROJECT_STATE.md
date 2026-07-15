@@ -4,102 +4,88 @@ _Last updated: 2026-07-15_
 
 ## Current Phase
 
-**Equities pivot — Phase 1 (platform foundation) COMPLETE, uncommitted.**
+**Equities pivot — Phase 2 (data & scanning layer) COMPLETE, uncommitted.**
+Phase 1 (platform foundation) is committed and pushed (`4f4d630`).
 
-The project has pivoted from the crypto/Freqtrade system to a research-first
-quantitative platform for **Indian equities** (owner-approved 2026-07-15). Phase
-1 built the reusable, market-agnostic foundation only. There are deliberately
-**no strategies, brokers, market data, paper trading, or live trading yet** —
-those are later phases. Everything below is in the working tree, awaiting owner
-approval to commit.
+The project is a research-first quantitative platform for **Indian equities**.
+Phase 2 built the complete market-data and scanning layer on top of the Phase 1
+foundation. Still **no brokers, no paper/live trading, no strategies** — by
+design. Everything in Phase 2 is in the working tree, awaiting approval to commit.
 
-## What Phase 1 delivered (`src/algo/`, editable-installed package)
+## Phase 2 delivered (`src/algo/data`, `universe`, `scanner`, `schedule`)
 
-- **core** — `config` (frozen-dataclass pattern + `MarketConfig` with NSE
-  defaults), `logging`, `enums` (shared vocabularies), `calendar`
-  (`TradingCalendar` interface + `StaticCalendar`), `costs` (`CostModel`
-  interface + `FlatCostModel`). All market-agnostic; no NSE rules hardcoded.
-- **evidence** — the SQLite evidence database: `schema` (10 tables), `database`
-  (`EvidenceDB` lifecycle + versioning), `models` (typed rows), `logger`
-  (`EvidenceLogger` — records **every** signal, outcome, trade, evaluation,
-  regime label, and run lineage). This is the upgrade of the crypto
-  `RejectionRecorder` into a full evidence store.
-- **strategies** — `StrategyProfile` plugin interface (entry signal + declarative
-  metadata; no per-strategy exits) and a multi-active `StrategyRegistry` with
-  package discovery.
-- **universe** — `Filter` framework (`ColumnRangeFilter`, `MembershipFilter`) +
-  `Universe` orchestrator with per-symbol drop attribution. Framework only.
-- **scanner** — `Scanner` interface + `Opportunity` + pure `rank_opportunities`.
-  No broker, no data, no loop.
-- **research** — `ResearchEngine` skeleton (evidence → validation battery →
-  `evaluations`; league table) with explicit Phase-2 `NotImplementedError`
-  placeholders for market-data-dependent edge measurement/labeling; and the
-  **relocated validation package** (metrics, Monte Carlo, walk-forward,
-  sensitivity, stress, portfolio, regime, report, coordinator).
+- **data/** — the source-agnostic market-data layer:
+  - `ohlcv` canonical bar contract (+ window/timezone helpers);
+  - `providers/` — `DataProvider` interface with `SyntheticDataProvider`
+    (deterministic, session-aware) and `CsvDataProvider` (bhavcopy/broker/vendor
+    imports) working offline, plus `NseProvider` — a documented wiring point for
+    a live feed (needs the owner's source choice + credentials);
+  - `store` — `MarketDataStore`, parquet per symbol×timeframe, upsert-dedup
+    (candles never in SQLite, D-010);
+  - `quality` — data-quality gates adapted from the archived `verify_data`
+    (errors block, warnings admit; calendar-aware continuity);
+  - `ingest` — `IngestionEngine`: `full_import` + `incremental_update`, window
+    computed from store coverage, quarantine on bad data, idempotent.
+- **universe/** (extends Phase 1) — `CategoryFilter` added; `UniverseManager`
+  (symbol master via the `instruments` table, point-in-time metrics frame,
+  eligibility); `build_filters(config)` for min volume / price band / min traded
+  value / min market cap / sector / black-white-list — all configurable.
+- **scanner/** (extends Phase 1) — `ScanEngine`: processes every eligible stock,
+  runs every enabled strategy, emits ranked `Opportunity` objects, records every
+  firing candidate to evidence. Pluggable `prepare_fn` (indicators, Phase 3) and
+  `score_fn` (confidence, Phase 4) so later phases don't touch it.
+- **schedule/** — `DataJobs`: `full_import`, `daily_update`, `intraday_refresh`
+  — callable, idempotent batch jobs (no daemon; a live loop is paper-phase).
 
-## Reused / adapted (maximum reuse mandate)
+## Reuse (Phase 2 built on Phase 1, no redesign)
 
-- The **validation package** moved `user_data/scripts/validation/` →
-  `src/algo/research/validation/`. Internal imports made relative;
-  `sensitivity.build_grid` decoupled from `algo_core` (now takes the params to
-  perturb); self-test decoupled from `user_data`. It passes its full self-test
-  unchanged in substance under the new Freqtrade-free venv (pandas 3.0/numpy 2.4).
-- The equity annualization change (252-day, session-aware returns) is
-  **deliberately deferred to Phase 2** — doing it before a calendar exists would
-  make it inconsistent with the daily-resample. Documented in `metrics.py`.
-
-## Archived (preserved, not deleted) — `archive/crypto-freqtrade/`
-
-Freqtrade strategies (v1/v2/v3), `algo_core`, the Phase D/E/F research scripts,
-`config.json`/`config_analysis.json`, `docker-compose.yml`, the hyperopt/notebook
-samples. The archive README flags the market-agnostic reuse candidates
-(`indicators`, `risk_engine`, `trade_manager`, `decision_engine`) for
-**promotion in Phase 2**, adapted not rewritten.
+Filters/orchestrator (`universe.base`/`universe.py`), the `Scanner` ABC +
+`Opportunity` + `rank_opportunities`, `StrategyProfile`, `EvidenceLogger`,
+`TradingCalendar`, `MarketConfig`, and the config pattern were all reused
+directly. New dependency: `pyarrow` (parquet engine), added to `pyproject.toml`.
 
 ## Validation performed
 
-- `pytest`: **32 passed** (core, evidence + FK enforcement, strategies + plugin
-  loading, universe, scanner, research engine, and the validation self-test).
-- Validation package self-test: **all checks PASS** as an installed module.
-- Import graph: every `algo.*` module imports cleanly.
-- On-disk startup smoke: DB file creation, schema install, end-to-end
-  registry→logger→research wiring, and persisted-DB reopen all green.
+- `pytest`: **64 passed** (32 Phase 1 + 32 Phase 2). New Phase-2 coverage:
+  store round-trip/dedup, provider determinism/session-awareness/CSV, quality
+  gates, ingestion + incremental + idempotency + quarantine, universe filtering
+  correctness + drop attribution, scanner (processes every stock, ranking,
+  evidence recording, performance), scheduling jobs.
+- End-to-end on-disk integration smoke: 25 symbols → full import (2,750 rows) →
+  idempotent re-run (all `up_to_date`, zero duplicate downloads) → universe
+  eligibility → scan of every eligible stock (14 ranked candidates, ~60 ms).
+
+## Phase 1 (committed `4f4d630`)
+
+Package foundation under `src/algo`: core primitives, SQLite evidence DB +
+logger, strategy plugin interface + registry, universe-filter framework, scanner
+interface, research-engine skeleton, and the relocated validation package. Crypto
+code preserved under `archive/crypto-freqtrade/`.
 
 ## Environment
 
-- **Python 3.11** virtualenv (`.venv`), package editable-installed via
-  `pyproject.toml` (src layout). pandas 3.0.3 / numpy 2.4.6.
-- **Freqtrade and Docker are no longer required** by the platform.
-- Local runtime data lives under `user_data/` (gitignored): market data store,
-  `user_data/evidence/` for the DB, logs. Crypto feathers retained locally, unused.
+- Python 3.11 venv, editable install. pandas 3.0.3 / numpy 2.4.6 / pyarrow 25.
+- Market data store: parquet under `user_data/data/` (gitignored). Evidence DB
+  under `user_data/evidence/` (gitignored). Freqtrade/Docker not required.
 
-## Crypto phase (now archived history)
+## Next (Phase 3 — pending owner approval)
 
-v1/v2/v3 all FAILED Mode A. The decisive finding (L-006/L-009, D-007): the entry
-edge was ~3 bps gross/trade vs a ~20 bps round-trip fee — under-powered, not
-mis-calibrated. Strategy iteration was stopped. Those lessons are the reason the
-new platform is measurement-first. Full detail preserved in `docs/LEARNINGS.md`,
-`docs/DECISIONS.md`, and `architecture/VALIDATION_RULES.md`.
-
-## Next (Phase 2 — pending owner approval)
-
-1. **Market foundations**: concrete NSE `TradingCalendar` (holiday list), the
-   Indian equity `CostModel` (brokerage + STT + exchange + GST + stamp + SEBI,
-   intraday vs delivery), instruments master.
-2. **Data layer**: EOD ingest + corporate-action adjustment + quality gates +
-   the static daily universe.
-3. **Research engine port**: promote the edge lab from the archive
-   (`measure_entry_edge`/`entry_edge_lab`), the outcome labeler, the trade
-   simulator (promoting `trade_manager`/`risk_engine`), and equity-parameterize
-   the validation package.
+1. **Wire a live data source** — implement `NseProvider` (or a broker provider)
+   once the owner picks the source and supplies credentials; the pipeline is
+   source-agnostic, so nothing else changes. Until then, `CsvDataProvider`
+   imports real exports.
+2. **Research-engine port** — promote the edge lab from the archive, the outcome
+   labeler, and the trade simulator; equity-parameterize the validation package;
+   add the indicator-enrichment `prepare_fn` for the scanner.
+3. **First candidate strategies** — measured, not deployed (the D-007 gate).
 
 ## Open decisions needed from owner
 
-- Approve committing Phase 1 as it stands.
-- Phase 2 kickoff; intraday data source / broker account (Zerodha/Dhan/Upstox).
-- Holding-horizon scope (recommend: let the research engine measure MIS + CNC).
+- Approve committing Phase 2.
+- Data source + broker account (Zerodha / Dhan / Upstox / vendor / EOD).
 - Authorize drafting `architecture/VALIDATION_RULES_EQ.md` (equity thresholds).
 
 ## Open blockers
 
-- None. Phase 1 is self-contained and validated.
+- None. Phase 2 is self-contained and validated on synthetic + CSV data; a live
+  feed is a provider implementation away.
