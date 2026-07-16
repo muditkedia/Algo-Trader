@@ -4,6 +4,22 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-019 — Measurement pipeline complete; all six candidates FAIL on synthetic data (2026-07-16)
+
+Phase 5 completed the Research Engine (edge lab, outcome labeler, trade
+simulator, NSE cost model, cost sensitivity, confidence calibration, league
+table with PASS/BORDERLINE/FAIL verdicts). Verdict bars are the pre-registered
+ones — D-007's 2x-cost hurdle judged on the day-clustered CI LOWER bound, the
+SS7 profit-factor/expectancy floors, SS15 2x-cost survival, and a 30-signal
+evidence minimum. **Controls prove the pipeline discriminates**: a planted-edge
+strategy PASSes, pure noise FAILs. On the synthetic corpus all six candidates
+FAIL (CI lower bounds below cost, PFs 0.62-1.14) — the correct result for
+random-walk data and the demonstration that nothing is biased toward
+implementation. Real verdicts await real NSE history (CSV import;
+`scripts/run_measurement.py --csv-root`). The risk engine was promoted verbatim
+from the archive; the simulator reproduces the archived TradeManager's
+monotonic stop-ratchet over stored bars with session square-off for intraday.
+
 ## D-018 — Six strategy candidates implemented; confidence is heuristic until calibrated (2026-07-16)
 
 Implemented the six researched strategies (pullback_15m, volexp_1h, orb_15m,

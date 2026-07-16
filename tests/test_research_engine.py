@@ -83,9 +83,11 @@ def test_no_trades_strategy_records_empty_eval():
     db.close()
 
 
-def test_market_data_methods_are_explicit_placeholders():
-    engine = ResearchEngine(EvidenceDB(MEMORY))
-    with pytest.raises(NotImplementedError):
-        engine.measure_edge()
-    with pytest.raises(NotImplementedError):
-        engine.label_outcomes()
+def test_market_data_methods_require_a_store():
+    # Phase 5 implemented measure_edge/label_outcomes; without a
+    # MarketDataStore they must refuse loudly, not silently no-op.
+    engine = ResearchEngine(EvidenceDB(MEMORY))     # no store wired
+    with pytest.raises(RuntimeError):
+        engine.measure_edge(None, [])
+    with pytest.raises(RuntimeError):
+        engine.label_outcomes(1, "1d")
