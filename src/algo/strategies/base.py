@@ -25,6 +25,7 @@ import pandas as pd
 
 from algo.core.enums import Direction, HoldingScope
 from algo.core.logging import get_logger
+from algo.strategies.confidence import ConfidenceScore
 
 logger = get_logger("strategies")
 
@@ -49,6 +50,11 @@ class StrategyMeta:
     known_failure_modes: tuple = ()
     #: Only enabled strategies can be instantiated for scanning/trading.
     enabled: bool = False
+    #: Bar timeframe the strategy trades on (the scanner loads bars per this).
+    timeframe: str = "1d"
+    #: Default minimum history (bars) for warmed-up indicators; strategies with
+    #: parameter-dependent warmups override min_history() instead.
+    min_bars: int = 2
 
 
 class StrategyProfile(ABC):
@@ -78,13 +84,34 @@ class StrategyProfile(ABC):
 
     # --------------------------------------------------------------- signal
 
+    def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        """Indicator preparation: return a NEW frame with the columns this
+        strategy's ``entry_signal``/``confidence`` need. Must not mutate the
+        input (the scanner shares the raw bars across strategies). Default:
+        pass-through for strategies that need only raw OHLCV."""
+        return dataframe
+
     @abstractmethod
     def entry_signal(self, dataframe: pd.DataFrame) -> pd.Series:
         """Boolean Series: True on bars where an entry candidate exists.
 
-        This is the coarse vectorized gate. Confidence scoring, ranking, risk,
-        and disposition happen downstream in common machinery.
+        Evaluated on the PREPARED frame. This is the coarse vectorized gate;
+        ranking, risk, and disposition happen downstream in common machinery.
+        Conditions should be edge-triggered (fire on the transition bar, not on
+        every bar a state holds) so a signal is emitted once per setup.
         """
+
+    def confidence(self, dataframe: pd.DataFrame) -> ConfidenceScore:
+        """Heuristic signal-quality score for the LAST bar of the prepared
+        frame, with named components (see strategies/confidence.py). These are
+        recorded as evidence and later recalibrated by the research engine -
+        they are hypotheses, not probabilities. Default: zero."""
+        return ConfidenceScore.zero("no confidence model")
+
+    def min_history(self) -> int:
+        """Bars needed for warmed-up indicators. Defaults to ``meta.min_bars``;
+        override when the warmup depends on configurable parameters."""
+        return int(self.meta.min_bars)
 
     # ------------------------------------------------------------- helpers
 

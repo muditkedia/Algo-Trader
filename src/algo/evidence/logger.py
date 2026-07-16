@@ -142,6 +142,16 @@ class EvidenceLogger:
                 self.conn, "signals", asdict(signal), "signal_id")
         return signal.signal_id
 
+    def signal_exists(self, strategy_id: int, symbol: str, ts: str,
+                      mode: str) -> bool:
+        """True when this exact signal is already recorded - the duplicate
+        guard for scan cycles that re-observe the same bar."""
+        row = self.conn.execute(
+            "SELECT 1 FROM signals WHERE strategy_id = ? AND symbol = ? "
+            "AND ts = ? AND mode = ? LIMIT 1",
+            (strategy_id, symbol, ts, _encode(mode))).fetchone()
+        return row is not None
+
     def record_signals(self, signals: Iterable[Signal]) -> List[int]:
         ids = []
         with self.conn:

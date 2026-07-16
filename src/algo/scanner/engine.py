@@ -1,21 +1,23 @@
-"""ScanEngine - the concrete scanner infrastructure (no strategies shipped).
+"""ScanEngine - one unified scan across every eligible stock and strategy.
 
-Each scan cycle processes EVERY eligible symbol: it loads the symbol's recent
-bars (point-in-time, up to ``as_of``), runs every enabled strategy's entry
-signal, and turns firing candidates into ranked ``Opportunity`` objects - the
-unified opportunity interface. With zero strategies registered it still walks the
-whole universe and returns an empty, timed result; that loop, its performance,
-and the evidence-recording seam are the Phase-2 deliverable.
+Each scan cycle processes EVERY eligible symbol: for each timeframe any enabled
+strategy trades (strategies declare theirs in ``meta.timeframe``), it loads the
+symbol's bars once (point-in-time, up to ``as_of``), runs each strategy's own
+indicator preparation and vectorized entry signal, scores firing candidates via
+the strategy's component confidence, and merges everything into ONE ranked
+``Opportunity`` list.
 
-Reuses Phase 1 wholesale: the ``Scanner`` ABC, ``Opportunity`` +
-``rank_opportunities``, the ``StrategyProfile`` interface, and the
-``EvidenceLogger`` (every firing candidate is recorded, disposition
-``recorded_only`` - there is no selection/confidence/trading yet).
+Evidence: every firing candidate is recorded to the evidence store with its
+full confidence-component breakdown. A duplicate guard
+(``EvidenceLogger.signal_exists``) makes re-scanning the same bar idempotent -
+scan cycles can overlap without double-counting signals.
 
-Two pluggable seams keep later phases from touching this file:
-  * ``prepare_fn(bars) -> bars``  - indicator enrichment (Phase 3).
-  * ``score_fn(symbol, strategy, bars) -> (confidence, extras)`` - confidence
-    engine (Phase 4). Default yields confidence 0.0.
+Pluggable seams (unchanged from Phase 2):
+  * ``prepare_fn(bars) -> bars``  - GLOBAL enrichment applied before strategies.
+  * ``score_fn(symbol, strategy, bars) -> (confidence, extras)`` - scoring
+    override; the default delegates to ``strategy.confidence`` (Phase 4), and
+    the future evidence-calibrated confidence engine replaces it here without
+    touching strategies.
 """
 
 from __future__ import annotations
@@ -54,7 +56,12 @@ class ScanResult:
 
 
 def _default_score(symbol, strategy, bars):
-    return 0.0, {}
+    """Delegate to the strategy's own component confidence (Phase 4).
+
+    The evidence-calibrated confidence engine later replaces this seam."""
+    result = strategy.confidence(bars)
+    return result.score, {"components": result.components,
+                          "reason": result.reason}
 
 
 class ScanEngine(Scanner):
@@ -65,7 +72,7 @@ class ScanEngine(Scanner):
                  score_fn: Optional[Callable] = None) -> None:
         self.store = store
         self.strategies = [s for s in strategies if s.enabled]
-        self.timeframe = timeframe
+        self.timeframe = timeframe          # fallback / no-strategy walk
         self.lookback_bars = lookback_bars
         self.evidence_logger = evidence_logger
         self.mode = mode
@@ -79,63 +86,91 @@ class ScanEngine(Scanner):
                     self.evidence_logger.register_strategy(
                         strat.name, strat.meta.version)
 
+    # --------------------------------------------------------------- grouping
+
+    def _by_timeframe(self) -> Dict[str, List[StrategyProfile]]:
+        """Strategies grouped by the timeframe they trade on; when there are
+        no strategies, the engine still walks the universe on its own
+        timeframe (data-coverage accounting keeps working)."""
+        groups: Dict[str, List[StrategyProfile]] = {}
+        for strat in self.strategies:
+            tf = getattr(strat.meta, "timeframe", None) or self.timeframe
+            groups.setdefault(tf, []).append(strat)
+        return groups or {self.timeframe: []}
+
     # ------------------------------------------------------------------ scan
 
     def scan(self, as_of, symbols: Optional[List[str]] = None) -> ScanResult:
         symbols = list(symbols or [])
-        result = ScanResult(as_of=as_of, timeframe=self.timeframe,
+        groups = self._by_timeframe()
+        result = ScanResult(as_of=as_of, timeframe=",".join(sorted(groups)),
                             n_symbols_requested=len(symbols))
         started = time.perf_counter()
+        symbols_with_data = set()
+
         for symbol in symbols:
-            bars = self.store.read(symbol, self.timeframe, end=as_of)
-            if bars.empty:
-                continue
-            bars = self.prepare_fn(bars.tail(self.lookback_bars)
-                                   .reset_index(drop=True))
-            result.n_symbols_with_data += 1
-            for strat in self.strategies:
-                signal = strat.entry_signal(bars)
-                if signal is None or len(signal) == 0:
+            for tf, strats in groups.items():
+                bars = self.store.read(symbol, tf, end=as_of)
+                if bars.empty:
                     continue
-                if bool(signal.iloc[-1]):
-                    result.n_candidates += 1
-                    result.opportunities.append(
-                        self._make_opportunity(symbol, strat, bars, as_of))
+                symbols_with_data.add(symbol)
+                need = max([self.lookback_bars]
+                           + [s.min_history() for s in strats])
+                window = self.prepare_fn(
+                    bars.tail(need).reset_index(drop=True))
+                for strat in strats:
+                    prepared = strat.prepare(window)
+                    signal = strat.entry_signal(prepared)
+                    if signal is None or len(signal) == 0:
+                        continue
+                    if bool(signal.iloc[-1]):
+                        result.n_candidates += 1
+                        result.opportunities.append(self._make_opportunity(
+                            symbol, strat, prepared, tf))
+
+        result.n_symbols_with_data = len(symbols_with_data)
         result.opportunities = rank_opportunities(result.opportunities)
         result.duration_ms = (time.perf_counter() - started) * 1000.0
-        logger.info("scan %s: %s", self.timeframe, result.summary())
+        logger.info("scan: %s", result.summary())
         return result
 
     # --------------------------------------------------------------- helpers
 
     def _make_opportunity(self, symbol: str, strat: StrategyProfile,
-                          bars: pd.DataFrame, as_of) -> Opportunity:
+                          bars: pd.DataFrame, timeframe: str) -> Opportunity:
         confidence, extras = self.score_fn(symbol, strat, bars)
-        direction = strat.meta.direction.value
         opp = Opportunity(
-            symbol=symbol, strategy=strat.name, direction=direction,
+            symbol=symbol, strategy=strat.name,
+            direction=strat.meta.direction.value,
             confidence=float(confidence),
             expected_reward=extras.get("expected_reward"),
             expected_risk=extras.get("expected_risk"),
             expected_holding_min=extras.get("expected_holding_min"),
-            reason=extras.get("reason", f"{strat.name} entry on {self.timeframe}"))
+            reason=extras.get("reason")
+            or f"{strat.name} entry on {timeframe}")
         if self.evidence_logger is not None:
-            self._record(symbol, strat, bars, as_of, opp)
+            self._record(symbol, strat, bars, opp, extras)
         return opp
 
-    def _record(self, symbol, strat, bars, as_of, opp: Opportunity) -> None:
-        """Record the firing candidate as a signal (recorded_only). Best-effort:
-        a missing instrument (FK) is logged, never aborts the scan."""
+    def _record(self, symbol, strat, bars, opp: Opportunity, extras) -> None:
+        """Record the firing candidate as a signal with its confidence
+        components. Duplicate-safe (same strategy/symbol/bar/mode recorded
+        once) and best-effort: recording failures never abort a scan."""
         try:
             last = bars.iloc[-1]
+            ts = str(pd.Timestamp(last["date"]))
+            strategy_id = self._strategy_ids[strat.name]
+            if self.evidence_logger.signal_exists(strategy_id, symbol, ts,
+                                                  self.mode):
+                return
             self.evidence_logger.record_signal(Signal(
-                ts=str(pd.Timestamp(last["date"])),
-                symbol=symbol, strategy_id=self._strategy_ids[strat.name],
+                ts=ts, symbol=symbol, strategy_id=strategy_id,
                 direction=opp.direction, mode=self.mode,
                 disposition=Disposition.RECORDED_ONLY.value,
-                disposition_reason="scan candidate (no confidence/selection yet)",
+                disposition_reason="scan candidate (no selection layer yet)",
                 entry_price=float(last["close"]),
-                confidence_score=opp.confidence))
+                confidence_score=opp.confidence,
+                confidence_components=extras.get("components") or None))
         except Exception as exc:  # never let evidence logging break a scan
             logger.warning("signal not recorded for %s/%s: %s",
                            symbol, strat.name, exc)

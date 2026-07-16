@@ -84,9 +84,9 @@ class MarketDataStore:
             return pd.DataFrame(columns=list(ohlcv.OHLCV_COLUMNS))
         frame = pd.read_parquet(path)
         if start is not None:
-            frame = frame[frame["date"] >= pd.Timestamp(start, tz="UTC")]
+            frame = frame[frame["date"] >= ohlcv.to_utc(start)]
         if end is not None:
-            frame = frame[frame["date"] <= pd.Timestamp(end, tz="UTC")]
+            frame = frame[frame["date"] <= ohlcv.to_utc(end)]
         return frame.reset_index(drop=True)
 
     def tail(self, symbol: str, timeframe: str, n: int) -> pd.DataFrame:

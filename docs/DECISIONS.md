@@ -4,6 +4,31 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-018 — Six strategy candidates implemented; confidence is heuristic until calibrated (2026-07-16)
+
+Implemented the six researched strategies (pullback_15m, volexp_1h, orb_15m,
+vwap_15m, nr7_daily, ema200_daily) as plug-ins on the Phase-1 interface: each
+declares indicator prep, an edge-triggered vectorized signal, frozen params, a
+component confidence score, regimes, and failure-mode metadata. The scanner now
+merges multiple timeframes into ONE ranked opportunity list and records every
+firing candidate to evidence with its component breakdown, duplicate-protected.
+**Status: all six are CANDIDATES.** Per the frozen lifecycle none may advance
+until the research engine measures its edge against costs (D-007 gate). Their
+confidence scores are explicitly heuristic hypotheses — the crypto phase proved
+hand-designed advisory scores can carry zero signal (L-003) — so every component
+is persisted for later evidence-based recalibration, and the scanner's score_fn
+seam is where the calibrated engine will replace them.
+
+## D-017 — Indicator library is pure pandas; talib not carried forward (2026-07-16)
+
+The archived crypto `indicators.py` used TA-Lib (a C dependency, painful on
+Windows, unavailable in this venv). The promoted `core/indicators.py` implements
+the same indicators in pure pandas — Wilder RSI/ATR/ADX use the identical
+formulas already battle-tested in the validation regime labeler — and ports
+`crossed_above`/`crossed_below` verbatim from the archive. Session-scoped
+equity additions (session VWAP, opening range) reset per NSE session. The
+archived talib version remains in `archive/crypto-freqtrade/` for reference.
+
 ## D-015 — Kotak Neo SDK has no historical-candle API; accumulate forward (2026-07-15)
 
 **Evidence:** the official Kotak Neo v2 SDK (supplied by the owner) exposes no
