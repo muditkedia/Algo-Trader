@@ -1,7 +1,12 @@
-"""NseProvider - documented wiring point for a live NSE / broker data source.
+"""NseProvider - generic NSE wiring-point stub (superseded by Kotak Neo).
 
-Deliberately NOT implemented. Wiring a live feed requires two owner decisions
-that are out of scope for Phase 2 and cannot be handled here:
+The concrete NSE market-data provider is now
+``algo.data.providers.kotak.KotakNeoDataProvider`` (Phase 3), which implements
+this same ``DataProvider`` interface against the official Kotak Neo SDK. This
+stub is retained only as a template for adding OTHER NSE sources (a second
+broker, a vendor) later.
+
+Wiring any live feed requires two owner decisions that cannot be handled here:
 
   1. The data source (NSE bhavcopy archives, or a broker API - Zerodha Kite,
      Dhan, Upstox - or a paid vendor). Each has different auth, rate limits,

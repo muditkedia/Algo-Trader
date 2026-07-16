@@ -4,88 +4,93 @@ _Last updated: 2026-07-15_
 
 ## Current Phase
 
-**Equities pivot — Phase 2 (data & scanning layer) COMPLETE, uncommitted.**
-Phase 1 (platform foundation) is committed and pushed (`4f4d630`).
+**Equities pivot — Phase 3 (Kotak Neo market-data provider) COMPLETE, uncommitted.**
+Phase 1 (`4f4d630`) and Phase 2 (`5a14fd6`) are committed and pushed.
 
-The project is a research-first quantitative platform for **Indian equities**.
-Phase 2 built the complete market-data and scanning layer on top of the Phase 1
-foundation. Still **no brokers, no paper/live trading, no strategies** — by
-design. Everything in Phase 2 is in the working tree, awaiting approval to commit.
+A research-first platform for Indian equities. Phase 3 replaced the temporary NSE
+stub with a real **Kotak Neo** data provider implementing the existing
+`DataProvider` interface, so it drops into the Phase-2 ingestion/store/schedule/
+scanner with no redesign. Still **no order placement, brokers-for-trading, or
+strategies** — by design.
 
-## Phase 2 delivered (`src/algo/data`, `universe`, `scanner`, `schedule`)
+## ⚠️ Important finding — Kotak Neo SDK has no historical-candle API
 
-- **data/** — the source-agnostic market-data layer:
-  - `ohlcv` canonical bar contract (+ window/timezone helpers);
-  - `providers/` — `DataProvider` interface with `SyntheticDataProvider`
-    (deterministic, session-aware) and `CsvDataProvider` (bhavcopy/broker/vendor
-    imports) working offline, plus `NseProvider` — a documented wiring point for
-    a live feed (needs the owner's source choice + credentials);
-  - `store` — `MarketDataStore`, parquet per symbol×timeframe, upsert-dedup
-    (candles never in SQLite, D-010);
-  - `quality` — data-quality gates adapted from the archived `verify_data`
-    (errors block, warnings admit; calendar-aware continuity);
-  - `ingest` — `IngestionEngine`: `full_import` + `incremental_update`, window
-    computed from store coverage, quarantine on bad data, idempotent.
-- **universe/** (extends Phase 1) — `CategoryFilter` added; `UniverseManager`
-  (symbol master via the `instruments` table, point-in-time metrics frame,
-  eligibility); `build_filters(config)` for min volume / price band / min traded
-  value / min market cap / sector / black-white-list — all configurable.
-- **scanner/** (extends Phase 1) — `ScanEngine`: processes every eligible stock,
-  runs every enabled strategy, emits ranked `Opportunity` objects, records every
-  firing candidate to evidence. Pluggable `prepare_fn` (indicators, Phase 3) and
-  `score_fn` (confidence, Phase 4) so later phases don't touch it.
-- **schedule/** — `DataJobs`: `full_import`, `daily_update`, `intraday_refresh`
-  — callable, idempotent batch jobs (no daemon; a live loop is paper-phase).
+Verified against the official SDK you supplied: the Kotak Neo v2 SDK exposes
+**no historical OHLCV/candle endpoint**. OHLC is available only from
+`quotes(quote_type='ohlc')` (the current session's bar) and the live websocket.
+Consequences, handled honestly (no invented endpoints):
 
-## Reuse (Phase 2 built on Phase 1, no redesign)
+- `KotakNeoDataProvider.fetch_ohlcv` returns **today's daily bar** from the
+  quotes snapshot. With the incremental scheduler this **accumulates a daily
+  history going forward** ("incremental updates only") and is idempotent (the
+  store upserts; a partial intraday snapshot is overwritten by the EOD bar).
+- **Bulk backfill of past history** uses the existing `CsvDataProvider` (import a
+  Kotak/vendor export) — or a future wiring of Kotak's separate charts/history
+  endpoint if its official spec is provided.
+- **Intraday bars** require the SDK's websocket feed (a live collector) — not
+  served by this provider; such requests return empty.
 
-Filters/orchestrator (`universe.base`/`universe.py`), the `Scanner` ABC +
-`Opportunity` + `rank_opportunities`, `StrategyProfile`, `EvidenceLogger`,
-`TradingCalendar`, `MarketConfig`, and the config pattern were all reused
-directly. New dependency: `pyarrow` (parquet engine), added to `pyproject.toml`.
+## Phase 3 delivered (`src/algo/data/providers/kotak/`)
 
-## Validation performed
+- `config.py` — `KotakNeoConfig`: all credentials from environment variables,
+  secret fields masked (`repr=False`), TOTP via a live code or a pyotp secret.
+- `session.py` — `KotakNeoSession`: the two-step TOTP login
+  (`totp_login`→`totp_validate`), lazy optional SDK import, injectable
+  `client_factory`; never hardcodes or logs secrets.
+- `instruments.py` — `KotakNeoInstruments`: scrip-master download (records or
+  `filesPaths` CSV), normalized symbol/token master, parquet cache, symbol→token
+  lookup, optional evidence-table sync; injectable downloader.
+- `provider.py` — `KotakNeoDataProvider(DataProvider)`: `fetch_ohlcv` via the
+  quotes OHLC snapshot with a flexible response parser.
+- Wired into `providers/__init__`; the old `NseProvider` now points here;
+  `.env.example` rewritten for Kotak Neo variables.
 
-- `pytest`: **64 passed** (32 Phase 1 + 32 Phase 2). New Phase-2 coverage:
-  store round-trip/dedup, provider determinism/session-awareness/CSV, quality
-  gates, ingestion + incremental + idempotency + quarantine, universe filtering
-  correctness + drop attribution, scanner (processes every stock, ranking,
-  evidence recording, performance), scheduling jobs.
-- End-to-end on-disk integration smoke: 25 symbols → full import (2,750 rows) →
-  idempotent re-run (all `up_to_date`, zero duplicate downloads) → universe
-  eligibility → scan of every eligible stock (14 ranked candidates, ~60 ms).
+## Reuse (no parallel implementations)
 
-## Phase 1 (committed `4f4d630`)
+Reuses `DataProvider`, `IngestionEngine`, `MarketDataStore`, `DataJobs`,
+`ScanEngine`, `EvidenceLogger`, `TradingCalendar`, the `ohlcv` helpers, and the
+config pattern directly. The SDK (`neo_api_client`) and `pyotp` are optional,
+lazily imported; no new hard dependency was added.
 
-Package foundation under `src/algo`: core primitives, SQLite evidence DB +
-logger, strategy plugin interface + registry, universe-filter framework, scanner
-interface, research-engine skeleton, and the relocated validation package. Crypto
-code preserved under `archive/crypto-freqtrade/`.
+## Validation performed (mocked — real credentials unavailable, per the task)
+
+- `pytest`: **77 passed** (64 prior + 13 Kotak). A `FakeNeoClient` injected via
+  the session factory / instruments downloader covers: authentication (env creds,
+  failure, missing-config), instrument loading (records + `filesPaths` CSV),
+  OHLC download + response-shape flexibility, incremental ingestion + idempotency,
+  scheduler `daily_update`, and scanner integration.
+- Secret masking asserted (nothing sensitive in `repr`).
 
 ## Environment
 
 - Python 3.11 venv, editable install. pandas 3.0.3 / numpy 2.4.6 / pyarrow 25.
-- Market data store: parquet under `user_data/data/` (gitignored). Evidence DB
-  under `user_data/evidence/` (gitignored). Freqtrade/Docker not required.
+- Optional at runtime for live Kotak use: `neo_api_client` (official SDK) and
+  `pyotp` (only if using `KOTAK_NEO_TOTP_SECRET`). Neither is needed for tests.
+- Credentials via environment (`.env`, git-ignored); see `.env.example`.
 
-## Next (Phase 3 — pending owner approval)
+## Prior phases (committed)
 
-1. **Wire a live data source** — implement `NseProvider` (or a broker provider)
-   once the owner picks the source and supplies credentials; the pipeline is
-   source-agnostic, so nothing else changes. Until then, `CsvDataProvider`
-   imports real exports.
-2. **Research-engine port** — promote the edge lab from the archive, the outcome
-   labeler, and the trade simulator; equity-parameterize the validation package;
-   add the indicator-enrichment `prepare_fn` for the scanner.
-3. **First candidate strategies** — measured, not deployed (the D-007 gate).
+- Phase 1 (`4f4d630`) — platform foundation: core, evidence DB + logger, strategy
+  plugin interface + registry, universe framework, scanner interface, research
+  skeleton, relocated validation package. Crypto code archived.
+- Phase 2 (`5a14fd6`) — data & scanning layer: providers/store/quality/ingestion,
+  universe management + filters, scanner engine, scheduling jobs.
 
-## Open decisions needed from owner
+## Next (Phase 4 — pending owner approval)
 
-- Approve committing Phase 2.
-- Data source + broker account (Zerodha / Dhan / Upstox / vendor / EOD).
+The research-engine port + first measured strategies (the D-007 gate). Live Kotak
+data is a matter of installing the SDK and supplying `.env` credentials; the code
+is ready and source-agnostic.
+
+## Open decisions / actions needed from owner
+
+- Approve committing Phase 3.
+- To go live on Kotak data: `pip install neo_api_client pyotp`, fill `.env`, and
+  run a daily `DataJobs.daily_update` after close (accumulates daily bars). For
+  historical backfill, provide a CSV export or Kotak's charts-API spec.
 - Authorize drafting `architecture/VALIDATION_RULES_EQ.md` (equity thresholds).
 
 ## Open blockers
 
-- None. Phase 2 is self-contained and validated on synthetic + CSV data; a live
-  feed is a provider implementation away.
+- None for the code. Backfill depth is bounded by the SDK (see finding above);
+  CSV import is the interim backfill path.

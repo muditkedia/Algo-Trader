@@ -4,6 +4,29 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-015 — Kotak Neo SDK has no historical-candle API; accumulate forward (2026-07-15)
+
+**Evidence:** the official Kotak Neo v2 SDK (supplied by the owner) exposes no
+historical OHLCV endpoint — grep of the SDK confirms OHLC only via
+`quotes(quote_type='ohlc')` (current session) and the live websocket; `urls.py`
+has no history route. **Decision:** `KotakNeoDataProvider.fetch_ohlcv` builds
+today's daily bar from the quotes snapshot, and the incremental scheduler
+accumulates a daily history going forward (idempotent via the store's upsert).
+Bulk backfill uses `CsvDataProvider` (broker/vendor export); a future Kotak
+charts endpoint can be wired if its official spec is provided. We do NOT invent
+or hit an unofficial/undocumented history URL. Intraday bars require the
+websocket collector (deferred).
+
+## D-014 — Kotak Neo as the concrete NSE data provider (2026-07-15)
+
+Implemented `KotakNeoDataProvider` against the Phase-2 `DataProvider` interface,
+plus secure env-var config (secrets masked), a TOTP login session wrapper (lazy
+optional SDK import, injectable client for tests), and an instrument-master
+downloader (scrip master → symbol/token map, parquet cache). Reuses the whole
+Phase-2 pipeline; no parallel implementation. Credentials are read only from the
+environment and never hardcoded/logged. Validated with 13 mocked tests (a
+`FakeNeoClient`); no SDK install or real credentials required.
+
 ## D-013 — Source-agnostic data layer; parquet store; NSE provider deferred (2026-07-15)
 
 Market data flows through a single `DataProvider` interface, so NSE bhavcopy, a
