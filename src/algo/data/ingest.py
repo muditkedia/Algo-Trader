@@ -3,11 +3,21 @@
 Two entry points:
 
 * ``full_import``        - fetch an explicit [start, end] window per symbol.
-* ``incremental_update`` - fetch only what the store is missing: the window
-                           starts one bar after the stored ``last_date``, so a
-                           symbol already up to date is a no-op (start > end).
+* ``incremental_update`` - fetch only what the store is missing: the tail
+                           window starts one bar after the stored ``last_date``
+                           (a symbol already up to date is a no-op), and when a
+                           requested history start is given, a HEAD gap (stored
+                           coverage beginning after the requested start) is
+                           backfilled too.
 
-Duplicate protection is two-layered: the incremental window never re-requests
+The head-gap backfill exists because of a real defect (D-029): the original
+implementation only ever extended coverage FORWARD, so a symbol first seeded
+with a narrow test window could never be backfilled - the wider re-run reported
+it ``up_to_date``, which was true of the tail and silently false of the
+requested window. That is exactly how RELIANCE and TCS lost 2023-2024 on the
+daily timeframe while 97 other symbols were complete.
+
+Duplicate protection is two-layered: the incremental windows never re-request
 stored bars, AND the store upserts on timestamp (last wins). Running an update
 twice therefore downloads nothing the second time and can never duplicate a
 candle. A symbol whose fetched data fails the quality gate is QUARANTINED (not
@@ -34,7 +44,7 @@ logger = get_logger("data.ingest")
 class SymbolResult:
     symbol: str
     timeframe: str
-    status: str                 # ok | up_to_date | empty | quarantined
+    status: str                 # ok | backfilled | up_to_date | empty | quarantined
     fetched: int = 0
     added: int = 0
     detail: str = ""
@@ -100,14 +110,36 @@ class IngestionEngine:
     def incremental_update(self, symbols: List[str], timeframe: str,
                            end=None, start_if_empty=None,
                            default_lookback_days: int = 365) -> IngestionReport:
+        """Fetch what the store is missing for each symbol.
+
+        ``start_if_empty`` is the requested history start. It seeds a symbol
+        with no data, AND backfills a symbol whose stored coverage begins later
+        than it (status ``backfilled``) - coverage must satisfy the request at
+        both ends, not just the tail (D-029). Callers that pass no start (the
+        paper engine's rolling top-up) get tail-only behaviour, unchanged.
+        """
         end = ohlcv.day_end(end) if end is not None \
             else pd.Timestamp.now(tz="UTC")
         step = pd.Timedelta(minutes=ohlcv.timeframe_minutes(timeframe))
         report = IngestionReport(timeframe=timeframe)
         for symbol in symbols:
-            last = self.store.last_date(symbol, timeframe)
-            if last is not None:
-                start = last + step
+            cov = self.store.coverage(symbol, timeframe)
+            if cov is not None:
+                # head gap: requested history begins before the stored data
+                if start_if_empty is not None:
+                    requested = pd.Timestamp(start_if_empty, tz="UTC")
+                    head_end = cov["start"] - step
+                    if requested <= head_end:
+                        head = self._ingest(symbol, timeframe, requested,
+                                            head_end)
+                        if head.status == "ok":
+                            head.status = "backfilled"
+                            head.detail = (f"head gap {requested.date()} -> "
+                                           f"{head_end.date()}" +
+                                           (f"; {head.detail}" if head.detail
+                                            else ""))
+                        report.results.append(head)
+                start = cov["end"] + step
             elif start_if_empty is not None:
                 start = pd.Timestamp(start_if_empty, tz="UTC")
             else:
@@ -115,7 +147,7 @@ class IngestionEngine:
             if start > end:
                 report.results.append(SymbolResult(
                     symbol, timeframe, "up_to_date",
-                    detail=f"stored through {last}"))
+                    detail=f"stored through {cov['end'] if cov else None}"))
                 continue
             report.results.append(self._ingest(symbol, timeframe, start, end))
         logger.info("incremental_update %s: %s", timeframe, report.summary())

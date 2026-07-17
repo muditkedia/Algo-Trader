@@ -1,17 +1,21 @@
-"""Phase 5 measurement run - all six strategies through the identical pipeline.
+"""Measurement run - every candidate through the identical research pipeline.
 
-Runs the complete evidence loop end to end:
+Runs the complete evidence loop end to end, per strategy:
 
-    build data -> measure entry edge (D-007 gate) -> record every signal with
-    its confidence -> label outcomes (incl. simulated managed trades) ->
-    evaluate (metric battery) -> cost sensitivity -> confidence calibration ->
-    league table with PASS / BORDERLINE / FAIL verdicts.
+    record every signal with its confidence -> label outcomes (incl. simulated
+    managed trades) -> measure entry edge (D-007 gate) -> evaluate (metric
+    battery) -> cost sensitivity -> confidence calibration -> league table with
+    PASS / BORDERLINE / FAIL verdicts.
 
-DATA HONESTY: until real NSE history is imported (CSV) this runs on the
-synthetic corpus. Verdicts on synthetic data validate the MACHINERY - they are
-not market verdicts. The pipeline's discrimination is proven separately by the
-test controls (planted edge -> PASS, pure noise -> FAIL). Point ``--csv-root``
-at a real export to produce real verdicts with zero code changes.
+The loop itself lives in ``ResearchEngine.research_all``; this script only
+chooses the data, the universe and where the report lands. Strategies are
+discovered from ``algo.strategies.library``, so a new candidate is measured by
+adding its module - nothing here needs to know it exists.
+
+DATA HONESTY: without ``--store-dir``/``--csv-root`` this runs on the synthetic
+corpus. Verdicts on synthetic data validate the MACHINERY - they are not market
+verdicts. The pipeline's discrimination is proven separately by the test
+controls (planted edge -> PASS, pure noise -> FAIL).
 
 Usage:
     .venv/Scripts/python scripts/run_measurement.py                 # synthetic
@@ -19,11 +23,17 @@ Usage:
     .venv/Scripts/python scripts/run_measurement.py \
         --store-dir user_data/data/nse                              # real store
         [--symbols RELIANCE,TCS | --symbols-file file]
+        [--strategies ema200_daily]        # measure a subset, same bars
 
 With ``--store-dir`` (e.g. after scripts/download_history.py) the REAL evidence
 DB (user_data/evidence/evidence.db) is used, verdicts are persisted as strategy
 lifecycle statuses (PASS -> measured, FAIL -> rejected), and nothing is wiped -
 this is the production measurement path the paper engine gates on.
+
+There is deliberately NO flag to change a strategy's measurement horizon: it is
+pre-registered in the strategy's own ``meta`` and versioned with it. Re-running
+a candidate at a horizon picked after seeing its verdict is the curve-fitting
+D-026 forbids, and a CLI flag is exactly how that would happen by accident.
 """
 
 from __future__ import annotations
@@ -34,18 +44,17 @@ import shutil
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from algo.core.calendar import StaticCalendar
-from algo.core.costs import NseEquityCostModel, Product
+from algo.core.costs import NseEquityCostModel
 from algo.core.logging import configure, get_logger
 from algo.data.providers.csv_provider import CsvDataProvider
 from algo.data.providers.synthetic import SyntheticDataProvider
 from algo.data.store import MarketDataStore
 from algo.evidence.database import EvidenceDB
 from algo.evidence.logger import EvidenceLogger
-from algo.evidence.models import Disposition, Mode, Signal
+from algo.research import reporting
 from algo.research.engine import ResearchEngine
 from algo.strategies.library import ALL_STRATEGIES
 
@@ -85,35 +94,22 @@ def import_csv_data(store: MarketDataStore, csv_root: str) -> list:
     return symbols
 
 
-def record_historical_signals(engine: ResearchEngine, log: EvidenceLogger,
-                              strategy, symbols: list) -> int:
-    """Record every historical firing bar as an evidence signal WITH the
-    strategy's confidence at that bar (indicators are causal, so confidence on
-    the truncated frame equals live confidence)."""
-    strategy_id = log.register_strategy(strategy.name, strategy.meta.version)
-    recorded = 0
-    for symbol in symbols:
-        bars = engine.store.read(symbol, strategy.meta.timeframe)
-        if bars.empty or len(bars) < strategy.min_history():
-            continue
-        prepared = strategy.prepare(bars)
-        fired = strategy.entry_signal(prepared)
-        for i in np.flatnonzero(fired.to_numpy(bool)):
-            ts = str(pd.Timestamp(prepared["date"].iloc[i]))
-            if log.signal_exists(strategy_id, symbol, ts, Mode.BACKTEST.value):
-                continue
-            conf = strategy.confidence(prepared.iloc[:int(i) + 1])
-            log.record_signal(Signal(
-                ts=ts, symbol=symbol, strategy_id=strategy_id,
-                direction=strategy.meta.direction.value,
-                mode=Mode.BACKTEST.value,
-                disposition=Disposition.RECORDED_ONLY.value,
-                disposition_reason="phase5 measurement replay",
-                entry_price=float(prepared["close"].iloc[i]),
-                confidence_score=conf.score,
-                confidence_components=conf.components or None))
-            recorded += 1
-    return recorded
+def select_strategies(names: str = None) -> list:
+    """Instantiate the discovered library, optionally filtered by name.
+
+    A subset runs the IDENTICAL pipeline over the IDENTICAL bars - it only
+    skips work. That matters for throughput: iterating on one new candidate
+    should not re-measure every strategy already on record.
+    """
+    available = {cls.meta.name: cls for cls in ALL_STRATEGIES}
+    if not names:
+        return [cls() for cls in ALL_STRATEGIES]
+    wanted = [n.strip() for n in names.split(",") if n.strip()]
+    unknown = [n for n in wanted if n not in available]
+    if unknown:
+        raise SystemExit(f"unknown strategy: {', '.join(unknown)}. "
+                         f"Available: {', '.join(sorted(available))}")
+    return [available[n]() for n in wanted]
 
 
 def main() -> int:
@@ -128,6 +124,9 @@ def main() -> int:
     parser.add_argument("--store-dir", default=None,
                         help="measure an EXISTING store (e.g. the SmartAPI "
                              "download at user_data/data/nse)")
+    parser.add_argument("--strategies", default=None,
+                        help="comma-separated subset to measure "
+                             "(default: every discovered strategy)")
     args = parser.parse_args()
     configure(level=logging.WARNING)
 
@@ -168,41 +167,23 @@ def main() -> int:
         log.upsert_instrument(symbol)
     engine = ResearchEngine(db, store=store, cost_model=NseEquityCostModel())
 
-    strategies = [cls() for cls in ALL_STRATEGIES]
-    # 1) record every historical signal (with confidence) + label outcomes
-    for strategy in strategies:
-        strategy_id = log.register_strategy(strategy.name,
-                                            strategy.meta.version)
-        n_signals = record_historical_signals(engine, log, strategy, symbols)
-        product = (Product.INTRADAY
-                   if strategy.meta.holding_scope.value == "intraday"
-                   else Product.DELIVERY)
-        n_labeled = engine.label_outcomes(strategy_id,
-                                          strategy.meta.timeframe,
-                                          product=product)
-        print(f"  {strategy.name:14} signals recorded: {n_signals:4d}  "
-              f"outcomes labeled: {n_labeled:4d}")
+    strategies = select_strategies(args.strategies)
+    print(f"strategies: {', '.join(s.name for s in strategies)}\n")
 
-    # 2) identical measurement sweep -> verdicts
-    print("\nmeasuring...")
-    verdicts = engine.measure_all(strategies, symbols)
+    # The whole evidence loop, per strategy, in one call.
+    verdicts = engine.research_all(
+        strategies, symbols,
+        on_verdict=lambda v: print(
+            f"  {v.strategy:14} signals recorded: {v.n_recorded:5d}  "
+            f"outcomes labeled: {v.n_labeled:5d}  -> {v.verdict}"))
     table = engine.league_table(verdicts)
 
-    # 3) render
     print("\n" + "=" * 100)
-    print("PHASE 5 LEAGUE TABLE  (" + data_note + ")")
+    print("LEAGUE TABLE  (" + data_note + ")")
     print("=" * 100)
-    columns = ["strategy", "verdict", "n_signals", "trades", "expectancy",
-               "win_rate", "profit_factor", "sharpe", "edge_bps",
-               "edge_ci_low_bps", "cost_bps", "median_hold_min", "conf_corr"]
-    with pd.option_context("display.width", 200, "display.max_columns", 50):
-        print(table[[c for c in columns if c in table.columns]]
-              .to_string(index=False))
-    print("\nVERDICT DETAIL")
-    for verdict in verdicts:
-        print(f"\n  {verdict.strategy}: {verdict.verdict}")
-        for reason in verdict.reasons:
-            print(f"    - {reason}")
+    print(reporting.league_table_text(table))
+    print("\nVERDICT DETAIL\n")
+    print(reporting.verdict_detail_text(verdicts))
 
     # Persist verdicts as lifecycle statuses (the paper engine gates on these).
     # Only real-data verdicts advance a strategy; synthetic runs record only.
@@ -225,12 +206,9 @@ def main() -> int:
                        "not a market verdict)")
 
     REPORT.parent.mkdir(parents=True, exist_ok=True)
-    lines = [f"# Phase 5 league table", "", f"_{data_note}_", "", "```",
-             table.to_string(index=False), "```", "", "## Verdict detail", ""]
-    for verdict in verdicts:
-        lines.append(f"### {verdict.strategy}: {verdict.verdict}")
-        lines += [f"- {reason}" for reason in verdict.reasons] + [""]
-    REPORT.write_text("\n".join(lines), encoding="utf-8")
+    REPORT.write_text(reporting.league_table_markdown(
+        table, verdicts, data_note=data_note,
+        title="Measurement league table"), encoding="utf-8")
     print(f"\nreport: {REPORT}")
     db.close()
     return 0

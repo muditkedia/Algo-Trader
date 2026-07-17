@@ -51,6 +51,72 @@ def test_day_bootstrap_deterministic_and_sane():
     assert lo1 < values.mean() < hi1         # CI brackets the sample mean
 
 
+# ------------------------------------------- block bootstrap (D-028)
+
+def test_block_of_one_is_bitwise_the_day_bootstrap():
+    """The short-horizon path must stay EXACTLY the L-009 methodology - the
+    numbers behind the recorded D-026 verdicts for the 15m strategies depend
+    on it."""
+    rng = np.random.default_rng(3)
+    values = pd.Series(rng.normal(0.001, 0.01, 200))
+    days = pd.Series(pd.date_range("2024-01-01", periods=200, freq="6h",
+                                   tz="UTC")).dt.normalize()
+    assert edge_lab.block_bootstrap_ci(values, days, 1, seed=11) \
+        == edge_lab.day_bootstrap_ci(values, days, seed=11)
+
+
+def test_block_bootstrap_deterministic():
+    rng = np.random.default_rng(9)
+    values = pd.Series(rng.normal(0.0, 0.01, 300))
+    days = pd.Series(pd.date_range("2024-01-01", periods=300, freq="1D",
+                                   tz="UTC")).dt.normalize()
+    a = edge_lab.block_bootstrap_ci(values, days, 8, seed=11)
+    b = edge_lab.block_bootstrap_ci(values, days, 8, seed=11)
+    assert a == b
+
+
+def test_overlapping_horizon_widens_the_ci():
+    """THE Part-E requirement: on overlapping long-horizon data the block CI
+    must be wider than the day CI, because neighbouring days share most of
+    their forward window and are not independent observations."""
+    rng = np.random.default_rng(5)
+    n, horizon = 500, 20
+    closes = 100.0 * np.exp(np.cumsum(rng.normal(0, 0.01, n)))
+    fwd = edge_lab.forward_returns(closes, horizon)          # 20-bar overlap
+    days = pd.Series(pd.date_range("2023-01-02", periods=n, freq="1D",
+                                   tz="UTC")).dt.normalize()
+    values = pd.Series(fwd)
+
+    day_lo, day_hi = edge_lab.day_bootstrap_ci(values, days, seed=7)
+    blk_lo, blk_hi = edge_lab.block_bootstrap_ci(values, days, horizon, seed=7)
+    day_width = day_hi - day_lo
+    blk_width = blk_hi - blk_lo
+    # a 20-day forward window on daily signals is ~20x overlapped; the honest
+    # interval is MUCH wider, not marginally
+    assert blk_width > day_width * 2
+
+
+def test_measure_records_block_days_per_horizon():
+    frames, signals = _planted_frames()
+    report = edge_lab.measure(frames, signals, strategy="planted",
+                              cost_pct=COST, timeframe_minutes=1440,
+                              bars_per_day=1.0)
+    assert [h.ci_block_days for h in report.horizons] == [1, 2, 4, 8]
+    # intraday example: 8 bars of 15m inside a 375-min session = 1 day
+    report15 = edge_lab.measure(frames, signals, strategy="planted",
+                                cost_pct=COST, timeframe_minutes=15,
+                                bars_per_day=25.0)
+    assert [h.ci_block_days for h in report15.horizons] == [1, 1, 1, 1]
+
+
+def test_measure_without_bars_per_day_is_unchanged():
+    """Direct callers that do not opt in keep the pre-D-028 behaviour."""
+    frames, signals = _planted_frames()
+    old = edge_lab.measure(frames, signals, strategy="planted",
+                           cost_pct=COST, timeframe_minutes=1440)
+    assert all(h.ci_block_days == 1 for h in old.horizons)
+
+
 # ----------------------------------------------------------------- controls
 
 def _planted_frames(n_symbols=3, n_bars=320, rise_pct=0.005, seed=5):

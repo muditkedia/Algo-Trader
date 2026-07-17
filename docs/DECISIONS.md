@@ -4,6 +4,106 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-029 — RELIANCE/TCS truncation: forward-only incremental update; head-gap backfill added (2026-07-17)
+
+**Root cause (evidenced, not guessed).** The two symbols' daily history began at
+exactly 2025-01-01 (381 bars) while 96 peers held 877 bars from 2023-01-01 — on
+the 1d timeframe ONLY (their 1h/15m were complete). File mtimes show
+RELIANCE/TCS 1d written at 15:57:37 as a pair, 14s BEFORE the alphabetical
+99-symbol batch began (15:57:51), and never touched again; their 1h/15m files
+were written in-sequence inside the main batch. So a separate immediately-prior
+invocation — a pre-flight smoke test on the two docstring example symbols,
+1d-only, started at 2025-01-01 — seeded the store, and then the code defect took
+over: ``IngestionEngine.incremental_update`` computed only the FORWARD window
+(``last_date + step → end``) and never compared stored coverage START against
+the requested start. The full download reported the symbols ``up_to_date`` —
+true of the tail, silently false of the requested window. Classification:
+download pipeline behaviour (not SmartAPI, not corporate actions, not mapping,
+not caching). The 16:27 mtime cluster separately confirms the D-025 quarantine
+recovery (SBILIFE/BANKBARODA/IRCTC/PNB/RECLTD/TORNTPHARM).
+
+**Fix.** ``incremental_update`` now also fills the HEAD gap when a requested
+start is given (loud ``backfilled`` status; same quality gates; store upsert
+merges). Callers that pass no start — the paper engine's rolling top-up — keep
+tail-only behaviour, so no surprise multi-year download can occur mid-session.
+Repaired live: both symbols now 877 rows from 2023-01-01; re-run is a no-op;
+store audit clean (only JIOFIN starts late — genuine, listed 2023-08-21).
+5 new tests. NOTE: the D-026 verdicts were measured on the truncated store;
+the next real measurement will see RELIANCE/TCS's full daily history (a ~2%
+signal-count shift on daily strategies). Statuses on record are unchanged.
+
+## D-028 — Long-horizon CIs use the stationary block bootstrap; verdicts preserved, gate honestly harder (2026-07-17)
+
+The edge lab's day-clustered CI (L-009) is correct only while a signal's
+forward window fits inside one day. At an 8-day horizon, signals days apart
+share most of their window — the day resample treats them as independent, so
+the CI is too NARROW and the D-007 gate too EASY. ``edge_lab`` now resamples
+contiguous blocks of days per horizon (block = days the forward window spans:
+``ceil(bars / bars_per_day)``, from ``MarketConfig.minutes_per_session``),
+REUSING ``validation/monte_carlo.py``'s existing stationary bootstrap (Politis
+& Romano) — one resampling implementation in the project. Horizons inside one
+day keep the original day resample bit-for-bit; direct ``edge_lab.measure``
+callers are unchanged unless they opt in; the engine always opts in. The block
+length is recorded per horizon (``ci_block_days``) for audit.
+
+**Verified on the real 99-symbol corpus:** all six verdicts identical (FAIL);
+15m CI-lows bit-identical (0.26/−1.95/0.05 bps); volexp_1h (block 2) unchanged
+to 1dp; and the finding that justifies the change — **ema200_daily CI-low
+23.4 → 6.2 bps, nr7_daily 4.0 → −13.0 bps**. The day bootstrap had been
+overstating long-horizon confidence by ~17 bps; every prior long-horizon
+narrative ("within 4% of the bar") holds for the POINT edge only. Promotion
+rules, bars, and ``verdict_for`` untouched. A synthetic-overlap test proves the
+widening direction; a planted-edge control still PASSes (discrimination
+retained). Done BEFORE any long-horizon candidate exists, so the harder gate
+cannot be mistaken for moved goalposts.
+
+## D-027 — Research pipeline: one seam, pre-registered horizons, measured throughput (2026-07-17)
+
+Phase 8 turned the measurement machinery into a research pipeline a new
+candidate plugs into, **without changing a single verdict** (verified: the six
+D-026 results reproduce exactly on the real 99-symbol corpus).
+
+* **`ResearchEngine.research` / `research_all`** is now the single seam: register
+  → record signals with confidence → label matured outcomes → measure entry edge
+  → simulate → evaluate → cost sensitivity → calibration → verdict. The loop used
+  to be hand-wired in `scripts/run_measurement.py`, so a second entry point would
+  have had to duplicate it. `_judge` is the one implementation of the evaluation
+  every candidate is judged by.
+* **Strategies are discovered, not listed.** `algo.strategies.library` discovers
+  its own modules through the existing `StrategyRegistry`, so adding a candidate
+  is *one file* — the hand-maintained `ALL_STRATEGIES` tuple that measurement,
+  paper trading and the tests all depended on is gone. Name uniqueness is now
+  enforced at import (the registry raises) rather than by a test.
+* **The measurement horizon is PRE-REGISTERED per strategy** (`meta.horizon_bars`,
+  `meta.max_hold_bars`), defaulting to exactly the Phase-5/7 values (1/2/4/8 bars,
+  8-bar hold) so every recorded verdict stays reproducible. This closes a real
+  gap: the horizon was hardcoded platform-wide, so a candidate whose thesis needs
+  weeks could only ever be measured over 8 bars. It is declared *with the
+  hypothesis and versioned with it*, and **no CLI flag exposes it** — re-running a
+  candidate at a horizon chosen after seeing its verdict is precisely the
+  curve-fitting D-026 forbids, and a flag is how that would happen by accident.
+* **Throughput, measured rather than assumed.** Profiling the real 15m corpus
+  showed the suspected bottleneck (indicators recomputed 3x per strategy) was
+  **0.4% of the run**; vectorized pandas is simply fast. The real cost was
+  `record_signals` at **54%** — a transaction (a disk sync) and a SELECT *per
+  signal*, over tens of thousands of signals. Reusing the logger's existing batch
+  writer + a single duplicate-guard query cut it **14.77s → 0.60s (24x)** and the
+  whole pipeline **2x** (27.5s → 13.4s per strategy per 5 symbols); a re-run is
+  now 0.04s. This is D-025's labeling finding applied to the recording step it
+  had left per-row. The single-pass `SignalSet` stays (it is correct and removes
+  duplication) but is documented for what it is: ~3s per strategy, not the fix.
+* **`--strategies` subset filter**: iterating on one new candidate no longer
+  re-measures the five already on record. Identical pipeline, identical bars.
+
+**Known limitation, deliberately not fixed** (it would change measurement, which
+this phase froze): `label_outcomes` and `simulate_strategy` each run
+`simulate_trade` over every signal — the same simulation computed twice, now ~85%
+of the remaining runtime. They are not trivially unifiable: the labeler simulates
+on raw store bars with a fixed ATR(14), while the simulator uses the strategy's
+prepared frame and will honour a strategy-supplied `atr` column. That divergence
+is worth resolving on its own evidence, not as a side effect of a throughput
+change.
+
 ## D-026 — ALL SIX STRATEGIES REJECTED on real NSE data (2026-07-17)
 
 First real measurement: 99 NIFTY-100 symbols, 2.85M bars (2023-01→2026-07),

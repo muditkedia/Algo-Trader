@@ -7,6 +7,8 @@ the confidence layer later reads.
 
 Phase 5 completes the loop:
 
+  * ``prepare_signals``   - indicators + entry signal, computed ONCE per symbol
+  * ``record_signals``    - persist every historical candidate with confidence
   * ``measure_edge``      - the D-007 gate: does the ENTRY, exits ignored, beat
                             the cost hurdle? (promoted L-009 methodology)
   * ``label_outcomes``    - attach realized outcomes to recorded signals
@@ -16,10 +18,17 @@ Phase 5 completes the loop:
   * ``league_table``      - rank every strategy and issue PASS / BORDERLINE /
                             FAIL verdicts against the PRE-REGISTERED bars
 
+Phase 8 closes it into one seam: ``research`` runs that whole sequence for a
+single strategy and ``research_all`` sweeps a library, so implementing a
+candidate is the only work adding one requires - measurement, evidence, the
+league table and the promotion decision follow with no further wiring.
+
 The verdict thresholds are NOT new: they are the project's own pre-registered
 decisions (D-007's "edge must exceed ~2x round-trip cost", and the frozen
 VALIDATION_RULES §7 profit-factor / expectancy / drawdown bars). Nothing here
-is tuned to make a strategy pass.
+is tuned to make a strategy pass, and nothing here may be re-picked after
+seeing a result - including the measurement horizon, which each strategy
+pre-registers in its own ``meta`` (see algo.strategies.base).
 """
 
 from __future__ import annotations
@@ -38,6 +47,7 @@ from algo.core.logging import get_logger
 from algo.data.ohlcv import timeframe_minutes
 from algo.evidence.database import EvidenceDB
 from algo.evidence.logger import EvidenceLogger
+from algo.evidence.models import Disposition, Mode, Signal
 from algo.research import edge_lab
 from algo.research.labeler import OutcomeLabeler
 from algo.research.simulator import simulate_trade
@@ -64,6 +74,46 @@ BORDERLINE_PROFIT_FACTOR = 1.0
 MIN_TRADES = 30
 
 
+def product_for_strategy(strategy) -> Product:
+    """The NSE product a strategy's declared holding scope implies.
+
+    Intraday is squared off in-session (MIS); anything else settles (CNC). The
+    distinction is first-order, not cosmetic: delivery pays STT on BOTH sides
+    (~31 bps round trip) where intraday pays it once (~12 bps).
+    """
+    return (Product.INTRADAY
+            if strategy.meta.holding_scope.value == "intraday"
+            else Product.DELIVERY)
+
+
+@dataclass(frozen=True)
+class SignalSet:
+    """One strategy's prepared frames + entry signals, keyed by symbol.
+
+    Holds only symbols that actually fired. Recording, edge measurement and
+    simulation each used to call ``prepare()`` + ``entry_signal()`` themselves,
+    so the indicator work ran three times per strategy per symbol; computing it
+    once and threading it through removes two of those passes.
+
+    Measured, so the claim is not oversold: on the real corpus this is ~1.5s per
+    pass for a 15m strategy over 2.16M bars, so the saving is ~3s per strategy -
+    real, but the indicator work was never the bottleneck. Vectorized pandas is
+    simply fast. The costs that dominate a sweep are the per-signal ones
+    (recording, labeling, simulation), which is where the throughput work
+    actually had to go.
+    """
+
+    frames: Dict[str, pd.DataFrame] = field(default_factory=dict)
+    signals: Dict[str, pd.Series] = field(default_factory=dict)
+
+    def __bool__(self) -> bool:
+        return bool(self.frames)
+
+    def n_signals(self) -> int:
+        return int(sum(int(s.to_numpy(bool).sum())
+                       for s in self.signals.values()))
+
+
 @dataclass
 class StrategyVerdict:
     strategy: str
@@ -73,6 +123,11 @@ class StrategyVerdict:
     trade_metrics: Optional[dict] = None
     cost_sensitivity: Optional[dict] = None
     calibration: Optional[dict] = None
+    #: Evidence written by this run (``research`` only; ``measure_all`` neither
+    #: records nor labels, and leaves these None rather than reporting a zero
+    #: that would read as "nothing fired").
+    n_recorded: Optional[int] = None
+    n_labeled: Optional[int] = None
 
     def as_row(self) -> dict:
         m = self.trade_metrics or {}
@@ -150,20 +205,17 @@ class ResearchEngine:
         """Run the full data-free validation pipeline; returns all results."""
         return coordinator.run_validation(trades_source, out_report, options)
 
-    # ------------------------------------------------------- 1) measure_edge
+    # -------------------------------------------------- 0) prepare (once)
 
-    def measure_edge(self, strategy, symbols: Sequence[str],
-                     product: Product = Product.INTRADAY,
-                     horizon_bars: Sequence[int] = edge_lab.DEFAULT_HORIZON_BARS,
-                     reference_price: float = 1000.0) -> edge_lab.EdgeReport:
-        """The D-007 gate: measure the ENTRY's forward edge against costs.
+    def prepare_signals(self, strategy, symbols: Sequence[str]) -> SignalSet:
+        """Indicators + entry signal for every symbol that fires, computed ONCE.
 
-        Exits are ignored entirely - this asks only whether the entry itself is
-        worth more than it costs to express. Uses the promoted L-009
-        methodology (day-clustered CIs, random baseline).
+        Symbols with too little history for a warmed-up indicator set, or with
+        no signal at all, are dropped - carrying them further would only make
+        the downstream steps re-discover that there is nothing to measure.
         """
         if self.store is None:
-            raise RuntimeError("measure_edge needs a MarketDataStore")
+            raise RuntimeError("prepare_signals needs a MarketDataStore")
         tf = strategy.meta.timeframe
         frames, signals = {}, {}
         for symbol in symbols:
@@ -176,14 +228,101 @@ class ResearchEngine:
                 continue
             frames[symbol] = prepared
             signals[symbol] = signal
+        return SignalSet(frames, signals)
 
+    # -------------------------------------------------- 1) record the evidence
+
+    def record_signals(self, strategy, symbols: Sequence[str],
+                       strategy_id: Optional[int] = None,
+                       mode: str = Mode.BACKTEST.value,
+                       disposition_reason: str = "measurement replay",
+                       prepared: Optional[SignalSet] = None,
+                       batch: int = 2000) -> int:
+        """Record every historical firing bar as a signal WITH its confidence.
+
+        Indicators are causal, so the confidence computed on the frame truncated
+        at bar i is exactly what the scanner would have produced live at bar i.
+
+        Idempotent: an already-recorded (strategy, symbol, ts, mode) is skipped,
+        so re-running the pipeline never duplicates evidence.
+
+        Reuses the logger's existing batch writer and checks the duplicate
+        guard with one query, because a replay records tens of thousands of
+        candidates per strategy: a transaction (a disk sync) plus a SELECT per
+        signal is what made recording ~85% of the cost of a real 15m sweep.
+        This is D-025's labeling finding applied to the recording step it left
+        per-row.
+        """
+        if strategy_id is None:
+            strategy_id = self.logger_.register_strategy(
+                strategy.name, strategy.meta.version)
+        prepared = (prepared if prepared is not None
+                    else self.prepare_signals(strategy, symbols))
+        seen = self.logger_.recorded_signal_keys(strategy_id, mode)
+        pending: List[Signal] = []
+        recorded = 0
+        for symbol, frame in prepared.frames.items():
+            fired = prepared.signals[symbol].to_numpy(bool)
+            dates, closes = frame["date"], frame["close"].to_numpy(float)
+            for i in np.flatnonzero(fired):
+                ts = str(pd.Timestamp(dates.iloc[i]))
+                if (symbol, ts) in seen:
+                    continue
+                seen.add((symbol, ts))
+                conf = strategy.confidence(frame.iloc[:int(i) + 1])
+                pending.append(Signal(
+                    ts=ts, symbol=symbol, strategy_id=strategy_id,
+                    direction=strategy.meta.direction.value, mode=mode,
+                    disposition=Disposition.RECORDED_ONLY.value,
+                    disposition_reason=disposition_reason,
+                    entry_price=float(closes[i]),
+                    confidence_score=conf.score,
+                    confidence_components=conf.components or None))
+                if len(pending) >= batch:
+                    recorded += len(self.logger_.record_signals(pending))
+                    pending = []
+        return recorded + len(self.logger_.record_signals(pending))
+
+    # ------------------------------------------------------- 2) measure_edge
+
+    def measure_edge(self, strategy, symbols: Sequence[str],
+                     product: Product = Product.INTRADAY,
+                     horizon_bars: Optional[Sequence[int]] = None,
+                     reference_price: float = 1000.0,
+                     prepared: Optional[SignalSet] = None
+                     ) -> edge_lab.EdgeReport:
+        """The D-007 gate: measure the ENTRY's forward edge against costs.
+
+        Exits are ignored entirely - this asks only whether the entry itself is
+        worth more than it costs to express. Uses the promoted L-009
+        methodology (day-clustered CIs, random baseline).
+
+        Horizons come from the strategy's PRE-REGISTERED ``meta.horizon_bars``.
+        ``horizon_bars`` overrides them, which exists for controls and
+        diagnostics - re-running a candidate at a horizon chosen after seeing
+        its verdict is the tuning D-026 forbids, so no entry point exposes it.
+
+        CIs use the D-028 block bootstrap: the resampling block per horizon is
+        the number of trading days the forward window spans, derived from the
+        market's session length. Horizons inside one day keep the original
+        L-009 day resample bit-for-bit.
+        """
+        prepared = (prepared if prepared is not None
+                    else self.prepare_signals(strategy, symbols))
+        horizons = tuple(horizon_bars if horizon_bars is not None
+                         else strategy.meta.horizon_bars)
         qty = max(100_000.0 / reference_price, 1e-9)
         cost = self.cost_model.round_trip_pct(
             entry_price=reference_price, exit_price=reference_price,
             quantity=qty, product=product)
+        tf_min = timeframe_minutes(strategy.meta.timeframe)
+        # Bars per trading session: 25 for 15m, 6.25 for 1h; >= session-length
+        # timeframes (1d) are one bar per day.
+        bars_per_day = max(1.0, self.market.minutes_per_session / tf_min)
         return edge_lab.measure(
-            frames, signals, strategy=strategy.name, cost_pct=cost,
-            timeframe_minutes=timeframe_minutes(tf), horizon_bars=horizon_bars)
+            prepared.frames, prepared.signals, strategy=strategy.name,
+            cost_pct=cost, timeframe_minutes=tf_min, horizon_bars=horizons,
+            bars_per_day=bars_per_day)
 
     # ----------------------------------------------------- 2) label_outcomes
 
@@ -203,23 +342,23 @@ class ResearchEngine:
     def simulate_strategy(self, strategy, symbols: Sequence[str],
                           strategy_id: Optional[int] = None,
                           product: Product = Product.INTRADAY,
-                          max_hold_bars: int = 8, persist: bool = True,
-                          atr_period: int = 14,
-                          swing_window: int = 10) -> pd.DataFrame:
-        """Replay every historical signal as a managed trade -> canonical frame."""
-        if self.store is None:
-            raise RuntimeError("simulate_strategy needs a MarketDataStore")
-        tf = strategy.meta.timeframe
+                          max_hold_bars: Optional[int] = None,
+                          persist: bool = True, atr_period: int = 14,
+                          swing_window: int = 10,
+                          prepared: Optional[SignalSet] = None) -> pd.DataFrame:
+        """Replay every historical signal as a managed trade -> canonical frame.
+
+        The hold cap comes from the strategy's pre-registered
+        ``meta.max_hold_bars`` unless explicitly overridden.
+        """
+        prepared = (prepared if prepared is not None
+                    else self.prepare_signals(strategy, symbols))
+        max_bars = int(max_hold_bars if max_hold_bars is not None
+                       else strategy.meta.max_hold_bars)
         records = []
-        for symbol in symbols:
-            bars = self.store.read(symbol, tf)
-            if bars.empty or len(bars) < strategy.min_history():
-                continue
-            prepared = strategy.prepare(bars)
-            signal = strategy.entry_signal(prepared)
-            if signal is None or not bool(signal.any()):
-                continue
-            work = prepared.copy()
+        for symbol, frame in prepared.frames.items():
+            signal = prepared.signals[symbol]
+            work = frame.copy()
             work["symbol"] = symbol
             if "atr" not in work.columns:
                 work["atr"] = atr_series(work, atr_period)
@@ -230,7 +369,7 @@ class ResearchEngine:
                     work, int(i), atr=float(work["atr"].iloc[i]),
                     swing_low=float(work["swing_low_calc"].iloc[i]),
                     params=self.risk_params, cost_model=self.cost_model,
-                    product=product, max_bars=max_hold_bars)
+                    product=product, max_bars=max_bars)
                 if trade is None:
                     continue
                 records.append(trade)
@@ -447,29 +586,105 @@ class ResearchEngine:
             (scope_type,)).fetchall()
         return pd.DataFrame([dict(r) for r in rows])
 
-    # ------------------------------------------------------------ full sweep
+    # ------------------------------------------------------------ the sweep
+
+    def _judge(self, strategy, symbols: Sequence[str], *, product: Product,
+               max_hold_bars: Optional[int], start_capital: float,
+               prepared: SignalSet, strategy_id: int) -> StrategyVerdict:
+        """The identical evaluation EVERY candidate is judged by.
+
+        One implementation, so no entry point can accidentally judge a strategy
+        by a different battery than the one that rejected the six on record.
+        """
+        edge = self.measure_edge(strategy, symbols, product=product,
+                                 prepared=prepared)
+        trades = self.simulate_strategy(
+            strategy, symbols, strategy_id=strategy_id, product=product,
+            max_hold_bars=max_hold_bars, persist=False, prepared=prepared)
+        trade_metrics = (self.evaluate_strategy(
+            strategy_id, start_capital=start_capital, trades=trades)
+            if not trades.empty else {})
+        cost_sens = self.cost_sensitivity(trades, start_capital)
+        calibration = self.confidence_calibration(strategy_id)
+        return self.verdict_for(strategy, edge, trade_metrics, cost_sens,
+                                calibration)
 
     def measure_all(self, strategies, symbols: Sequence[str],
-                    product_for=None, max_hold_bars: int = 8,
+                    product_for=None, max_hold_bars: Optional[int] = None,
                     start_capital: float = 100_000.0) -> List[StrategyVerdict]:
-        """Run every strategy through the IDENTICAL evaluation and judge it."""
+        """Judge every strategy from data already in the store.
+
+        Measurement only: it neither records signals nor labels outcomes. Use
+        ``research_all`` for the complete evidence loop.
+        """
         verdicts = []
         for strategy in strategies:
             product = (product_for(strategy) if product_for
-                       else (Product.INTRADAY
-                             if strategy.meta.holding_scope.value == "intraday"
-                             else Product.DELIVERY))
+                       else product_for_strategy(strategy))
             strategy_id = self.logger_.register_strategy(
                 strategy.name, strategy.meta.version)
-            edge = self.measure_edge(strategy, symbols, product=product)
-            trades = self.simulate_strategy(
-                strategy, symbols, strategy_id=strategy_id, product=product,
-                max_hold_bars=max_hold_bars, persist=False)
-            trade_metrics = (self.evaluate_strategy(
-                strategy_id, start_capital=start_capital, trades=trades)
-                if not trades.empty else {})
-            cost_sens = self.cost_sensitivity(trades, start_capital)
-            calibration = self.confidence_calibration(strategy_id)
-            verdicts.append(self.verdict_for(strategy, edge, trade_metrics,
-                                             cost_sens, calibration))
+            verdicts.append(self._judge(
+                strategy, symbols, product=product,
+                max_hold_bars=max_hold_bars, start_capital=start_capital,
+                prepared=self.prepare_signals(strategy, symbols),
+                strategy_id=strategy_id))
+        return verdicts
+
+    # ------------------------------------------------- the research pipeline
+
+    def research(self, strategy, symbols: Sequence[str], *, product_for=None,
+                 max_hold_bars: Optional[int] = None,
+                 start_capital: float = 100_000.0, record: bool = True,
+                 label: bool = True) -> StrategyVerdict:
+        """The complete research pipeline for ONE strategy.
+
+        register -> record every signal with its confidence -> label matured
+        outcomes -> measure the entry edge -> simulate managed trades ->
+        evaluate -> cost sensitivity -> confidence calibration -> verdict.
+
+        This is the single seam a new candidate plugs into: implement the
+        strategy and this runs, unchanged, against it. Indicators and the entry
+        signal are computed once here and reused by every step.
+        """
+        product = (product_for(strategy) if product_for
+                   else product_for_strategy(strategy))
+        strategy_id = self.logger_.register_strategy(strategy.name,
+                                                     strategy.meta.version)
+        prepared = self.prepare_signals(strategy, symbols)
+        n_recorded = n_labeled = None
+        if record:
+            n_recorded = self.record_signals(strategy, symbols,
+                                             strategy_id=strategy_id,
+                                             prepared=prepared)
+        if label:
+            n_labeled = self.label_outcomes(
+                strategy_id, strategy.meta.timeframe, product=product,
+                max_hold_bars=int(max_hold_bars if max_hold_bars is not None
+                                  else strategy.meta.max_hold_bars))
+        verdict = self._judge(strategy, symbols, product=product,
+                              max_hold_bars=max_hold_bars,
+                              start_capital=start_capital, prepared=prepared,
+                              strategy_id=strategy_id)
+        verdict.n_recorded, verdict.n_labeled = n_recorded, n_labeled
+        logger.info("researched %s: %s (%s signals recorded, %s labeled)",
+                    strategy.name, verdict.verdict, n_recorded, n_labeled)
+        return verdict
+
+    def research_all(self, strategies, symbols: Sequence[str], *,
+                     product_for=None, max_hold_bars: Optional[int] = None,
+                     start_capital: float = 100_000.0, record: bool = True,
+                     label: bool = True,
+                     on_verdict=None) -> List[StrategyVerdict]:
+        """Run the full pipeline over a library. ``on_verdict`` is called with
+        each verdict as it lands, so a long sweep can report progress without
+        this module knowing anything about how it is displayed."""
+        verdicts = []
+        for strategy in strategies:
+            verdict = self.research(
+                strategy, symbols, product_for=product_for,
+                max_hold_bars=max_hold_bars, start_capital=start_capital,
+                record=record, label=label)
+            verdicts.append(verdict)
+            if on_verdict is not None:
+                on_verdict(verdict)
         return verdicts

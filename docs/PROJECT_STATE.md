@@ -4,11 +4,140 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 7 (production execution rules + REAL market data) IN PROGRESS, uncommitted.**
-Phases 1–6 committed & pushed (`4f4d630`, `5a14fd6`, `aa212c1`, `7a1aeac`,
-`40392cf`, `c3e38c4`).
+**Phase 8 (research pipeline) + Phase 8.5 (research planning layer) COMPLETE,
+uncommitted — awaiting owner approval.** Phases 1–7 committed (`4f4d630`,
+`5a14fd6`, `aa212c1`, `7a1aeac`, `40392cf`, `c3e38c4`, `e898842`).
 
-### SECURITY EVENT (2026-07-17) — contained, no leak
+## Phase 8.5 delivered — research planning layer (D-028, D-029)
+
+- **`research/IMPLEMENTATION_ROADMAP.md`**: every candidate scored on twelve
+  evidence dimensions and tiered (IMPLEMENT FIRST: B1 time-series momentum,
+  A3 52-week high, D2 earnings-gap continuation · SOON: B3, H1, C2, D3, B7,
+  then the cross-sectional seam, then A1, E1 · LATER: 10 · NOT FEASIBLE: 8 with
+  named unblockers). Diversified ten-strategy queue with effort / research
+  value / qualitative survival probability / failure risks / dependencies per
+  strategy. Survival ceiling deliberately "moderate" — calibrated to the 0-for-6
+  base rate and the corrected D-028 gate.
+- **Part C practitioner audit** (library §3): added **B7 Elder triple screen**
+  and **H1 Wyckoff spring** (objective components isolated; non-codable
+  narrative parts explicitly excluded); expanded **B3** with the mechanical
+  Turtle/Darvas rules (pyramiding documented as NOT integrable); mapped
+  CAN-SLIM / institutional ORB / RS-leaders onto existing entries so they are
+  never double-counted. Library now 29 candidates.
+- **D-029 — RELIANCE/TCS root cause found and fixed**: a 1d-only pre-flight
+  smoke test seeded the two symbols from 2025-01-01, and
+  `incremental_update` only ever extended coverage FORWARD, so the full
+  2023 download reported them `up_to_date` while silently missing 2023–24
+  (evidence: mtime forensics — the pair was written 14s before the alphabetical
+  batch and never touched again; 1h/15m were full because the smoke test was
+  1d-only). Fixed with head-gap backfill (loud `backfilled` status; no-start
+  callers like the paper engine unchanged); both symbols repaired live to the
+  full 877 bars; store audit clean (only JIOFIN late — genuine listing date).
+- **D-028 — stationary block-bootstrap CIs for long horizons**, reusing
+  `monte_carlo.py`'s existing implementation. Verified on the real corpus: all
+  six verdicts identical, 15m CI-lows bit-identical, **ema200_daily CI-low
+  23.4 → 6.2 bps / nr7_daily 4.0 → −13.0 bps** — the day bootstrap had been
+  overstating long-horizon confidence ~17 bps. Promotion rules untouched.
+  Synthetic-overlap widening + planted-PASS controls added.
+- Validation: **240 tests pass** (9 new: 4 backfill, 5 bootstrap). Real-sweep
+  verification 303s. Next: implement B1 (time-series momentum) ALONE.
+
+## Phase 8 delivered — the research pipeline (D-027)
+
+The bottleneck is no longer infrastructure; it is finding a strategy with an edge
+that clears costs. Phase 8 made adding a candidate cheap **without changing a
+single verdict**.
+
+- **One seam**: `ResearchEngine.research` / `research_all` runs the whole loop
+  (register → record signals w/ confidence → label outcomes → measure edge →
+  simulate → evaluate → cost sensitivity → calibration → verdict). It was
+  hand-wired in `run_measurement.py`; a second entry point would have duplicated
+  it. `_judge` is the single implementation of the evaluation.
+- **Strategies are discovered, not listed**: `algo.strategies.library` discovers
+  its own modules via the existing `StrategyRegistry`. **Adding a candidate is
+  one file** — the hand-maintained `ALL_STRATEGIES` tuple is gone. Name
+  uniqueness is enforced at import instead of by a test.
+- **Pre-registered horizons**: `meta.horizon_bars` / `meta.max_hold_bars`,
+  defaulting to exactly the Phase-5/7 values (1/2/4/8, 8-bar hold). This closes a
+  real gap — the horizon was hardcoded platform-wide, so a candidate needing
+  weeks could only be measured over 8 bars. **No CLI flag exposes it**: choosing
+  a horizon after seeing a verdict is the tuning D-026 forbids.
+- **Throughput, measured not assumed**: the suspected bottleneck (indicators
+  recomputed 3×) was **0.4%** of the run. The real cost was `record_signals` at
+  **54%** — a transaction (disk sync) + a SELECT per signal. Reusing the logger's
+  existing batch writer cut it **14.77s → 0.60s (24×)**, the pipeline **2×**, and
+  a re-run to **0.04s**. (D-025's labeling fix, applied to the recording step it
+  had left per-row.)
+- **`--strategies` subset filter**: iterating on one candidate no longer
+  re-measures the five on record.
+- **`research/reporting.py`**: league table + verdict detail promoted out of the
+  script, so every entry point renders identical evidence.
+
+### Phase 8 validation
+
+- **231 tests pass** (25 new; baseline 206 unchanged).
+- **The decisive proof — D-026 reproduces exactly.** Re-running the full real
+  sweep (99 symbols, 2.85M bars, 6 strategies) through the new pipeline against a
+  copy of the production evidence DB returns **every verdict and every headline
+  number identical** to the recorded D-026 table (signal counts to the unit; PF,
+  edge, CI-low, cost to the recorded precision), in 192s, with
+  `recorded=0 labeled=0` — proving idempotency on real data.
+
+## Phase 8 research report — `research/CANDIDATE_LIBRARY.md`
+
+27 candidates across momentum, trend, volatility compression, events, low-risk,
+mean reversion and seasonality, each with hypothesis, horizon, weaknesses,
+cost sensitivity and references (including deliberate counter-references).
+
+**The organizing finding:** cost is fixed per round trip (~31 bps delivery, ~12
+intraday) while edge scales with the move, so the D-007 hurdle as a *share of the
+target move* is the survival metric. The library is therefore biased to
+multi-week/multi-month holds — which is D-007's own Option 2 and L-006's own
+conclusion, now backed by NSE evidence.
+
+**Recommended first implementation: time-series (absolute) momentum** — most
+replicated effect in the literature, implementable on the current interface with
+zero platform change, nearly parameter-free (so a FAIL indicts the market, not
+the encoding), and aimed at the one real opening in the evidence: at the longest
+horizon ever measured here (8 bars), ema200_daily's edge came within 4% of the
+bar.
+
+### Open decisions this raised (flagged, NOT taken)
+
+1. ~~Block-bootstrap CIs before judging any long-horizon candidate~~ —
+   **RESOLVED in Phase 8.5 (D-028)**, verdict-preserving, verified on the real
+   corpus.
+2. **A cross-sectional seam.** `entry_signal(dataframe) -> Series` is per-symbol,
+   so cross-sectional momentum / relative strength / low-vol ranking — the
+   best-documented, most cost-survivable families — **cannot be expressed**. The
+   fix is additive (an optional `prepare_cross_section` the engine calls once per
+   sweep), not a redesign. Out of scope for Phase 8.
+3. **Multiple testing.** Evaluating ~25 candidates at a 95% bound yields ~1.25
+   expected false PASSes from noise alone, and `EdgeReport.best()` already picks
+   the best of several horizons without adjusting for that choice. A
+   high-throughput pipeline without this control is a false-discovery factory
+   (Harvey/Liu/Zhu 2016).
+4. **Data gaps that block whole families**: no sector map (`instruments.sector`
+   **0/99**), no earnings calendar (blocks PEAD — the highest-value acquisition
+   available), no index-membership history, long-only (blocks pairs trading).
+5. ~~DATA DEFECT: RELIANCE and TCS truncated~~ — **RESOLVED in Phase 8.5
+   (D-029)**: root cause was the forward-only incremental update after a
+   1d-only smoke-test seed; pipeline fixed with head-gap backfill; both symbols
+   repaired to full 877-bar coverage; store audit clean.
+6. **`ARCHITECTURE.md` is stale** — it still documents the retired Freqtrade
+   crypto system (Binance spot, 5m/15m/1h/4h, `user_data/strategies/algo_core/`),
+   which D-009 retired. `SYSTEM_OVERVIEW.md` is **empty**. The Indian-equity
+   architecture is documented only across DECISIONS/PROJECT_STATE.
+
+### Known limitation, deliberately not fixed
+
+`label_outcomes` and `simulate_strategy` each run `simulate_trade` over every
+signal — the same simulation computed twice, ~85% of the remaining runtime. They
+are not trivially unifiable (the labeler uses raw bars + a fixed ATR(14); the
+simulator uses the prepared frame and honours a strategy-supplied `atr`), and
+resolving it changes measurement, which this phase froze. Worth its own phase.
+
+## SECURITY EVENT (2026-07-17) — contained, no leak
 
 Live SmartAPI credentials were placed in the **tracked** `.env.example`, and a
 second copy existed in an un-ignored `smartapi.env`. Verified: **the secrets

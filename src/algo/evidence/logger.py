@@ -152,6 +152,17 @@ class EvidenceLogger:
             (strategy_id, symbol, ts, _encode(mode))).fetchone()
         return row is not None
 
+    def recorded_signal_keys(self, strategy_id: int, mode: str) -> set:
+        """Every (symbol, ts) already recorded for a strategy+mode.
+
+        The bulk equivalent of ``signal_exists``: one query, instead of one
+        SELECT per candidate bar, for a replay that checks tens of thousands.
+        """
+        rows = self.conn.execute(
+            "SELECT symbol, ts FROM signals WHERE strategy_id = ? AND mode = ?",
+            (strategy_id, _encode(mode))).fetchall()
+        return {(row[0], row[1]) for row in rows}
+
     def find_signal(self, strategy_id: int, symbol: str, ts: str,
                     mode: str) -> Optional[int]:
         """signal_id of an exact recorded signal, or None."""
@@ -180,6 +191,14 @@ class EvidenceLogger:
                 (rank, signal_id))
 
     def record_signals(self, signals: Iterable[Signal]) -> List[int]:
+        """Batch-write signals in ONE transaction; returns their signal_ids.
+
+        Same reasoning as ``record_outcomes``: ``record_signal`` opens a
+        transaction per row, costing a disk sync each, and a historical replay
+        records tens of thousands of candidates per strategy. Prefer
+        ``record_signal`` only on the live path, where signals arrive one at a
+        time.
+        """
         ids = []
         with self.conn:
             for signal in signals:

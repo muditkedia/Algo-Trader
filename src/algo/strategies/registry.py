@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
-from typing import Dict, List, Type
+from types import ModuleType
+from typing import Dict, List, Type, Union
 
 from algo.core.logging import get_logger
 from algo.strategies.base import StrategyProfile
@@ -42,18 +43,27 @@ class StrategyRegistry:
                     name, cls.meta.version, cls.meta.enabled)
         return cls
 
-    def discover(self, package: str) -> List[str]:
+    def discover(self, package: Union[str, ModuleType]) -> List[str]:
         """Import every module in ``package`` and register the strategies found.
+
+        Accepts a dotted name or an already-imported package object. The latter
+        lets a plugin package discover itself from inside its own ``__init__``:
+        the import system publishes a package to ``sys.modules`` (with
+        ``__path__`` set) before executing its body, so the modules it contains
+        can be walked from there.
 
         Returns the names registered from this package. Missing package or zero
         strategies is not an error (Phase 1 ships no strategy plugins).
         """
-        try:
-            pkg = importlib.import_module(package)
-        except ModuleNotFoundError:
-            logger.info("strategy package '%s' not present - nothing to discover",
-                        package)
-            return []
+        if isinstance(package, ModuleType):
+            pkg = package
+        else:
+            try:
+                pkg = importlib.import_module(package)
+            except ModuleNotFoundError:
+                logger.info("strategy package '%s' not present - nothing to "
+                            "discover", package)
+                return []
         found: List[str] = []
         for _, modname, _ in pkgutil.iter_modules(pkg.__path__,
                                                   pkg.__name__ + "."):
@@ -64,7 +74,8 @@ class StrategyRegistry:
                         and getattr(obj, "meta", None) is not None):
                     self.register(obj)
                     found.append(obj.meta.name)
-        logger.info("discovered %d strategy(ies) in '%s'", len(found), package)
+        logger.info("discovered %d strategy(ies) in '%s'", len(found),
+                    pkg.__name__)
         return found
 
     # ------------------------------------------------------------- accessors

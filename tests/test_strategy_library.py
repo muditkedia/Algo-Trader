@@ -360,10 +360,16 @@ def test_metadata_contract(cls):
     assert meta.supported_regimes and meta.hypothesis
     assert meta.expected_behaviour and meta.known_failure_modes
     assert meta.required_columns
+    # A candidate must pre-register the horizon its edge is claimed at.
+    assert meta.horizon_bars and min(meta.horizon_bars) >= 1
+    assert meta.max_hold_bars >= max(meta.horizon_bars)
     strat = cls()
     assert strat.min_history() >= 2
 
 
 def test_strategy_names_unique():
+    # Uniqueness is now enforced at import (the registry raises on a duplicate
+    # name), so this asserts the invariant rather than a strategy count that a
+    # new candidate would have to remember to bump.
     names = [cls.meta.name for cls in ALL_STRATEGIES]
-    assert len(names) == len(set(names)) == 6
+    assert len(names) == len(set(names)) >= 6

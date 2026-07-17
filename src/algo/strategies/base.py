@@ -60,6 +60,35 @@ class StrategyMeta:
     #: volatility. Purely declarative - the execution layer honours it, so
     #: existing strategies need no changes (see algo.risk.trailing).
     trail_mode: str = "atr"
+    #: PRE-REGISTERED research horizon, in bars of ``timeframe``.
+    #:
+    #: ``horizon_bars`` are the forward-return horizons the edge lab measures;
+    #: ``max_hold_bars`` caps the simulated managed trade. Together they encode
+    #: the strategy's OWN claim about how long its edge needs to pay out, and
+    #: they are frozen with ``version`` BEFORE measurement. This matters: the
+    #: horizon is the one parameter that could be re-picked after seeing a bad
+    #: verdict, which is precisely the tuning D-026 forbids. Declaring it here
+    #: makes it part of the hypothesis and version-bumps any change to it.
+    #:
+    #: Defaults reproduce the Phase-5/7 measurement exactly, so every verdict
+    #: already on record stays reproducible.
+    horizon_bars: tuple = (1, 2, 4, 8)
+    max_hold_bars: int = 8
+
+    def __post_init__(self) -> None:
+        # Fail at import, not mid-sweep: a mis-declared horizon would silently
+        # measure a different hypothesis than the one written above it.
+        horizons = tuple(self.horizon_bars)
+        if not horizons or any(int(h) < 1 for h in horizons):
+            raise ValueError(
+                f"{self.name}: horizon_bars must be a non-empty tuple of "
+                f"positive bar counts, got {self.horizon_bars!r}")
+        if int(self.max_hold_bars) < max(horizons):
+            raise ValueError(
+                f"{self.name}: max_hold_bars ({self.max_hold_bars}) is shorter "
+                f"than the longest measured horizon ({max(horizons)}) - the "
+                "simulated trade could never reach the horizon its edge is "
+                "claimed at")
 
 
 class StrategyProfile(ABC):

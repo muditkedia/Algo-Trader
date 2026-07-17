@@ -36,6 +36,61 @@ def test_incremental_from_empty(ingestion, store, symbols):
     assert all(store.coverage(s, "1d")["rows"] > 0 for s in symbols)
 
 
+# --------------------------------------------------- head-gap backfill (D-029)
+
+def test_head_gap_is_backfilled(ingestion, store):
+    """THE RELIANCE/TCS defect: a symbol seeded with a narrow test window used
+    to stay truncated forever, because incremental only extended forward."""
+    # seed with the narrow late window (what the smoke test did)
+    ingestion.full_import(["AAA"], "1d", "2024-02-01", "2024-03-29")
+    seeded = store.coverage("AAA", "1d")
+    # the wider re-run (what the full universe download did)
+    report = ingestion.incremental_update(
+        ["AAA"], "1d", end="2024-03-29", start_if_empty="2024-01-01")
+
+    statuses = [r.status for r in report.results]
+    assert "backfilled" in statuses                  # loud, distinct status
+    fixed = store.coverage("AAA", "1d")
+    assert fixed["start"] < seeded["start"]          # head gap now filled
+    assert fixed["end"] == seeded["end"]             # tail untouched
+    assert fixed["rows"] > seeded["rows"]
+
+    # matches a from-scratch download of the same window exactly
+    from algo.data.store import MarketDataStore
+    fresh = MarketDataStore(store.root.parent / "fresh")
+    IngestionEngine(fresh, ingestion.provider, ingestion.calendar).full_import(
+        ["AAA"], "1d", "2024-01-01", "2024-03-29")
+    assert fixed["rows"] == fresh.coverage("AAA", "1d")["rows"]
+
+
+def test_backfill_is_idempotent(ingestion, store):
+    ingestion.full_import(["AAA"], "1d", "2024-02-01", "2024-03-29")
+    ingestion.incremental_update(["AAA"], "1d", end="2024-03-29",
+                                 start_if_empty="2024-01-01")
+    rows = store.coverage("AAA", "1d")["rows"]
+    again = ingestion.incremental_update(["AAA"], "1d", end="2024-03-29",
+                                         start_if_empty="2024-01-01")
+    assert all(r.status in ("up_to_date", "empty") for r in again.results)
+    assert store.coverage("AAA", "1d")["rows"] == rows   # nothing re-fetched
+
+
+def test_no_requested_start_means_no_backfill(ingestion, store):
+    """The paper engine's rolling top-up passes no start - its behaviour must
+    not change: tail-only, never a surprise multi-year backfill mid-session."""
+    ingestion.full_import(["AAA"], "1d", "2024-02-01", "2024-03-15")
+    report = ingestion.incremental_update(["AAA"], "1d", end="2024-03-29")
+    assert all(r.status != "backfilled" for r in report.results)
+    assert store.coverage("AAA", "1d")["start"] == pd.Timestamp(
+        "2024-02-01", tz="UTC")
+
+
+def test_full_coverage_triggers_no_backfill(ingestion, store):
+    ingestion.full_import(["AAA"], "1d", "2024-01-01", "2024-03-29")
+    report = ingestion.incremental_update(
+        ["AAA"], "1d", end="2024-03-29", start_if_empty="2024-01-01")
+    assert [r.status for r in report.results] == ["up_to_date"]
+
+
 class _BadProvider(DataProvider):
     name = "bad"
 

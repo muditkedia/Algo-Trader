@@ -16,15 +16,31 @@ The crypto entry passed "statistically significant" and still died, because
 significance is not the bar: **beating costs** is (D-007). The D-007
 implementation bar (gross edge >= 2x round-trip cost) is applied by the
 research engine using these numbers.
+
+Long horizons (D-028): resampling by single calendar day is the right
+independence unit only while a signal's forward window fits inside one day.
+At an 8-day horizon, signals four days apart share half their window - the
+returns are mechanically autocorrelated across days, so an iid day resample
+understates the variance of the mean and the CI comes out too NARROW, making
+the D-007 gate too EASY. The fix resamples contiguous BLOCKS of days at least
+as long as the horizon, via the stationary bootstrap already implemented in
+validation.monte_carlo (Politis & Romano) - reused, not re-derived. Horizons
+that fit within a day keep the original day resample bit-for-bit.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
+
+# The one existing stationary-bootstrap implementation in the project
+# (VALIDATION_RULES SS14). Reusing its index generator is the point: one
+# resampling algorithm, one set of properties, no drift.
+from algo.research.validation.monte_carlo import _stationary_bootstrap_indices
 
 DEFAULT_HORIZON_BARS = (1, 2, 4, 8)
 
@@ -41,6 +57,9 @@ class HorizonStats:
     ci_high: float
     p_win: float
     random_mean: float
+    #: Resampling block length (days) the CI used - 1 = plain day bootstrap,
+    #: >1 = stationary block bootstrap (D-028). Recorded for auditability.
+    ci_block_days: int = 1
 
     @property
     def edge_vs_random_bps(self) -> float:
@@ -83,6 +102,7 @@ class EdgeReport:
                  "net_mean_bps": round(h.net_mean * 1e4, 2),
                  "median_bps": round(h.gross_median * 1e4, 2),
                  "ci95_bps": [round(h.ci_low * 1e4, 2), round(h.ci_high * 1e4, 2)],
+                 "ci_block_days": h.ci_block_days,
                  "p_win": round(h.p_win, 4),
                  "edge_vs_random_bps": round(h.edge_vs_random_bps, 2),
                  "beats_cost": h.beats_cost}
@@ -123,6 +143,8 @@ def day_bootstrap_ci(values: pd.Series, days: pd.Series,
 
     Signals cluster and overlap within a day, so days - not signals - are the
     independent unit. An iid bootstrap would understate the interval (L-009).
+    Correct only while the forward window fits inside one day - for longer
+    horizons use ``block_bootstrap_ci`` (D-028).
     """
     frame = pd.DataFrame({"v": values, "d": days}).dropna()
     if frame.empty:
@@ -138,6 +160,40 @@ def day_bootstrap_ci(values: pd.Series, days: pd.Series,
     return (float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5)))
 
 
+def block_bootstrap_ci(values: pd.Series, days: pd.Series,
+                       mean_block_days: int, n_boot: int = 2000,
+                       seed: int = 7) -> tuple:
+    """95% CI of the mean, resampling contiguous BLOCKS of calendar days.
+
+    For a forward-return horizon spanning ``H`` days, signals on days closer
+    than ``H`` apart share part of their window; day resampling treats them as
+    independent and the CI comes out too narrow (the gate too easy - D-028).
+    Resampling geometric-length blocks with mean ``mean_block_days`` keeps
+    overlapping days together, so the between-block variance reflects the true
+    number of independent observations.
+
+    ``mean_block_days <= 1`` delegates to ``day_bootstrap_ci`` unchanged - the
+    short-horizon path stays bit-identical to the L-009 methodology.
+    """
+    if mean_block_days <= 1:
+        return day_bootstrap_ci(values, days, n_boot=n_boot, seed=seed)
+    frame = pd.DataFrame({"v": values, "d": days}).dropna()
+    if frame.empty:
+        return (float("nan"), float("nan"))
+    # groupby sorts keys, so the group sequence is chronological - required
+    # for blocks of ADJACENT days to be meaningful.
+    groups = [g["v"].to_numpy() for _, g in frame.groupby("d")]
+    if len(groups) < 2:
+        return (float("nan"), float("nan"))
+    rng = np.random.default_rng(seed)
+    picks = _stationary_bootstrap_indices(
+        len(groups), n_boot, float(mean_block_days), rng)
+    means = np.empty(n_boot)
+    for b in range(n_boot):
+        means[b] = np.concatenate([groups[i] for i in picks[b]]).mean()
+    return (float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5)))
+
+
 # ------------------------------------------------------------- measurement
 
 
@@ -150,11 +206,20 @@ def measure(
     timeframe_minutes: float,
     horizon_bars: Sequence[int] = DEFAULT_HORIZON_BARS,
     seed: int = 7,
+    bars_per_day: Optional[float] = None,
 ) -> EdgeReport:
     """Measure an entry rule's edge across symbols.
 
     ``frames``  symbol -> prepared OHLCV frame (with ``date``).
     ``signals`` symbol -> boolean Series aligned to that frame.
+
+    ``bars_per_day`` (bars per trading session for this timeframe) activates
+    the D-028 long-horizon CI: each horizon's resampling block is the number
+    of days its forward window spans, ``ceil(bars / bars_per_day)``. Omitted
+    (None), every horizon uses the plain day bootstrap - the pre-D-028
+    behaviour, kept as the default so direct callers and stored comparisons
+    are unaffected unless the caller opts in. The research engine always
+    passes it.
     """
     max_h = max(horizon_bars)
     rows, random_rows = [], []
@@ -193,7 +258,10 @@ def measure(
         clean = values.dropna()
         if clean.empty:
             continue
-        lo, hi = day_bootstrap_ci(values, entries["day"], seed=seed)
+        block_days = (int(math.ceil(bars / bars_per_day))
+                      if bars_per_day else 1)
+        lo, hi = block_bootstrap_ci(values, entries["day"], block_days,
+                                    seed=seed)
         stats = HorizonStats(
             bars=bars, minutes=bars * timeframe_minutes, n=int(len(clean)),
             gross_mean=float(clean.mean()), gross_median=float(clean.median()),
@@ -201,7 +269,8 @@ def measure(
             ci_low=lo, ci_high=hi,
             p_win=float((clean > cost_pct).mean()),
             random_mean=float(randoms[col].dropna().mean())
-            if not randoms.empty else float("nan"))
+            if not randoms.empty else float("nan"),
+            ci_block_days=block_days)
         stats._cost = cost_pct
         report.horizons.append(stats)
 
