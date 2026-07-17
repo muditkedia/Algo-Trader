@@ -25,6 +25,9 @@ them after out-of-sample data has been seen invalidates the run._
    perturbation (§13).
 6. **Decide on distributions and lower bounds, not point estimates.**
    Monte-Carlo confidence intervals gate acceptance (§14).
+7. **Benchmark-relative, not absolute.** A verdict is on the edge OVER a
+   baseline that shares the strategy's market exposure — never on absolute
+   return, which market drift can supply on its own (§26, D-031).
 
 ---
 
@@ -636,3 +639,65 @@ survivorship negligible for these still-listed majors.
    objective comparison.
 6. **Portfolio ranges:** worst-case simultaneous-stop ≤ 15% of capital
    (reject > 20%); utilization band ~15–70% (§16).
+
+---
+
+## 26. Benchmark-aware acceptance (AMENDMENT, approved 2026-07-17, D-031)
+
+**Why the amendment.** Phase 9 (L-010) showed the pre-registered §7 gate,
+designed and validated at short (8-bar / intraday) horizons, can be cleared at
+multi-week horizons by market participation alone: 2 of 3 seeded random-entry
+controls PASSed on the real NSE corpus, because at 40–60-day horizons absolute
+forward return is dominated by bull-market drift and the survivorship of
+measuring today's constituents. Absolute return is therefore not a sufficient
+promotion criterion. This amendment adds a benchmark-relative gate. It does NOT
+relax any existing threshold — it adds a requirement.
+
+**26.1 Baselines (every measured strategy, identical trade constraints).**
+Each is deterministic (seeded) and priced through the SAME risk engine, costs
+and intrabar convention as the strategy:
+
+1. **Buy & Hold, matched per trade** — same symbol, same entry bar, held the
+   strategy's full `max_hold_bars`, net one round trip. Isolates entry+exit
+   skill from being long the picked name.
+2. **Buy & Hold, portfolio** — equal-weight the traded universe over the
+   window. The "just be long the market" number. (Generous by survivorship —
+   deliberately, so beating it means more.)
+3. **Random entry, K≥3 deterministic seeds** — random (symbol, bar) entries,
+   matched to the strategy's trade count, natural managed exits.
+4. **Random entry, matched holding period** — as (3) but exits forced to the
+   strategy's mean realized holding, removing the exit engine from the
+   comparison.
+
+**26.2 The binding gate — Selection Edge.** At the entry level, the SELECTION
+edge is the strategy's mean forward return minus a random entry's (baseline 3,
+the corpus drift). Its 95% lower bound uses the D-028 block bootstrap on the
+DIFFERENCE (both samples resampled by independent day-blocks). Evaluated at the
+horizon that maximises the selection edge; the identical rule applied to the
+random-entry control — which has no selection edge at any horizon — is what
+keeps that choice honest.
+
+> **Promotion requires the selection-edge CI lower bound to exceed the
+> round-trip cost**, exactly as D-007 required of the absolute edge. A strategy
+> that clears every absolute §7 bar but shows no selection edge (CI-low ≤ 0) is
+> earning market drift, not skill, and is **FAILed**. The absolute §7 bars are
+> retained in full: a promotable strategy must clear BOTH.
+
+**26.3 Reported comparative metrics (with CIs where valid):** Selection Edge;
+Excess Return vs Buy & Hold; Excess Return vs Random; Information Ratio (per-
+trade excess vs matched B&H, annualized, where tracking error is non-trivial and
+n≥30); Relative Profit Factor (strategy ÷ random); Relative Drawdown (strategy −
+random). These enrich the evidence; the binding gate is 26.2.
+
+**26.4 Assumptions & limitations (documented, not hidden).**
+- The random baseline is drawn UNIFORMLY across dates, so it removes overall
+  drift but not drift *concentration* (a strategy trading mostly in the bull
+  sub-period keeps some timing benefit). A same-day cross-sectional baseline
+  would remove that too but cannot be earned by a per-symbol strategy that is
+  the only one trading on a date; it is a documented future tightening, not a
+  current gate.
+- The random baseline's own sampling error is included via the two-sample
+  bootstrap (it is not treated as a fixed constant).
+- Buy & Hold uses the current universe over the whole window (survivorship);
+  this makes it a generous drift benchmark on purpose.
+- Everything is deterministic under the declared seeds and replayable.

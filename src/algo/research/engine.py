@@ -72,6 +72,14 @@ MIN_PROFIT_FACTOR = 1.25
 BORDERLINE_PROFIT_FACTOR = 1.0
 #: SS8: below this many trades a bucket is "insufficient evidence" = inconclusive.
 MIN_TRADES = 30
+#: D-031 (the benchmark amendment): the binding promotion gate is now the
+#: SELECTION edge - forward return in excess of a random entry from the same
+#: corpus - not the absolute return. Absolute return can be won by market
+#: participation alone (L-010: 2 of 3 random-entry controls PASSed the old
+#: bars at multi-week horizons). The selection edge's block-bootstrap CI lower
+#: bound must clear the round-trip cost, exactly as D-007 required of the
+#: absolute edge. The absolute D-007 checks are RETAINED (a strategy must both
+#: beat random AND clear cost in absolute terms); the selection gate is added.
 
 
 def product_for_strategy(strategy) -> Product:
@@ -123,17 +131,29 @@ class StrategyVerdict:
     trade_metrics: Optional[dict] = None
     cost_sensitivity: Optional[dict] = None
     calibration: Optional[dict] = None
+    #: Benchmark battery (D-031): comparative metrics vs buy&hold and random
+    #: entry. None when benchmarks were not run (the cheap selection gate in
+    #: the ``edge`` dict is always present; the managed battery is opt-in).
+    benchmarks: Optional[dict] = None
     #: Evidence written by this run (``research`` only; ``measure_all`` neither
     #: records nor labels, and leaves these None rather than reporting a zero
     #: that would read as "nothing fired").
     n_recorded: Optional[int] = None
     n_labeled: Optional[int] = None
 
+    def _best_selection_horizon(self) -> dict:
+        """The horizon the amended gate turns on: max selection edge."""
+        horizons = (self.edge or {}).get("horizons") or []
+        scored = [h for h in horizons if h.get("selection_bps") is not None]
+        return max(scored, key=lambda h: h["selection_bps"]) if scored else {}
+
     def as_row(self) -> dict:
         m = self.trade_metrics or {}
         horizons = (self.edge or {}).get("horizons") or []
         best = max(horizons, key=lambda h: h.get("gross_mean_bps") or -1e9) \
             if horizons else {}
+        sel = self._best_selection_horizon()
+        bench = self.benchmarks or {}
         return {
             "strategy": self.strategy, "verdict": self.verdict,
             "n_signals": (self.edge or {}).get("n_signals", 0),
@@ -146,7 +166,12 @@ class StrategyVerdict:
             "median_hold_min": (self.trade_metrics or {}).get("median_hold_min"),
             "edge_bps": best.get("gross_mean_bps"),
             "edge_ci_low_bps": (best.get("ci95_bps") or [None])[0],
+            "selection_bps": sel.get("selection_bps"),
+            "selection_ci_low_bps": (sel.get("selection_ci_bps") or [None])[0],
             "cost_bps": round((self.edge or {}).get("cost_pct", 0) * 1e4, 2),
+            "excess_vs_bh": bench.get("excess_vs_bh"),
+            "excess_vs_random": bench.get("excess_vs_random"),
+            "rel_pf": bench.get("relative_profit_factor"),
             "mfe_mae": (self.edge or {}).get("mfe_mae_ratio"),
             "conf_corr": (self.calibration or {}).get("correlation"),
             "reasons": "; ".join(self.reasons),
@@ -355,27 +380,51 @@ class ResearchEngine:
                     else self.prepare_signals(strategy, symbols))
         max_bars = int(max_hold_bars if max_hold_bars is not None
                        else strategy.meta.max_hold_bars)
+        entries = {sym: np.flatnonzero(sig.to_numpy(bool))
+                   for sym, sig in prepared.signals.items()}
+        return self.simulate_entries(
+            entries, prepared, product=product, max_bars=max_bars,
+            atr_period=atr_period, swing_window=swing_window,
+            enter_tag=strategy.name,
+            strategy_id=strategy_id if persist else None)
+
+    def simulate_entries(self, entries_by_symbol, prepared: "SignalSet", *,
+                         product: Product, max_bars: int, atr_period: int = 14,
+                         swing_window: int = 10, enter_tag: str = "",
+                         strategy_id: Optional[int] = None) -> pd.DataFrame:
+        """Simulate a managed trade at each given entry index -> canonical frame.
+
+        The one simulation path, shared by ``simulate_strategy`` (entries from
+        the strategy's signals) and the benchmark battery (random entries), so
+        a benchmark is priced through EXACTLY the same risk engine, costs and
+        intrabar convention as the strategy it is compared against - the
+        comparison is otherwise meaningless. ``entries_by_symbol`` maps a symbol
+        to an iterable of integer bar positions into its prepared frame.
+        """
         records = []
         for symbol, frame in prepared.frames.items():
-            signal = prepared.signals[symbol]
+            idx = entries_by_symbol.get(symbol)
+            if idx is None or len(idx) == 0:
+                continue
             work = frame.copy()
             work["symbol"] = symbol
             if "atr" not in work.columns:
                 work["atr"] = atr_series(work, atr_period)
             work["swing_low_calc"] = work["low"].rolling(
                 swing_window, min_periods=1).min()
-            for i in np.flatnonzero(signal.to_numpy(bool)):
+            for i in idx:
+                i = int(i)
                 trade = simulate_trade(
-                    work, int(i), atr=float(work["atr"].iloc[i]),
+                    work, i, atr=float(work["atr"].iloc[i]),
                     swing_low=float(work["swing_low_calc"].iloc[i]),
                     params=self.risk_params, cost_model=self.cost_model,
                     product=product, max_bars=max_bars)
                 if trade is None:
                     continue
                 records.append(trade)
-                if persist and strategy_id is not None:
+                if strategy_id is not None:
                     self.logger_.record_trade(trade.to_record(
-                        strategy_id=strategy_id, enter_tag=strategy.name))
+                        strategy_id=strategy_id, enter_tag=enter_tag))
         if not records:
             return pd.DataFrame(columns=list(_TRADE_COLUMNS))
         frame = pd.DataFrame([{
@@ -383,7 +432,7 @@ class ResearchEngine:
             "close_date": t.close_date, "profit_ratio": t.profit_ratio,
             "profit_abs": t.profit_abs, "stake_amount": t.stake_amount,
             "trade_duration": t.holding_min, "exit_reason": t.exit_reason,
-            "enter_tag": strategy.name, "stop_distance_pct": t.stop_distance_pct,
+            "enter_tag": enter_tag, "stop_distance_pct": t.stop_distance_pct,
             "gross_ratio": t.gross_ratio, "mfe_pct": t.mfe_pct,
             "mae_pct": t.mae_pct,
         } for t in records])
@@ -490,10 +539,19 @@ class ResearchEngine:
 
     def verdict_for(self, strategy, edge: edge_lab.EdgeReport,
                     trade_metrics: dict, cost_sens: dict,
-                    calibration: dict) -> StrategyVerdict:
-        """Apply the PRE-REGISTERED bars. Deliberately hard to pass."""
+                    calibration: dict,
+                    benchmarks: Optional[dict] = None) -> StrategyVerdict:
+        """Apply the PRE-REGISTERED bars, amended by D-031. Hard to pass.
+
+        The amendment adds one binding requirement to the existing bars: the
+        SELECTION edge (excess over a random entry) must clear cost on its CI
+        lower bound. A strategy that clears the ABSOLUTE bars but has no
+        selection edge is earning market drift, not skill, and is now FAILed
+        with that stated plainly (the L-010 defect, closed).
+        """
         reasons: List[str] = []
         best = edge.best()
+        best_sel = edge.best_selection()
         cost = edge.cost_pct
 
         if edge.n_signals < MIN_TRADES:
@@ -501,9 +559,10 @@ class ResearchEngine:
                 strategy.name, "INCONCLUSIVE",
                 [f"only {edge.n_signals} signals (< {MIN_TRADES} minimum "
                  "for any trusted statistic)"],
-                edge.as_dict(), trade_metrics, cost_sens, calibration)
+                edge.as_dict(), trade_metrics, cost_sens, calibration,
+                benchmarks=benchmarks)
 
-        # --- the D-007 gate: entry edge vs the cost hurdle -------------------
+        # --- the D-007 gate: ABSOLUTE entry edge vs the cost hurdle ----------
         edge_ok = False
         if best is None:
             reasons.append("no measurable forward edge")
@@ -522,6 +581,31 @@ class ResearchEngine:
                     f"implementation bar ({hurdle * 1e4:.1f} bps = 2x cost)")
             else:
                 edge_ok = True
+
+        # --- D-031 gate: SELECTION edge vs the cost hurdle ------------------
+        # The binding requirement. Absolute edge can be market drift; this
+        # cannot - it is measured against a random entry from the same corpus.
+        selection_ok = False
+        selection_present = False
+        if best_sel is None or best_sel.selection_ci_low != best_sel.selection_ci_low:
+            reasons.append("selection edge not computable (no random baseline)")
+        else:
+            sel_lo = best_sel.selection_ci_low
+            sel_pt = best_sel.selection_mean
+            selection_present = sel_lo > 0
+            if sel_lo <= 0:
+                reasons.append(
+                    f"selection edge NOT ESTABLISHED: {sel_pt * 1e4:+.1f} bps "
+                    f"point but 95% lower bound {sel_lo * 1e4:+.1f} bps <= 0 - "
+                    "indistinguishable from a random entry (market drift) on "
+                    "this sample (D-031/L-010)")
+            elif sel_lo <= cost:
+                reasons.append(
+                    f"selection edge {sel_pt * 1e4:+.1f} bps clears random but "
+                    f"its lower bound {sel_lo * 1e4:+.1f} bps <= round-trip "
+                    f"cost {cost * 1e4:.1f} bps")
+            else:
+                selection_ok = True
 
         # --- realized trade quality -----------------------------------------
         pf = trade_metrics.get("profit_factor") or 0.0
@@ -548,17 +632,26 @@ class ResearchEngine:
                 survives_2x = False
                 reasons.append("net-negative under 2x costs (edge too thin)")
 
-        if edge_ok and trades_ok and survives_2x:
+        # --- combine: selection skill is now REQUIRED for PASS --------------
+        # The amendment only TIGHTENS: BORDERLINE still needs an absolute bar
+        # (edge or trades) AND a positive selection edge, so nothing that failed
+        # every absolute bar can be raised by a weak selection number, and
+        # nothing with zero selection edge can pass however strong its (drift-
+        # fed) absolute numbers look.
+        if edge_ok and trades_ok and survives_2x and selection_ok:
             verdict = "PASS"
-            reasons.insert(0, "clears the D-007 cost hurdle and the SS7 bars")
-        elif not reasons:
-            verdict = "BORDERLINE"
-        elif edge_ok or trades_ok:
+            reasons.insert(0, "clears the D-007 cost hurdle, the SS7 bars, AND "
+                              "shows selection edge over random beyond cost "
+                              "(D-031)")
+        elif (edge_ok or trades_ok) and selection_present:
+            # genuine on both dimensions but short of a full PASS
             verdict = "BORDERLINE"
         else:
+            # no absolute bar cleared, or no selection edge at all -> FAIL
             verdict = "FAIL"
         return StrategyVerdict(strategy.name, verdict, reasons, edge.as_dict(),
-                               trade_metrics, cost_sens, calibration)
+                               trade_metrics, cost_sens, calibration,
+                               benchmarks=benchmarks)
 
     def league_table(self, verdicts: Optional[List[StrategyVerdict]] = None,
                      scope_type: str = "overall") -> pd.DataFrame:
@@ -590,11 +683,18 @@ class ResearchEngine:
 
     def _judge(self, strategy, symbols: Sequence[str], *, product: Product,
                max_hold_bars: Optional[int], start_capital: float,
-               prepared: SignalSet, strategy_id: int) -> StrategyVerdict:
+               prepared: SignalSet, strategy_id: int,
+               benchmarks: bool = False) -> StrategyVerdict:
         """The identical evaluation EVERY candidate is judged by.
 
         One implementation, so no entry point can accidentally judge a strategy
         by a different battery than the one that rejected the six on record.
+
+        The SELECTION gate (D-031) lives inside ``edge`` and is always applied.
+        The managed BENCHMARK battery (``benchmarks=True``) adds the comparative
+        report (excess vs buy&hold / random, relative PF/DD, information ratio);
+        it re-simulates random baselines, so it is opt-in for the real
+        measurement and the re-judge, off for the fast test path.
         """
         edge = self.measure_edge(strategy, symbols, product=product,
                                  prepared=prepared)
@@ -606,12 +706,19 @@ class ResearchEngine:
             if not trades.empty else {})
         cost_sens = self.cost_sensitivity(trades, start_capital)
         calibration = self.confidence_calibration(strategy_id)
+        bench = None
+        if benchmarks and not trades.empty:
+            from algo.research import benchmarks as bench_mod
+            bench = bench_mod.run_benchmarks(
+                self, strategy, prepared, trades, product=product, edge=edge,
+                start_capital=start_capital).summary()
         return self.verdict_for(strategy, edge, trade_metrics, cost_sens,
-                                calibration)
+                                calibration, benchmarks=bench)
 
     def measure_all(self, strategies, symbols: Sequence[str],
                     product_for=None, max_hold_bars: Optional[int] = None,
-                    start_capital: float = 100_000.0) -> List[StrategyVerdict]:
+                    start_capital: float = 100_000.0,
+                    benchmarks: bool = False) -> List[StrategyVerdict]:
         """Judge every strategy from data already in the store.
 
         Measurement only: it neither records signals nor labels outcomes. Use
@@ -627,7 +734,7 @@ class ResearchEngine:
                 strategy, symbols, product=product,
                 max_hold_bars=max_hold_bars, start_capital=start_capital,
                 prepared=self.prepare_signals(strategy, symbols),
-                strategy_id=strategy_id))
+                strategy_id=strategy_id, benchmarks=benchmarks))
         return verdicts
 
     # ------------------------------------------------- the research pipeline
@@ -635,7 +742,8 @@ class ResearchEngine:
     def research(self, strategy, symbols: Sequence[str], *, product_for=None,
                  max_hold_bars: Optional[int] = None,
                  start_capital: float = 100_000.0, record: bool = True,
-                 label: bool = True) -> StrategyVerdict:
+                 label: bool = True,
+                 benchmarks: bool = False) -> StrategyVerdict:
         """The complete research pipeline for ONE strategy.
 
         register -> record every signal with its confidence -> label matured
@@ -644,7 +752,8 @@ class ResearchEngine:
 
         This is the single seam a new candidate plugs into: implement the
         strategy and this runs, unchanged, against it. Indicators and the entry
-        signal are computed once here and reused by every step.
+        signal are computed once here and reused by every step. ``benchmarks``
+        adds the D-031 managed comparison battery.
         """
         product = (product_for(strategy) if product_for
                    else product_for_strategy(strategy))
@@ -664,7 +773,7 @@ class ResearchEngine:
         verdict = self._judge(strategy, symbols, product=product,
                               max_hold_bars=max_hold_bars,
                               start_capital=start_capital, prepared=prepared,
-                              strategy_id=strategy_id)
+                              strategy_id=strategy_id, benchmarks=benchmarks)
         verdict.n_recorded, verdict.n_labeled = n_recorded, n_labeled
         logger.info("researched %s: %s (%s signals recorded, %s labeled)",
                     strategy.name, verdict.verdict, n_recorded, n_labeled)
@@ -673,7 +782,7 @@ class ResearchEngine:
     def research_all(self, strategies, symbols: Sequence[str], *,
                      product_for=None, max_hold_bars: Optional[int] = None,
                      start_capital: float = 100_000.0, record: bool = True,
-                     label: bool = True,
+                     label: bool = True, benchmarks: bool = False,
                      on_verdict=None) -> List[StrategyVerdict]:
         """Run the full pipeline over a library. ``on_verdict`` is called with
         each verdict as it lands, so a long sweep can report progress without
@@ -683,7 +792,7 @@ class ResearchEngine:
             verdict = self.research(
                 strategy, symbols, product_for=product_for,
                 max_hold_bars=max_hold_bars, start_capital=start_capital,
-                record=record, label=label)
+                record=record, label=label, benchmarks=benchmarks)
             verdicts.append(verdict)
             if on_verdict is not None:
                 on_verdict(verdict)

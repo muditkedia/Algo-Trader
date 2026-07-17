@@ -7,6 +7,49 @@ NseEquityCostModel).
 
 ---
 
+## L-011 — A POINT edge is not an edge: the selection edge vs random is within noise for all 14 (2026-07-17)
+
+The benchmark amendment (D-031) replaced the absolute gate with the SELECTION
+edge (forward return minus a random entry from the same corpus), gated on the
+block-bootstrap CI of the DIFFERENCE. Re-judging the whole database:
+
+| strategy | absolute edge (bps) | selection POINT | selection CI-low | verdict |
+|---|---|---|---|---|
+| hvol_daily | 255.6 | +109.5 | **−82.3** | FAIL |
+| wyckoff_spring_daily | 332.3 | +64.0 | **−108.5** | FAIL |
+| triple_screen_daily | 179.5 | +23.5 | **−128.9** | FAIL |
+| donchian55_daily | 564.7 | +22.9 | **−380.0** | FAIL |
+| ema200_daily | 60.1 | +12.4 | −26.5 | FAIL |
+| tsmom_daily | 313.0 | −19.1 | −70.7 | FAIL |
+
+**Every apparent edge collapses.** The L-010 diagnostic reported selection
+POINT estimates (+67/+91 bps) as if they were findings; with a proper difference
+CI, none clears zero. Cause: at 20–60-day horizons the forward return — for BOTH
+the strategy and the random baseline — is dominated by which multi-week window
+it falls in, and 3.5 years holds only ~14–40 independent such windows. A ~60 bps
+selection signal cannot be resolved from zero against that between-period
+variance. The point estimate is real arithmetic; it is not evidence.
+
+**The general lesson:** on short samples at long horizons, a benchmark-relative
+POINT estimate is meaningless without its interval — and the interval is wide
+because independent observations, not trades, are what pin down a mean. 3,769
+wyckoff trades span ~40 independent 20-day blocks; the effective n is 40, not
+3,769. This is L-009's day-clustering lesson (D-028) taken to its conclusion at
+the difference level.
+
+**Corollary — the drift decomposition.** Of wyckoff's 332 bps absolute edge,
+~268 is the random-entry baseline (drift) and ~64 is selection; of donchian's
+565 bps, essentially ALL is drift (selection +23, CI-low −380). Absolute edge at
+long horizons is mostly beta. The gate now says so.
+
+**Methodological note (the residual weakness):** the two-sample difference is
+UNPAIRED, so it carries the drift variance of both samples. A paired date-matched
+cross-sectional edge (return minus same-day universe mean) would cancel drift
+per-observation and have far more power. Recommended as the next amendment, NOT
+adopted post-hoc (that would be tuning the method to the answer).
+
+---
+
 ## L-010 — THE FROZEN GATE PASSES PURE RANDOMNESS at multi-week horizons on this corpus (2026-07-17)
 
 Batch-1 due diligence: a seeded strategy firing on ARBITRARY bars (no market

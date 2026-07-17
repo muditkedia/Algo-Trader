@@ -170,9 +170,10 @@ def main() -> int:
     strategies = select_strategies(args.strategies)
     print(f"strategies: {', '.join(s.name for s in strategies)}\n")
 
-    # The whole evidence loop, per strategy, in one call.
+    # The whole evidence loop, per strategy, in one call. Benchmarks on: every
+    # strategy is judged against buy&hold and random-entry baselines (D-031).
     verdicts = engine.research_all(
-        strategies, symbols,
+        strategies, symbols, benchmarks=True,
         on_verdict=lambda v: print(
             f"  {v.strategy:14} signals recorded: {v.n_recorded:5d}  "
             f"outcomes labeled: {v.n_labeled:5d}  -> {v.verdict}"))

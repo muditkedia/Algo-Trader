@@ -4,6 +4,57 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-031 — Benchmark amendment: the gate is now selection edge over random, and it FAILs all 14 (2026-07-17)
+
+Phase 10 amended the frozen protocol (VALIDATION_RULES §26, owner-approved) to
+close the L-010 defect: the promotion gate is no longer absolute return but the
+**selection edge** — forward return in EXCESS of a random entry drawn from the
+same corpus — with a D-028 block-bootstrap CI on the *difference*. Promotion
+requires the selection-edge CI lower bound to clear the round-trip cost, exactly
+as D-007 required of the absolute edge; the absolute §7 bars are retained
+(PASS needs both). A benchmark battery (buy & hold matched-per-trade + portfolio;
+random entry, 3 seeds, matched count; random matched-holding) is computed for
+every daily strategy and reported with comparative metrics (excess vs B&H,
+excess vs random, information ratio, relative PF/DD). All deterministic, all
+priced through the same risk engine via one shared `simulate_entries`.
+
+**Re-judgement of the whole database (Part C), no parameter/horizon/cost change:
+ALL 14 strategies FAIL, 5 status changes** (wyckoff_spring, hvol, triple_screen
+`measured`→`rejected`; donchian55, tsmom `draft`→`rejected`; the other 9 already
+rejected). The finding that matters:
+
+* The batch-1 "winners" have positive selection POINT estimates — wyckoff +64.0,
+  hvol +109.5, triple_screen +23.5 bps — but their difference-CI lower bounds
+  are deeply negative (−108.5 / −82.3 / −128.9 bps). **The apparent edge is not
+  statistically distinguishable from a random entry.** At 20–60-day horizons on
+  3.5 years, both the strategy and the random baseline carry huge between-period
+  drift variance, and ~14–40 independent blocks cannot resolve a ~60 bps edge
+  from zero. This is the pre-registered sample-size warning (roadmap §2) made
+  rigorous: a long-horizon edge cannot be *established* on this data, whatever
+  its point estimate.
+* The L-010 diagnostic's +67/+91 bps were POINT estimates; D-031 shows they are
+  within noise. Nothing is disproven — it is *not established*, which for a
+  deployment gate is the same verdict.
+
+**Validation (Part D):** the drift-control regression test (a strategy entering
+arbitrarily in a rising market) now FAILs for lack of selection edge; a
+planted-selection control PASSes (the gate credits genuine skill when the sample
+supports it); the intraday incumbents reproduce D-026 to the decimal (volexp
+9.13, orb 3.01, vwap 2.83, pullback 0.17 bps); the daily incumbents correctly
+reflect the D-029 RELIANCE/TCS repair (ema200 1402→1420 signals). Determinism is
+unit-tested (seeded bootstraps + benchmark battery). 285 tests pass (+8).
+
+**Known limitation, stated not hidden (Part E):** the two-sample difference CI
+treats the strategy and random samples as independent, so it does NOT cancel the
+common market-drift variance — it is correctly SIZED (drift cannot pass) but has
+low POWER on short samples. A *paired* date-matched cross-sectional selection
+edge (strategy return minus the same-day universe mean) would cancel drift
+per-observation and detect a real cross-sectional edge with far more power. That
+is the recommended next amendment — deferred to owner approval rather than
+adopted after seeing it changes outcomes, which would be methodology-shopping.
+The current gate is adopted as pre-registered (D-030), and its honest result
+stands: no strategy is deployable on this evidence.
+
 ## D-030 — Batch 1 measured: 3 PASS / 2 BORDERLINE / 3 FAIL — and the control that voids deployment (2026-07-17)
 
 Phase 9 implemented the eight pre-registered candidates

@@ -134,7 +134,35 @@ strategies may not be re-cut after their verdict.
 
 ---
 
-## 3.5 Post-batch-1 priors update (Phase 9, D-030/L-010)
+## 3.6 Post-benchmark priors update (Phase 10, D-031/L-011)
+
+The benchmark amendment re-judged everything: **all 14 FAIL; no strategy shows
+an established selection edge.** The batch-1 "survivors" (hvol, wyckoff_spring,
+triple_screen) have positive selection POINTS but difference-CI lower bounds
+deep in negative territory — indistinguishable from a random entry on 3.5y of
+multi-week data. This SUPERSEDES the §3.5 priors below, which were built on the
+L-010 point estimates now shown to be within noise.
+
+**What this changes for the queue:**
+- **No family has demonstrated edge.** The apparent hvol/spring advantage did
+  not survive an honest interval, so their raised priors (§3.5) are withdrawn.
+- **The binding problem is now statistical power, not strategy choice.** On 3.5y
+  at multi-week horizons the gate cannot resolve a ~60 bps edge from zero. Two
+  responses dominate ANY next strategy in expected value:
+  1. **The paired date-matched selection gate** (D-031 limitation) — cancels
+     drift per-observation, far more power, and is the correct cross-sectional
+     alpha measure. Owner-approved amendment, before batch 2.
+  2. **More independent history** — the corpus grows daily; a 12-month-horizon
+     study needs years, not months, of new data to gain independent blocks.
+- **Data acquisitions still lead on EV**: an earnings calendar (PEAD, the one
+  event family) and a sector map (rotation) unblock genuinely different
+  hypotheses whose edge, if real, is larger per trade and thus easier to resolve
+  than the marginal technical edges batch 1 chased.
+
+Batch 2 should not proceed until the power problem is addressed; implementing
+more technical variants now would only generate more within-noise FAILs.
+
+## 3.5 Post-batch-1 priors update (Phase 9, D-030/L-010) — SUPERSEDED by §3.6
 
 Queue slots #1–#8 are now measured. What the batch actually taught (selection
 edge = gross − random baseline, the only informative statistic at these

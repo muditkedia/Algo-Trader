@@ -4,8 +4,47 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 9 (batch-1 strategy discovery) COMPLETE, uncommitted — awaiting owner
-approval.** Phases 1–8.5 committed (…`e898842`, `eba2c60`).
+**Phase 10 (measurement integrity & benchmark framework) COMPLETE, uncommitted
+— awaiting owner approval.** Phases 1–9 committed (…`eba2c60`, `c9e7490`).
+
+## Phase 10 delivered — the benchmark amendment (D-031, L-011)
+
+Closed the L-010 defect permanently. The promotion gate is no longer absolute
+return but the **selection edge over a random entry**, gated on the D-028
+block-bootstrap CI of the difference (VALIDATION_RULES §26, owner-approved).
+
+- **Amended gate** (`edge_lab` + `engine.verdict_for`): selection edge =
+  strategy forward return − random-entry baseline; PASS requires its CI-low to
+  clear cost, exactly as D-007 required of the absolute edge. Absolute §7 bars
+  retained; the amendment only tightens (a strategy failing every absolute bar
+  can't be raised; one with no selection edge can't pass however strong its
+  drift-fed absolute numbers).
+- **Benchmark battery** (`research/benchmarks.py`): buy&hold matched-per-trade +
+  portfolio; random entry (3 seeds, matched count); random matched-holding — all
+  through one shared `simulate_entries`, deterministic, with excess-vs-B&H,
+  excess-vs-random, information ratio, relative PF/DD (+CIs).
+- **Re-judged the whole DB** (`scripts/rejudge_benchmark.py`, new evaluation
+  generation, history kept): **all 14 FAIL, 5 status changes** — wyckoff_spring,
+  hvol, triple_screen `measured`→`rejected`; donchian55, tsmom `draft`→
+  `rejected`. The batch-1 "winners" have positive selection POINTS (+64/+110/+23
+  bps) but CI-lows of −108/−82/−129 bps: **not distinguishable from a random
+  entry** on 3.5y of multi-week data. Report:
+  `user_data/backtest_results/reports/benchmark_rejudge.md`.
+- **Validation**: drift-control regression test FAILs (the L-010 defect, now an
+  automated guard); planted-selection control PASSes; intraday incumbents
+  reproduce D-026 to the decimal; determinism unit-tested. **285 tests (+8).**
+- **NOTHING is promotable.** The paper engine stays off — now not by policy
+  (D-030) but by evidence: zero strategies show established selection skill.
+
+### Is the framework stable? (Part F)
+
+The gate is correctly SIZED — validated that market drift cannot pass it — so
+remaining strategies can be measured under it without further protocol change
+for SAFETY. But it has low POWER on short samples (the unpaired difference
+carries drift variance). Before batch 2 is worth running, the recommended (owner-
+approved) refinement is the **paired date-matched cross-sectional selection
+edge**, which cancels drift per-observation. See D-031 / L-011 and §"Open
+decisions" below.
 
 ## Phase 9 delivered — batch 1: eight strategies, measured, and the control that reframes everything (D-030, L-010)
 
@@ -372,12 +411,21 @@ FAILs; all six FAIL on synthetic — correct). See DECISIONS D-008…D-021.
 
 ## Open decisions / actions needed from owner
 
-- Approve committing Phase 6.
-- Create the local `.env` (values from smartapi.angelone.in; see .env.example).
-- `pip install smartapi-python pyotp logzero websocket-client pycryptodome`
-  (the `smartapi` extra) into `.venv` before first live use.
-- Choose the measurement universe (symbols file, e.g. NIFTY-100 constituents).
+- **Approve committing Phase 10** (the benchmark amendment). Phases 1–9 are
+  committed.
+- **Decide the power problem before batch 2** (the load-bearing decision). The
+  amended gate is correctly sized but low-power on 3.5y multi-week data. Options,
+  in EV order: (1) approve the **paired date-matched cross-sectional selection
+  gate** (D-031/L-011 — cancels drift per-observation, far more power); (2)
+  acquire an **earnings calendar** (unblocks PEAD) and a **sector map** (unblocks
+  rotation) — different, larger-per-trade hypotheses; (3) accumulate more
+  independent history (years, for multi-week horizons). Implementing more
+  technical variants now would only produce more within-noise FAILs.
+- `.env` exists; the `smartapi` extra is installed; NIFTY-100 universe chosen.
 
 ## Open blockers
 
-- Real verdicts + paper trading blocked only on the local `.env`.
+- **Nothing is promotable.** All 14 strategies are `rejected` under the amended
+  gate — none shows an established selection edge on the available data. The
+  paper engine correctly refuses to start (by evidence, not policy). Progress
+  requires the power decision above, not more strategies.

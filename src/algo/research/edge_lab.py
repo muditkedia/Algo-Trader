@@ -60,6 +60,14 @@ class HorizonStats:
     #: Resampling block length (days) the CI used - 1 = plain day bootstrap,
     #: >1 = stationary block bootstrap (D-028). Recorded for auditability.
     ci_block_days: int = 1
+    #: Selection edge = gross_mean - random_mean, i.e. the strategy's forward
+    #: return in EXCESS of a random entry drawn from the same corpus (which
+    #: earns the market drift). The block-bootstrap CI is on this DIFFERENCE.
+    #: D-031: this is the drift-adjusted number the amended gate turns on -
+    #: absolute return alone can be won by market participation (L-010).
+    selection_mean: float = float("nan")
+    selection_ci_low: float = float("nan")
+    selection_ci_high: float = float("nan")
 
     @property
     def edge_vs_random_bps(self) -> float:
@@ -67,8 +75,21 @@ class HorizonStats:
 
     @property
     def beats_cost(self) -> bool:
-        """Is the LOWER bound of the gross mean above the cost hurdle?"""
+        """Is the LOWER bound of the GROSS mean above the cost hurdle?
+
+        The pre-D-031 (absolute) test. Retained for continuity and reporting;
+        the amended gate uses ``selection_beats_cost``.
+        """
         return self.ci_low > self._cost
+
+    @property
+    def selection_beats_cost(self) -> bool:
+        """Does the LOWER bound of the SELECTION edge clear the cost hurdle?
+
+        The amended promotion test (D-031): the strategy must beat a random
+        entry by more than it costs to trade - drift is not enough.
+        """
+        return self.selection_ci_low > self._cost
 
     _cost: float = 0.0
 
@@ -85,8 +106,20 @@ class EdgeReport:
     random_mfe_mae_ratio: float = 0.0
 
     def best(self) -> Optional[HorizonStats]:
+        """Horizon with the highest GROSS mean (absolute-return view)."""
         return max(self.horizons, key=lambda h: h.gross_mean) \
             if self.horizons else None
+
+    def best_selection(self) -> Optional[HorizonStats]:
+        """Horizon with the highest SELECTION edge (drift-adjusted view).
+
+        The amended gate's horizon. Picking the best selection horizon cannot
+        game drift - drift is already removed - and the identical rule applied
+        to the random-entry control (which has no selection edge at ANY
+        horizon) is what keeps the best-of-horizons choice honest (D-031).
+        """
+        scored = [h for h in self.horizons if h.selection_mean == h.selection_mean]
+        return max(scored, key=lambda h: h.selection_mean) if scored else None
 
     def as_dict(self) -> dict:
         return {
@@ -105,7 +138,15 @@ class EdgeReport:
                  "ci_block_days": h.ci_block_days,
                  "p_win": round(h.p_win, 4),
                  "edge_vs_random_bps": round(h.edge_vs_random_bps, 2),
-                 "beats_cost": h.beats_cost}
+                 "selection_bps": round(h.selection_mean * 1e4, 2)
+                 if h.selection_mean == h.selection_mean else None,
+                 "selection_ci_bps": [
+                     round(h.selection_ci_low * 1e4, 2)
+                     if h.selection_ci_low == h.selection_ci_low else None,
+                     round(h.selection_ci_high * 1e4, 2)
+                     if h.selection_ci_high == h.selection_ci_high else None],
+                 "beats_cost": h.beats_cost,
+                 "selection_beats_cost": h.selection_beats_cost}
                 for h in self.horizons],
         }
 
@@ -194,6 +235,47 @@ def block_bootstrap_ci(values: pd.Series, days: pd.Series,
     return (float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5)))
 
 
+def _block_means(values: pd.Series, days: pd.Series, mean_block_days: int,
+                 n_boot: int, rng: np.random.Generator) -> Optional[np.ndarray]:
+    """``n_boot`` resampled means of ``values``, blocked by day (D-028)."""
+    frame = pd.DataFrame({"v": values, "d": days}).dropna()
+    if frame.empty:
+        return None
+    groups = [g["v"].to_numpy() for _, g in frame.groupby("d")]
+    if len(groups) < 2:
+        return None
+    block = max(1.0, float(mean_block_days))
+    picks = _stationary_bootstrap_indices(len(groups), n_boot, block, rng)
+    return np.array([np.concatenate([groups[i] for i in picks[b]]).mean()
+                     for b in range(n_boot)])
+
+
+def selection_diff_ci(signal_values: pd.Series, signal_days: pd.Series,
+                      random_values: pd.Series, random_days: pd.Series,
+                      mean_block_days: int, n_boot: int = 2000,
+                      seed: int = 7) -> tuple:
+    """95% CI of the SELECTION edge = mean(signal) - mean(random).
+
+    Both samples are resampled by day-blocks (D-028) and INDEPENDENTLY (the
+    random baseline is drawn from the whole corpus, so its sampling error is
+    real and must widen the difference's interval, not be treated as a fixed
+    constant). The paired difference of the two block-means gives an honest
+    interval on the drift-adjusted edge (D-031). Deterministic under ``seed``;
+    the signal and random resamples use separate, seed-derived generators so
+    neither disturbs the other's stream.
+    """
+    rng_s = np.random.default_rng(seed)
+    rng_r = np.random.default_rng(seed + 1)
+    means_s = _block_means(signal_values, signal_days, mean_block_days,
+                           n_boot, rng_s)
+    means_r = _block_means(random_values, random_days, mean_block_days,
+                           n_boot, rng_r)
+    if means_s is None or means_r is None:
+        return (float("nan"), float("nan"))
+    diff = means_s - means_r
+    return (float(np.percentile(diff, 2.5)), float(np.percentile(diff, 97.5)))
+
+
 # ------------------------------------------------------------- measurement
 
 
@@ -262,15 +344,24 @@ def measure(
                       if bars_per_day else 1)
         lo, hi = block_bootstrap_ci(values, entries["day"], block_days,
                                     seed=seed)
+        random_mean = float(randoms[col].dropna().mean()) \
+            if not randoms.empty else float("nan")
+        # Drift-adjusted (selection) edge and its difference CI (D-031).
+        sel_mean = sel_lo = sel_hi = float("nan")
+        if not randoms.empty:
+            sel_mean = float(clean.mean()) - random_mean
+            sel_lo, sel_hi = selection_diff_ci(
+                values, entries["day"], randoms[col], randoms["day"],
+                block_days, seed=seed)
         stats = HorizonStats(
             bars=bars, minutes=bars * timeframe_minutes, n=int(len(clean)),
             gross_mean=float(clean.mean()), gross_median=float(clean.median()),
             net_mean=float(clean.mean() - cost_pct),
             ci_low=lo, ci_high=hi,
             p_win=float((clean > cost_pct).mean()),
-            random_mean=float(randoms[col].dropna().mean())
-            if not randoms.empty else float("nan"),
-            ci_block_days=block_days)
+            random_mean=random_mean, ci_block_days=block_days,
+            selection_mean=sel_mean, selection_ci_low=sel_lo,
+            selection_ci_high=sel_hi)
         stats._cost = cost_pct
         report.horizons.append(stats)
 

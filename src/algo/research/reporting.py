@@ -19,8 +19,9 @@ import pandas as pd
 #: two numbers the D-007 gate actually turns on (edge_ci_low_bps vs cost_bps).
 LEAGUE_COLUMNS = ("strategy", "verdict", "n_signals", "trades", "expectancy",
                   "win_rate", "profit_factor", "sharpe", "max_drawdown_pct",
-                  "edge_bps", "edge_ci_low_bps", "cost_bps", "median_hold_min",
-                  "conf_corr")
+                  "edge_bps", "edge_ci_low_bps", "selection_bps",
+                  "selection_ci_low_bps", "cost_bps", "excess_vs_bh",
+                  "excess_vs_random", "rel_pf", "conf_corr")
 
 
 def league_table_text(table: pd.DataFrame,
