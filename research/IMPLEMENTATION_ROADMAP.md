@@ -134,6 +134,29 @@ strategies may not be re-cut after their verdict.
 
 ---
 
+## 3.5 Post-batch-1 priors update (Phase 9, D-030/L-010)
+
+Queue slots #1–#8 are now measured. What the batch actually taught (selection
+edge = gross − random baseline, the only informative statistic at these
+horizons per L-010):
+
+- **Attention/volume (hvol, +91 bps at 20d)** and **trapped-liquidity price
+  action (wyckoff_spring, +67 bps)** are the two families whose selection edge
+  clears cost — the only genuinely interesting results. Raised priors.
+- **Pullback continuation (triple_screen, +22)** — positive but below cost.
+- **Breakout (donchian, ≈0)** and **own-trend momentum (tsmom, −146!)** —
+  no selection edge; tsmom's entries were WORSE than random. Lowered priors
+  for B2/B3-variants and A5; A1 (cross-sectional momentum) is a different
+  claim and keeps its literature prior, but expectations are tempered.
+- **Compression (squeeze, −202)** — actively adverse selection; C1 VCP's
+  prior drops sharply. **Anchoring-threshold (hi52, −227)** — the per-symbol
+  threshold form is dead; only the published cross-sectional RANK form (via
+  the seam) remains worth testing.
+- **NOTHING advances to paper trading**: the gate amendment (D-030) precedes
+  any further batch. Sequencing for Phase 10: amend gate → re-judge recorded
+  measurements → survivor deep-validation (walk-forward, regimes) → THEN the
+  cross-sectional seam and batch 2.
+
 ## 4. Recommended first implementation (unchanged, re-affirmed post-D-028)
 
 **B1 — time-series (absolute) momentum**, exactly as specified in the library

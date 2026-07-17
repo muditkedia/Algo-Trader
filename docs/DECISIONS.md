@@ -4,6 +4,47 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-030 — Batch 1 measured: 3 PASS / 2 BORDERLINE / 3 FAIL — and the control that voids deployment (2026-07-17)
+
+Phase 9 implemented the eight pre-registered candidates
+(research/PREREGISTRATION_BATCH1.md) and measured them on the real 99-symbol
+corpus through the unchanged pipeline. Frozen-rule verdicts, persisted as
+statuses per the existing promotion map:
+
+* **PASS → `measured`**: wyckoff_spring_daily (PF 1.44, +0.58% expectancy,
+  n=3,772), hvol_daily (PF 1.29, n=1,522), triple_screen_daily (PF 1.29,
+  n=3,679).
+* **BORDERLINE → `draft`**: donchian55_daily (PF 1.16), tsmom_daily (entry-edge
+  leg passed while managed trades LOST — PF 0.80, −0.31% expectancy).
+* **FAIL → `rejected`**: hi52_daily, squeeze_daily, egap_daily.
+
+**But the due-diligence control (L-010) voids deployment**: 2 of 3 seeded
+RANDOM-entry strategies also PASS the frozen bars on this corpus — at 40–60-day
+horizons the absolute-return gate is saturated by bull-market drift plus the
+survivorship of measuring today's constituents. Decisions taken:
+
+1. **Statuses stand as the frozen rules produced them** — moving them by a
+   test invented after seeing results would be goalpost-moving in the other
+   direction. But they are explicitly NOT deployment evidence.
+2. **The paper engine must NOT be started** although `measured` statuses now
+   exist that would let it. No paper trading until the gate is amended.
+3. **Proposed amendment (owner approval required — D-003 froze the protocol):**
+   add a drift-adjusted leg to D-007 — the SELECTION edge (gross minus the
+   random-entry baseline) must clear the round-trip cost on its CI lower
+   bound — and run seeded random-entry controls alongside every real
+   measurement, reported in the league table. Under that lens batch 1 reads:
+   hvol +91 bps and wyckoff_spring +67 bps selection edge at 20d (both clear
+   30.9 bps; genuinely interesting), triple_screen +22 (does not),
+   donchian ≈ 0, everything else negative.
+4. **No re-tuning of anything measured** — batch-1 parameters stay frozen as
+   pre-registered; the amendment re-JUDGES recorded measurements, it does not
+   re-cut strategies.
+
+Reproducibility verified: re-running a batch strategy records 0 new signals and
+reproduces its verdict to the decimal; the six incumbents' statuses and numbers
+are untouched; discovery picked up all eight modules with zero registration
+edits. 277 tests pass (37 new).
+
 ## D-029 — RELIANCE/TCS truncation: forward-only incremental update; head-gap backfill added (2026-07-17)
 
 **Root cause (evidenced, not guessed).** The two symbols' daily history began at

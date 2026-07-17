@@ -39,11 +39,14 @@ def scan_setup(store, synthetic):
     db.close()
 
 
-def test_registry_discovers_all_six():
+def test_registry_discovers_the_whole_library():
     reg = StrategyRegistry()
     found = reg.discover("algo.strategies.library")
-    assert sorted(found) == ["ema200_daily", "nr7_daily", "orb_15m",
-                             "pullback_15m", "volexp_1h", "vwap_15m"]
+    # the original six are always present; the library grows by discovery,
+    # so assert membership + consistency rather than a hardcoded roster
+    assert {"ema200_daily", "nr7_daily", "orb_15m",
+            "pullback_15m", "volexp_1h", "vwap_15m"} <= set(found)
+    assert sorted(found) == [cls.meta.name for cls in ALL_STRATEGIES]
     assert reg.enabled_names() == sorted(found)
 
 

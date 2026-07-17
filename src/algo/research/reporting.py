@@ -18,8 +18,9 @@ import pandas as pd
 #: League-table columns, in reading order: what fired, what it earned, and the
 #: two numbers the D-007 gate actually turns on (edge_ci_low_bps vs cost_bps).
 LEAGUE_COLUMNS = ("strategy", "verdict", "n_signals", "trades", "expectancy",
-                  "win_rate", "profit_factor", "sharpe", "edge_bps",
-                  "edge_ci_low_bps", "cost_bps", "median_hold_min", "conf_corr")
+                  "win_rate", "profit_factor", "sharpe", "max_drawdown_pct",
+                  "edge_bps", "edge_ci_low_bps", "cost_bps", "median_hold_min",
+                  "conf_corr")
 
 
 def league_table_text(table: pd.DataFrame,

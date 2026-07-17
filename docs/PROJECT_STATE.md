@@ -4,9 +4,41 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 8 (research pipeline) + Phase 8.5 (research planning layer) COMPLETE,
-uncommitted — awaiting owner approval.** Phases 1–7 committed (`4f4d630`,
-`5a14fd6`, `aa212c1`, `7a1aeac`, `40392cf`, `c3e38c4`, `e898842`).
+**Phase 9 (batch-1 strategy discovery) COMPLETE, uncommitted — awaiting owner
+approval.** Phases 1–8.5 committed (…`e898842`, `eba2c60`).
+
+## Phase 9 delivered — batch 1: eight strategies, measured, and the control that reframes everything (D-030, L-010)
+
+- **Pre-registered** (research/PREREGISTRATION_BATCH1.md, written before any
+  code): tsmom, hi52, egap (PEAD proxy), donchian55, wyckoff_spring, squeeze,
+  hvol, triple_screen — eight distinct hypothesis families, all 1d/long-only/
+  delivery, horizons declared per strategy, platform-uniform exits.
+- **Implemented as eight drop-in modules** — discovery, measurement, evidence,
+  ranking and promotion all picked them up with ZERO platform edits (the
+  Phase-8 promise, kept). One genuine logic bug caught by tests pre-measurement
+  (spring's reclaim reference collapsing to the flush low). Shared weekly
+  resample/as-of join added to core/indicators with a truncation lookahead
+  proof for both weekly-screen strategies.
+- **Measured on the real corpus** (99 symbols, production evidence DB):
+  **PASS** wyckoff_spring (PF 1.44), hvol (1.29), triple_screen (1.29) →
+  `measured`; **BORDERLINE** donchian55, tsmom → `draft`; **FAIL** hi52,
+  squeeze, egap → `rejected`. Full table + diagnostics:
+  user_data/backtest_results/reports/batch1_league_table.md.
+- **THE CONTROL FINDING (L-010): 2 of 3 seeded random-entry strategies also
+  PASS the frozen bars on this corpus.** At 40–60-day horizons the
+  absolute-return D-007 gate saturates on bull-market drift + survivorship
+  (today's constituents). Batch-1 PASSes are therefore NOT deployment
+  evidence. The informative statistic is the SELECTION edge vs the random
+  baseline: hvol **+91 bps** and wyckoff_spring **+67 bps** at 20d (both clear
+  the 30.9 bps cost), triple_screen +22 (does not), donchian ≈0, tsmom −146
+  (its entire "edge" was drift), squeeze −202 (the pre-registered failure).
+- **DO NOT START THE PAPER ENGINE**: three `measured` statuses exist, so it
+  WOULD start — D-030 forbids it pending the gate amendment.
+- **Proposed for owner approval (Phase 10)**: amend the frozen protocol with a
+  drift-adjusted gate leg (selection edge vs random baseline must clear cost
+  on its CI) + standing seeded random controls in every real measurement.
+- Reproducibility verified (re-run: 0 new signals, verdict identical to the
+  decimal); six incumbents untouched; **277 tests pass** (37 new).
 
 ## Phase 8.5 delivered — research planning layer (D-028, D-029)
 

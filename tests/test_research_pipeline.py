@@ -139,15 +139,19 @@ def test_discover_accepts_an_imported_package():
 # -------------------------------------------- B) pre-registered horizons
 
 def test_horizon_defaults_reproduce_the_phase7_measurement():
-    """Every verdict already on record must stay reproducible: the defaults
-    ARE the horizons the six rejected strategies were measured at."""
+    """The D-026 verdicts must stay reproducible: the defaults ARE the
+    horizons the six rejected strategies were measured at. Later batches
+    pre-register their own horizons - only the ORIGINAL six are pinned."""
     meta = StrategyMeta(name="d", version="1.0", direction=Direction.LONG,
                         holding_scope=HoldingScope.SWING)
     assert meta.horizon_bars == edge_lab.DEFAULT_HORIZON_BARS == (1, 2, 4, 8)
     assert meta.max_hold_bars == 8
+    phase7_six = {"ema200_daily", "nr7_daily", "orb_15m", "pullback_15m",
+                  "volexp_1h", "vwap_15m"}
     for cls in ALL_STRATEGIES:
-        assert cls.meta.horizon_bars == (1, 2, 4, 8)
-        assert cls.meta.max_hold_bars == 8
+        if cls.meta.name in phase7_six:
+            assert cls.meta.horizon_bars == (1, 2, 4, 8)
+            assert cls.meta.max_hold_bars == 8
 
 
 def test_horizon_longer_than_hold_is_rejected():

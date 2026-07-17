@@ -2,6 +2,45 @@
 
 Empirical findings from validation. Newest first. Numbers are net of 0.1%/side
 fees, Binance spot, BTC+ETH, dev corpus 2020-01..2025-06 unless noted.
+L-010+ are Indian equities (NSE, 99 NIFTY-100 symbols, 2023-01..2026-07,
+NseEquityCostModel).
+
+---
+
+## L-010 — THE FROZEN GATE PASSES PURE RANDOMNESS at multi-week horizons on this corpus (2026-07-17)
+
+Batch-1 due diligence: a seeded strategy firing on ARBITRARY bars (no market
+information), run through the identical pipeline at (10,20,40,60)-bar horizons
+with identical management and costs, over 3 seeds:
+
+| seed | verdict | PF | expectancy | "edge" | CI-low | vs random |
+|---|---|---|---|---|---|---|
+| 1 | **PASS** | 1.39 | +0.0044 | 503 bps | 227 bps | +14 |
+| 2 | BORDERLINE | 0.98 | −0.0003 | 334 bps | 35 bps | −168 |
+| 3 | **PASS** | 1.34 | +0.0046 | 473 bps | 130 bps | −12 |
+
+**Two of three coin flips PASS the pre-registered bars.** Cause: the D-007 gate
+hurdles ABSOLUTE forward return against cost. At 8-bar/intraday scale (where
+the bars were designed and correctly rejected six strategies plus the noise
+control) drift over the window is negligible; at 40–60 days on a 2023–26 bull
+sample of CURRENT index constituents (survivorship), drift alone is 300–550 bps
+— an order of magnitude above the 61.8 bps hurdle. The gate saturates on beta.
+
+**Corollary (the useful signal that remains):** the edge lab's random-entry
+baseline decomposes gross return into drift + selection. Batch-1 selection
+edges (gross − random, best horizon): hvol +91 bps and wyckoff_spring +67 bps
+(both > the 30.9 bps round trip); triple_screen +22 (below cost);
+donchian −2; tsmom −146 (its entire 313 bps "edge" was drift — it picked
+WORSE-than-random bars); squeeze −202 (compression actively selects bad bars,
+exactly the pre-registered failure mode); egap −152; hi52 −227.
+
+**Implications:** (1) no batch-1 verdict is deployment evidence; the paper
+engine must not be started although three strategies now hold `measured`
+status. (2) The acceptance protocol needs an owner-approved amendment (D-003:
+VALIDATION_RULES is frozen): a drift-adjusted leg — selection edge vs the
+random baseline must clear cost on its CI — plus seeded random-entry controls
+run alongside every real measurement. (3) Confidence heuristics again carry no
+signal (corr −0.04..+0.06; L-003 three times running).
 
 ---
 

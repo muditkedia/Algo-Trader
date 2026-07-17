@@ -116,6 +116,39 @@ def crossed_below(series: pd.Series, reference: pd.Series) -> pd.Series:
     return (series < reference) & (series.shift(1) >= reference.shift(1))
 
 
+# ------------------------------------------------------------- weekly frame
+
+
+def weekly_bars(frame: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate daily bars into calendar weeks (label = the week's Friday).
+
+    Weeks with no sessions (exchange holidays spanning a week) are dropped.
+    Used by the weekly-screen strategies; the lookahead-safe join back to the
+    daily frame is ``weekly_asof``.
+    """
+    weekly = frame.set_index("date").resample("W-FRI").agg(
+        {"open": "first", "high": "max", "low": "min",
+         "close": "last", "volume": "sum"})
+    return weekly.dropna(subset=["close"])
+
+
+def weekly_asof(dates: pd.Series, weekly_values: pd.Series) -> pd.Series:
+    """Join a weekly series to daily bars without lookahead.
+
+    Each daily bar receives the value of the most recent week whose label
+    (its Friday) falls ON OR BEFORE the bar's calendar day - so a Friday bar
+    may use the week completing at its own close (all inputs known at that
+    close), while Monday-Thursday bars see only strictly earlier weeks. A
+    mid-week PARTIAL bucket is never joined: its label (the upcoming Friday)
+    lies in the future of every bar inside it. Bars before the first complete
+    week get NaN. Booleans should be passed as floats (ffill of NaN-holed
+    bools loses dtype).
+    """
+    aligned = weekly_values.reindex(dates.dt.normalize(), method="ffill")
+    aligned.index = dates.index
+    return aligned
+
+
 # ------------------------------------------------------- session-scoped (NSE)
 
 
