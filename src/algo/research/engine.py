@@ -322,6 +322,7 @@ class ResearchEngine:
         P&L. This is the FIRST evidence about whether the Phase-4 heuristic
         confidences carry any signal at all - exactly the L-003 question.
         """
+        from algo.evidence import queries as evidence_queries
         rows = self.db.connection.execute(
             "SELECT s.confidence_score AS conf, o.sim_pnl_net AS pnl "
             "FROM signals s JOIN signal_outcomes o USING (signal_id) "
@@ -330,8 +331,9 @@ class ResearchEngine:
         frame = pd.DataFrame([dict(r) for r in rows])
         if len(frame) < 10 or frame["conf"].nunique() < 2:
             return {"status": "insufficient evidence", "n": int(len(frame))}
-        # Spearman = Pearson on ranks (avoids a scipy dependency)
-        corr = float(frame["conf"].rank().corr(frame["pnl"].rank()))
+        # shared calibration statistic (single implementation, evidence.queries)
+        corr = evidence_queries.confidence_outcome_correlation(
+            self.db, strategy_id)
         try:
             frame["bin"] = pd.qcut(frame["conf"], q=min(bins, frame["conf"].nunique()),
                                    duplicates="drop")
@@ -342,7 +344,7 @@ class ResearchEngine:
         except ValueError:
             buckets = {}
         return {"status": "computed", "n": int(len(frame)),
-                "correlation": round(corr, 4) if corr == corr else None,
+                "correlation": round(corr, 4) if corr is not None else None,
                 "buckets": buckets}
 
     # --------------------------------------------------------- 5) the verdict

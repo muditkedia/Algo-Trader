@@ -152,6 +152,33 @@ class EvidenceLogger:
             (strategy_id, symbol, ts, _encode(mode))).fetchone()
         return row is not None
 
+    def find_signal(self, strategy_id: int, symbol: str, ts: str,
+                    mode: str) -> Optional[int]:
+        """signal_id of an exact recorded signal, or None."""
+        row = self.conn.execute(
+            "SELECT signal_id FROM signals WHERE strategy_id = ? AND "
+            "symbol = ? AND ts = ? AND mode = ? LIMIT 1",
+            (strategy_id, symbol, ts, _encode(mode))).fetchone()
+        return int(row[0]) if row else None
+
+    def update_disposition(self, signal_id: int, disposition: str,
+                           reason: Optional[str] = None) -> None:
+        """Upgrade a signal's disposition (e.g. recorded_only -> executed when
+        the paper engine actually takes it)."""
+        with self.conn:
+            self.conn.execute(
+                "UPDATE signals SET disposition = ?, disposition_reason = "
+                "COALESCE(?, disposition_reason) WHERE signal_id = ?",
+                (_encode(disposition), reason, signal_id))
+
+    def update_rank(self, signal_id: int, rank: int) -> None:
+        """Persist the latest ranking decision for an already-recorded signal
+        (re-scans re-rank; the signal row keeps the most recent rank)."""
+        with self.conn:
+            self.conn.execute(
+                "UPDATE signals SET rank_in_scan = ? WHERE signal_id = ?",
+                (rank, signal_id))
+
     def record_signals(self, signals: Iterable[Signal]) -> List[int]:
         ids = []
         with self.conn:

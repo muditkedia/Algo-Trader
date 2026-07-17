@@ -4,6 +4,49 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-022 — Execution intelligence: canonical Opportunity, weighted ranking, adaptive cadence, portfolio decisions, dynamic sizing (2026-07-17)
+
+Extended (not redesigned) the scanner + paper engine into the production
+execution pipeline. The canonical ``Opportunity`` carries prices/risk geometry
+(promoted risk engine), expectations, historical evidence stats, confidence
+components, regime, liquidity, and cost. Ranking replaced confidence ordering
+with a configurable weighted engine (``RankingWeights``/``RankingScales`` from
+config; strategies without evidence score components at the NEUTRAL midpoint,
+never fabricated); every ranking decision persists to the signal row (rank +
+``_ranking`` breakdown). Scanning cadence adapts per strategy timeframe
+(15m≈45s, 1h≈3min, 1d≈7min, configurable) and position management runs every
+tick independently of scans. A PortfolioManager decides OPEN/SKIP/REDUCE/
+REPLACE against capital, exposure, sector caps (the correlation proxy until
+return-correlation evidence exists — explicit, not hidden), and a daily risk
+budget; sizing is dynamic (risk-parity core via ``risk_based_stake``,
+confidence-scaled, budget/concentration/hard-capped, returns 0 rather than
+force a too-small position). A console dashboard renders the full system state
+each tick. No ML anywhere; confidence stays evidence-based heuristics pending
+calibration. 179 tests.
+
+## D-021 — Paper engine is gated on real-data measurement survival (2026-07-16)
+
+The Paper Trading Engine refuses any strategy whose evidence status is not
+measured/validated/approved/paper — statuses only a REAL-data measurement run
+can grant (synthetic runs persist "draft" explicitly). `allow_unmeasured`
+exists solely for offline pipeline validation and logs loudly. This encodes the
+project's core rule in the runtime itself: nothing trades, even on paper,
+without measured evidence. No live orders exist anywhere in the codebase.
+
+## D-020 — Production data source pivots to Angel One SmartAPI (2026-07-16)
+
+Owner decision: SmartAPI (app + GitHub Pages redirect + static IP already set
+up) replaces Kotak Neo as the production NSE source; CSV import becomes a
+fallback. Unlike Kotak's SDK, SmartAPI has a documented HISTORICAL candle API
+(getCandleData: 1-minute…1-day intervals, per-interval day limits, ~3 req/s),
+so real backfill is first-class. Implemented against the official SDK
+(verified from its source): TOTP login/refresh/logout/profile, scrip-master
+instrument map, chunked+throttled candle download, ltp quote. Credentials come
+ONLY from a local .env (stdlib loader, secrets masked via repr=False, missing
+values reported by name with portal provenance). Kotak code is retained but
+unused; the DataProvider abstraction meant zero changes to
+ingestion/store/scheduler/scanner/research.
+
 ## D-019 — Measurement pipeline complete; all six candidates FAIL on synthetic data (2026-07-16)
 
 Phase 5 completed the Research Engine (edge lab, outcome labeler, trade

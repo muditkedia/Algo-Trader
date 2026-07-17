@@ -14,7 +14,16 @@ test controls (planted edge -> PASS, pure noise -> FAIL). Point ``--csv-root``
 at a real export to produce real verdicts with zero code changes.
 
 Usage:
-    .venv/Scripts/python scripts/run_measurement.py [--symbols N] [--csv-root DIR]
+    .venv/Scripts/python scripts/run_measurement.py                 # synthetic
+    .venv/Scripts/python scripts/run_measurement.py --csv-root DIR  # CSV import
+    .venv/Scripts/python scripts/run_measurement.py \
+        --store-dir user_data/data/nse                              # real store
+        [--symbols RELIANCE,TCS | --symbols-file file]
+
+With ``--store-dir`` (e.g. after scripts/download_history.py) the REAL evidence
+DB (user_data/evidence/evidence.db) is used, verdicts are persisted as strategy
+lifecycle statuses (PASS -> measured, FAIL -> rejected), and nothing is wiped -
+this is the production measurement path the paper engine gates on.
 """
 
 from __future__ import annotations
@@ -109,28 +118,51 @@ def record_historical_signals(engine: ResearchEngine, log: EvidenceLogger,
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--symbols", type=int, default=12)
+    parser.add_argument("--symbols", default="12",
+                        help="synthetic: count; with --store-dir: "
+                             "comma-separated symbol list")
+    parser.add_argument("--symbols-file", default=None,
+                        help="file with one symbol per line (with --store-dir)")
     parser.add_argument("--csv-root", default=None,
                         help="import real CSV data instead of synthetic")
+    parser.add_argument("--store-dir", default=None,
+                        help="measure an EXISTING store (e.g. the SmartAPI "
+                             "download at user_data/data/nse)")
     args = parser.parse_args()
     configure(level=logging.WARNING)
 
-    # fresh, reproducible run
-    shutil.rmtree(STORE_DIR, ignore_errors=True)
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DB_PATH.unlink(missing_ok=True)
-
-    store = MarketDataStore(STORE_DIR)
-    if args.csv_root:
-        symbols = import_csv_data(store, args.csv_root)
-        data_note = f"REAL data imported from {args.csv_root}"
+    real_run = bool(args.store_dir)
+    if real_run:
+        store = MarketDataStore(args.store_dir)
+        if args.symbols_file:
+            symbols = [s.strip().upper() for s in
+                       Path(args.symbols_file).read_text().splitlines()
+                       if s.strip() and not s.startswith("#")]
+        elif args.symbols and not args.symbols.isdigit():
+            symbols = [s.strip().upper() for s in args.symbols.split(",")
+                       if s.strip()]
+        else:
+            symbols = sorted(set().union(*(set(store.symbols(tf)) for tf in
+                                           ("15m", "1h", "1d"))))
+        data_note = f"REAL data from {args.store_dir}"
+        db_path = ROOT / "evidence" / "evidence.db"     # production DB, kept
     else:
-        symbols = build_synthetic_data(store, args.symbols)
-        data_note = ("SYNTHETIC corpus - verdicts validate the machinery, "
-                     "NOT the strategies' market worth")
+        # fresh, reproducible synthetic/CSV run in the scratch DB
+        shutil.rmtree(STORE_DIR, ignore_errors=True)
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        DB_PATH.unlink(missing_ok=True)
+        store = MarketDataStore(STORE_DIR)
+        if args.csv_root:
+            symbols = import_csv_data(store, args.csv_root)
+            data_note = f"REAL data imported from {args.csv_root}"
+        else:
+            symbols = build_synthetic_data(store, int(args.symbols))
+            data_note = ("SYNTHETIC corpus - verdicts validate the machinery, "
+                         "NOT the strategies' market worth")
+        db_path = DB_PATH
     print(f"data: {len(symbols)} symbols | {data_note}\n")
 
-    db = EvidenceDB(DB_PATH)
+    db = EvidenceDB(db_path)
     log = EvidenceLogger(db)
     for symbol in symbols:
         log.upsert_instrument(symbol)
@@ -171,6 +203,26 @@ def main() -> int:
         print(f"\n  {verdict.strategy}: {verdict.verdict}")
         for reason in verdict.reasons:
             print(f"    - {reason}")
+
+    # Persist verdicts as lifecycle statuses (the paper engine gates on these).
+    # Only real-data verdicts advance a strategy; synthetic runs record only.
+    status_map = {"PASS": "measured", "FAIL": "rejected",
+                  "BORDERLINE": "draft", "INCONCLUSIVE": "draft"}
+    for verdict in verdicts:
+        strategy_id = log.register_strategy(
+            verdict.strategy,
+            next(s.meta.version for s in strategies
+                 if s.name == verdict.strategy))
+        if real_run:
+            log.set_strategy_status(
+                strategy_id, status_map[verdict.verdict],
+                reason=f"measurement {verdict.verdict}: "
+                       + "; ".join(verdict.reasons)[:400])
+        else:
+            log.set_strategy_status(
+                strategy_id, "draft",
+                reason=f"synthetic-run {verdict.verdict} (machinery check, "
+                       "not a market verdict)")
 
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     lines = [f"# Phase 5 league table", "", f"_{data_note}_", "", "```",

@@ -16,6 +16,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest"]
+# Official Angel One SDK + its documented companions; needed only for live use.
+smartapi = ["smartapi-python", "pyotp", "logzero", "websocket-client",
+            "pycryptodome"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }

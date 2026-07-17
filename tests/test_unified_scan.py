@@ -82,12 +82,14 @@ def test_every_opportunity_written_to_evidence(scan_setup):
         row = by_key[(opp.symbol, opp.strategy)]
         assert row["disposition"] == "recorded_only"
         assert row["confidence_score"] == pytest.approx(opp.confidence)
-    # crafted ORB signal carries its full component breakdown
+    # crafted ORB signal carries its full component breakdown PLUS the
+    # persisted ranking decision (every ranking decision is auditable)
     orb = by_key[("CRAFT_ORB", "orb_15m")]
     components = json.loads(orb["confidence_components"])
-    assert set(components) == {"volume_surge", "range_tightness",
-                               "close_strength"}
-    assert all(0.0 <= c["score"] <= 1.0 for c in components.values())
+    assert {"volume_surge", "range_tightness",
+            "close_strength", "_ranking"} <= set(components)
+    assert all(0.0 <= c["score"] <= 1.0
+               for name, c in components.items() if name != "_ranking")
 
 
 def test_rescan_creates_no_duplicate_signals(scan_setup):
