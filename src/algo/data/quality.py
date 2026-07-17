@@ -55,6 +55,32 @@ class QualityReport:
         self.issues.append(QualityIssue(code, severity, detail))
 
 
+def invalid_row_mask(frame: pd.DataFrame) -> pd.Series:
+    """Boolean mask of rows that violate OHLC integrity.
+
+    Isolated bad bars do occur in real broker feeds (observed on SmartAPI:
+    ~1 bar in 20,000 with low > open, or a negative volume). This identifies
+    exactly which rows are unusable so a caller can drop THOSE rows and report
+    it, instead of discarding an otherwise-clean multi-year history.
+    """
+    if ohlcv.is_empty(frame):
+        return pd.Series(dtype=bool)
+    df = frame
+    price = df[list(ohlcv.PRICE_COLUMNS)]
+    body_high = df[["open", "close"]].max(axis=1)
+    body_low = df[["open", "close"]].min(axis=1)
+    bad = (
+        price.isna().any(axis=1)
+        | df["volume"].isna()
+        | (df["high"] < df["low"])
+        | (df["high"] < body_high)
+        | (df["low"] > body_low)
+        | (price <= 0).any(axis=1)
+        | (df["volume"] < 0)
+    )
+    return bad.fillna(True)
+
+
 def check_ohlcv(frame: pd.DataFrame, symbol: str, timeframe: str,
                 calendar=None) -> QualityReport:
     """Validate a raw OHLCV frame; return a structured report."""

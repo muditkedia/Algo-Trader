@@ -61,13 +61,22 @@ class SmartApiDataProvider(DataProvider):
 
     def __init__(self, session, instruments, exchange: str = "NSE",
                  max_days_per_request: Optional[Dict[str, int]] = None,
-                 min_request_interval_s: float = 0.4,
+                 min_request_interval_s: float = 1.0,
+                 rate_limit_retries: int = 4,
+                 rate_limit_backoff_s: float = 2.0,
                  sleep_fn: Optional[Callable] = None) -> None:
         self.session = session
         self.instruments = instruments
         self.exchange = exchange
         self.max_days = {**MAX_DAYS_PER_REQUEST, **(max_days_per_request or {})}
+        # Observed against the live API: the documented "3 req/s" is enforced
+        # harder in practice (bulk downloads got "Access denied because of
+        # exceeding access rate" at 2.5 req/s), so the default is conservative
+        # and rate-limit rejections are retried with exponential backoff rather
+        # than being mistaken for bad data.
         self.min_interval = min_request_interval_s
+        self.rate_limit_retries = rate_limit_retries
+        self.rate_limit_backoff_s = rate_limit_backoff_s
         self.sleep = sleep_fn or time_mod.sleep
         self._last_request = 0.0
 
@@ -84,11 +93,36 @@ class SmartApiDataProvider(DataProvider):
 
     # -------------------------------------------------------------- candles
 
-    def _request_candles(self, params: dict) -> list:
-        """One getCandleData call with throttle + one refresh-retry."""
+    @staticmethod
+    def _is_rate_limited(error: Exception) -> bool:
+        """The API reports rate limiting as a non-JSON body, which the SDK
+        surfaces as a parse error - so match on the text, not a status code."""
+        text = str(error).lower()
+        return "exceeding access rate" in text or "access denied" in text \
+            or "rate" in text and "denied" in text
+
+    def _call_candles(self, client, params: dict):
         self._throttle()
+        return client.getCandleData(params)
+
+    def _request_candles(self, params: dict) -> list:
+        """One getCandleData call: throttled, rate-limit backoff, refresh-retry."""
         client = self.session.ensure().client
-        response = client.getCandleData(params)
+        response = None
+        for attempt in range(self.rate_limit_retries + 1):
+            try:
+                response = self._call_candles(client, params)
+                break
+            except Exception as exc:
+                if self._is_rate_limited(exc) and attempt < self.rate_limit_retries:
+                    wait = self.rate_limit_backoff_s * (2 ** attempt)
+                    logger.warning("rate limited - backing off %.1fs "
+                                   "(attempt %d/%d)", wait, attempt + 1,
+                                   self.rate_limit_retries)
+                    self.sleep(wait)
+                    continue
+                raise
+
         if isinstance(response, dict) and not response.get("status", False):
             message = str(response.get("message") or "")
             error_type = str(response.get("errorcode")
@@ -96,8 +130,7 @@ class SmartApiDataProvider(DataProvider):
             if "token" in (message + error_type).lower():
                 logger.info("session expired mid-download - refreshing once")
                 self.session.refresh()
-                self._throttle()
-                response = client.getCandleData(params)
+                response = self._call_candles(client, params)
         if not isinstance(response, dict) or not response.get("status", False):
             detail = (response or {}).get("message", "?") \
                 if isinstance(response, dict) else type(response).__name__

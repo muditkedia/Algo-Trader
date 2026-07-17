@@ -103,6 +103,16 @@ class SmartApiSession:
         """The account profile (verifies the session end-to-end)."""
         return _check(self.client.getProfile(self.refresh_token), "getProfile")
 
+    def rms_limits(self) -> dict:
+        """Account funds / RMS limits (documented ``rmsLimit`` endpoint).
+
+        The source of REAL intraday buying power - so the platform never has to
+        assume a leverage multiple. Keys are whatever the broker returns (e.g.
+        net, availablecash, availableintradaypayin, utiliseddebits); the
+        interpretation lives in ``algo.paper.buying_power``, not here.
+        """
+        return _check(self.client.rmsLimit(), "rmsLimit")
+
     def logout(self) -> None:
         if self._client is not None and self.logged_in:
             try:

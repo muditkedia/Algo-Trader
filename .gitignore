@@ -3,7 +3,12 @@ __pycache__/
 *.pyc
 
 # Environment / packaging
+# Secrets: ignore EVERY .env variant (.env, smartapi.env, local.env, ...).
+# The tracked template .env.example is deliberately NOT matched by these.
 .env
+*.env
+.env.*
+!.env.example
 .venv/
 *.egg-info/
 build/
@@ -11,6 +16,7 @@ dist/
 .pytest_cache/
 
 # Runtime data (local only)
+logs/
 user_data/data/
 user_data/evidence/
 user_data/backtest_results/

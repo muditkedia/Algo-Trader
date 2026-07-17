@@ -179,7 +179,7 @@ def test_portfolio_replace_only_when_clearly_better():
 # ------------------------------------------------------------------- sizing
 
 CFG = SizingConfig(risk_per_trade=0.005, min_stake=5_000, max_stake=500_000,
-                   max_capital_per_trade=0.5, daily_risk_budget=0.02)
+                   max_capital_per_trade=0.5)
 
 
 def _size(confidence=1.0, stop=0.02, budget_left=20_000, capital=1_000_000,

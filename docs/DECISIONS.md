@@ -4,6 +4,77 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-026 — ALL SIX STRATEGIES REJECTED on real NSE data (2026-07-17)
+
+First real measurement: 99 NIFTY-100 symbols, 2.85M bars (2023-01→2026-07),
+125,794 signals, 125,719 labeled outcomes, no tuning. **Every strategy FAILS**
+the pre-registered bars and is `rejected` in the evidence DB; the paper engine
+refuses to start. Evidence:
+
+* **Intraday (pullback_15m, vwap_15m, orb_15m, volexp_1h): decisively dead.**
+  Gross edge 0.2–9.1 bps against a 12.2 bps round trip; PF 0.52–0.69; Sharpe
+  −4 to −11.7; MFE/|MAE| 1.03–1.16 (near coin-flip). This is D-007/L-006
+  reproduced on Indian equities: **cost, not signal quality, is the binding
+  constraint at intraday frequency.**
+* **Daily (ema200_daily, nr7_daily): real but insufficient edge.**
+  ema200_daily has POSITIVE expectancy (+0.0025, PF 1.20) and a 59.4 bps point
+  edge over a 30.9 bps delivery cost — but its 95% CI lower bound (23.4 bps)
+  does not clear cost, and PF misses the 1.25 floor. The bar is the bound, not
+  the point estimate (§14). It is the only candidate meriting further research.
+* **Confidence carries no signal**: correlation with realized P&L −0.026 to
+  +0.018 across all six — L-003 reproduced. The Phase-4 heuristic scores are
+  worthless on this evidence and must be replaced by evidence-calibrated
+  priors, never hand-tuned.
+
+**Decision: do not deploy anything. Do not tune on this data** (it would be
+fitting the only honest sample we have). The next research must attack the cost
+hurdle structurally — lower frequency, larger moves, or a genuinely stronger
+entry — not re-parameterize losers.
+
+## D-025 — Live-data defects: rate limits, glitch bars, O(n²) labeling (2026-07-17)
+
+Three real defects only a live run could expose, all fixed and tested:
+(1) SmartAPI enforces its rate limit harder than documented and reports it as a
+non-JSON body the SDK raises as a *parse* error — it looked like data
+corruption and quarantined 47 symbol-timeframes. Now detected, backed off
+exponentially, retried (1h 74→99, 15m 55→99).
+(2) Rare impossible bars (~1 per 20,000) were discarding entire multi-year
+histories. Now dropped individually — explicitly counted and logged, never
+silently reshaped (L-008) — with tolerance `max(abs_floor, pct×rows)`; the
+absolute floor exists because one bad bar in an 877-row daily series is 0.11%
+while the identical defect in 15m data is 0.005% (1d 93→99). Systematically
+broken feeds are still quarantined whole.
+(3) Outcome labeling scanned the frame per signal (O(signals×bars)) and synced
+per row; a date→index map + batched writes made the real run tractable.
+
+## D-024 — Leverage relaxes the notional ceiling; risk stays equity-based (2026-07-17)
+
+Buying power is resolved from the broker (SmartAPI ``rmsLimit``) or an
+explicitly CONFIGURED allowance — never a hardcoded 5x or any x
+(``BuyingPowerConfig``: cash | multiplier | broker, with a ``max_multiplier``
+guard so a mis-parsed field cannot silently inflate risk). Crucially, buying
+power raises the DEPLOYMENT ceiling only: risk-per-trade continues to size from
+account EQUITY, because a stop-out loses equity and equity does not grow with
+leverage. So leverage lets a risk-justified position be HELD, it never enlarges
+the risk taken. Capital is otherwise fully deployable across the three slots
+(``max_capital_deployed`` default 1.0) — idle capital only ever results from a
+configured risk limit. Also removed a duplicate ``daily_risk_budget`` field
+from SizingConfig (PortfolioConfig owns it; a test caught the dead copy).
+
+## D-023 — Net break-even protection and selectable trailing modes (2026-07-17)
+
+"Move the stop to entry" is a trap: exiting at entry loses the full round trip.
+``risk/breakeven.py`` computes the true net break-even — entry grossed up by
+brokerage + STT + exchange + GST + stamp + SEBI + slippage (from the configured
+CostModel, so it differs correctly for INTRADAY vs DELIVERY) plus an execution
+buffer — and ARMS only once a configurable profit trigger is met (default 3x
+the round-trip cost, optionally also an ATR multiple). Never immediately after
+entry: the crypto post-mortem showed tightening too early cuts winners short
+(L-006). ``risk/trailing.py`` keeps the promoted ATR chandelier as the default
+(unchanged behaviour) and adds percentage / structure / volatility modes behind
+one interface; the profit-lock ladder applies in every mode. Strategies select
+via a declarative ``meta.trail_mode`` — no strategy code changes.
+
 ## D-022 — Execution intelligence: canonical Opportunity, weighted ranking, adaptive cadence, portfolio decisions, dynamic sizing (2026-07-17)
 
 Extended (not redesigned) the scanner + paper engine into the production

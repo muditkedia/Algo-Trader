@@ -4,9 +4,106 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 6 (SmartAPI provider + paper engine + EXECUTION INTELLIGENCE) COMPLETE.**
-Phases 1–5 committed & pushed (`4f4d630`, `5a14fd6`, `aa212c1`, `7a1aeac`,
-`40392cf`).
+**Phase 7 (production execution rules + REAL market data) IN PROGRESS, uncommitted.**
+Phases 1–6 committed & pushed (`4f4d630`, `5a14fd6`, `aa212c1`, `7a1aeac`,
+`40392cf`, `c3e38c4`).
+
+### SECURITY EVENT (2026-07-17) — contained, no leak
+
+Live SmartAPI credentials were placed in the **tracked** `.env.example`, and a
+second copy existed in an un-ignored `smartapi.env`. Verified: **the secrets
+were never committed to any branch** (`git log -S` across `--all` returns
+nothing; `HEAD`'s template was still empty). Remediation: secrets moved to the
+git-ignored `.env`, the tracked template restored to empty placeholders, and
+`.gitignore` widened to `*.env` / `.env.*` (with `!.env.example`) so no `.env`
+variant can ever be staged. `smartapi.env` is now ignored but is a redundant
+plaintext copy — **recommend deleting it** (`.env` holds everything).
+No rotation is required, since nothing was published.
+
+## Phase 7 delivered — Part A: production execution rules
+
+- **A1 max 3 positions** (`PortfolioConfig.max_open_positions = 3`): a fourth
+  opportunity is decided against the book — OPEN / SKIP / REDUCE / REPLACE —
+  with the reasoning persisted to evidence.
+- **A2 one capital pool** (`max_capital_deployed = 1.0`): dynamically allocated
+  across the three slots; capital idles only when a configured risk limit binds.
+- **A3 buying power, never hardcoded** (`paper/buying_power.py`): cash |
+  multiplier | broker modes; `SmartApiSession.rms_limits()` reads the real
+  `rmsLimit` funds; `max_multiplier` guard against a mis-parsed field. Leverage
+  raises the notional ceiling; **risk stays equity-based** (D-024).
+- **A4 net break-even** (`risk/breakeven.py`): stop moves to entry grossed up by
+  brokerage + STT + exchange + GST + stamp + SEBI + slippage + buffer (from the
+  configured CostModel), and only once a configurable trigger is met (default
+  3× round-trip cost) — never immediately after entry (D-023).
+- **A5 trailing modes** (`risk/trailing.py`): promoted ATR chandelier stays the
+  default; percentage / structure / volatility added behind one interface;
+  profit-lock ladder applies in every mode; strategies opt in via declarative
+  `meta.trail_mode` — **no strategy code changed**.
+- Removed a duplicate `daily_risk_budget` field (PortfolioConfig owns it).
+
+Part A validation: **200 tests pass** (21 new).
+
+## Phase 7 — Part B: real market (COMPLETE)
+
+- **SmartAPI login: VERIFIED** against the live API (session → profile
+  `MUDIT KEDIA`, exchanges `nse_cm`/`bse_cm` → refresh → logout).
+- **Universe**: `scripts/build_universe.py` generates `nifty100.txt` from the
+  live instrument master (2,406 NSE `-EQ`) → **99/101 active**. `TATAMOTORS`
+  (demerged; successor `TMPV`) and `LTIM` are absent — genuine index drift, not
+  substituted (that would be inventing index membership).
+- **Historical download: 99/99 symbols on all three timeframes**,
+  **2,846,753 real NSE bars**, 2023-01-01 → 2026-07-17
+  (1d 85,651 · 1h 604,058 · 15m 2,157,044).
+
+### Two real defects the live run exposed (both fixed, both tested)
+
+1. **Rate limiting mistaken for bad data.** 47 of 75 quarantines were
+   `Access denied because of exceeding access rate` — the API enforces harder
+   than its documented 3/s. The SDK surfaces it as a JSON *parse* error, so it
+   looked like corruption. Fix: detect it, exponential backoff + retry,
+   conservative 1.0s default throttle. Recovered 1h 74→99 and 15m 55→99.
+2. **One bad bar discarded a whole symbol.** SmartAPI returns rare impossible
+   bars (BRITANNIA **1 bad in 21,829** = 0.005%; CANBK 4 in 21,828). The
+   all-or-nothing gate threw away 3.5 clean years over one tick. Fix: an
+   explicit, counted, logged row-level drop with a
+   `max(max_invalid_rows, pct × rows)` tolerance — the absolute floor matters
+   because 1 bad bar in an 877-row *daily* series is 0.11% while the identical
+   defect in 15m data is 0.005%. Systematically broken feeds are still
+   quarantined whole. Recovered 1d 93→99.
+3. **Labeling was O(signals × bars)** (a linear frame scan per signal ≈ 1.3
+   billion comparisons) plus one disk sync per row. Fix: a date→row index built
+   once per symbol + batched writes. ~12 outcomes/s → 62,166 in minutes.
+
+### REAL measurement result: ALL SIX STRATEGIES FAIL
+
+99 symbols · **125,794 signals · 125,719 labeled outcomes** · no tuning.
+
+| strategy | verdict | signals | PF | expectancy | edge bps | CI-low bps | cost bps |
+|---|---|---|---|---|---|---|---|
+| ema200_daily | **FAIL** | 1,402 | 1.20 | +0.00248 | 59.4 | 23.4 | 30.9 |
+| nr7_daily | **FAIL** | 898 | 1.03 | +0.00036 | 50.1 | 4.0 | 30.9 |
+| volexp_1h | **FAIL** | 11,086 | 0.69 | −0.00121 | 9.1 | 2.4 | 12.2 |
+| orb_15m | **FAIL** | 23,706 | 0.66 | −0.00123 | 3.0 | 0.3 | 12.2 |
+| vwap_15m | **FAIL** | 26,517 | 0.58 | −0.00124 | 2.8 | 0.1 | 12.2 |
+| pullback_15m | **FAIL** | 62,185 | 0.52 | −0.00149 | 0.2 | −2.0 | 12.2 |
+
+All strategies are `rejected` in the evidence DB; **the paper engine refuses to
+start (exit 3)** — the gate works.
+
+**What the evidence says (not opinion):**
+- **The intraday strategies are killed by costs, exactly as crypto was**
+  (D-007/L-006 reproduced on Indian equities): 0.2–9.1 bps of gross edge
+  against a 12.2 bps round trip. MFE/|MAE| 1.03–1.16 — barely better than a
+  coin flip. Sharpe −4 to −11.7. These are not close.
+- **The daily strategies have REAL edge but it does not clear delivery costs
+  with confidence**: ema200_daily's 59.4 bps point edge exceeds the 30.9 bps
+  cost and its expectancy is *positive* (PF 1.20), but the 95% CI lower bound
+  (23.4 bps) sits below cost, and PF misses the 1.25 floor. It is the only
+  candidate worth further *research* — not deployment.
+- **Confidence carries no signal**: correlation with realized P&L is −0.026 to
+  +0.018 across all six. The Phase-4 heuristic scores are, on this evidence,
+  worthless — precisely the L-003 finding, now reproduced on NSE. They must be
+  replaced by evidence-calibrated priors, not hand-tuned.
 
 **The project's production market-data source is Angel One SmartAPI** (D-020).
 Kotak Neo is superseded (code retained, unused). CSV import remains a fallback,

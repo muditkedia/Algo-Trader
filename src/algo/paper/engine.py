@@ -38,11 +38,14 @@ from algo.core.enums import Disposition, HoldingScope, Mode
 from algo.core.logging import get_logger
 from algo.evidence.logger import EvidenceLogger
 from algo.evidence.models import TradeRecord
+from algo.paper.buying_power import BuyingPowerConfig, resolve_buying_power
 from algo.paper.portfolio import (
     Action, PortfolioConfig, PortfolioManager, PortfolioState,
 )
 from algo.paper.sizing import SizingConfig, size_position
-from algo.risk.engine import RiskParams, initial_stop_pct, trailing_stop_price
+from algo.risk.breakeven import BreakevenConfig, breakeven_candidate
+from algo.risk.engine import RiskParams, initial_stop_pct
+from algo.risk.trailing import TrailConfig, trail_stop_price
 from algo.scanner.engine import ScanEngine
 from algo.scanner.ranking import OpportunityRanker, RankingScales, RankingWeights
 from algo.scanner.scheduler import ScanCadence, ScanScheduler
@@ -75,6 +78,8 @@ class PaperPosition:
     strategy_id: Optional[int] = None
     confidence: float = 0.0
     score: float = 0.0                # ranking score at entry (replace basis)
+    trail_mode: str = "atr"           # from the strategy's declared preference
+    breakeven_armed: bool = False     # net break-even protection engaged
 
 
 class PaperEngine:
@@ -86,6 +91,10 @@ class PaperEngine:
                  ranking_weights: Optional[RankingWeights] = None,
                  ranking_scales: Optional[RankingScales] = None,
                  cadence: Optional[ScanCadence] = None,
+                 buying_power: Optional[BuyingPowerConfig] = None,
+                 breakeven: Optional[BreakevenConfig] = None,
+                 trail: Optional[TrailConfig] = None,
+                 rms: Optional[dict] = None,
                  max_positions: Optional[int] = None,
                  stake_per_trade: Optional[float] = None,
                  min_confidence: float = 0.0,
@@ -95,6 +104,10 @@ class PaperEngine:
         self.log = evidence_logger
         self.risk = risk_params or RiskParams()
         self.costs = cost_model or NseEquityCostModel()
+        self.buying_power_cfg = buying_power or BuyingPowerConfig()
+        self.breakeven_cfg = breakeven or BreakevenConfig()
+        self.trail_cfg = trail or TrailConfig()
+        self.rms = rms          # broker funds payload (mode="broker")
 
         portfolio = portfolio or PortfolioConfig()
         if max_positions is not None:       # legacy convenience override
@@ -228,8 +241,15 @@ class PaperEngine:
     def capital_deployed(self) -> float:
         return sum(p.stake for p in self.positions.values())
 
-    def available_capital(self) -> float:
-        return max(0.0, self.portfolio_cfg.total_capital
+    def buying_power(self, product: Product = Product.INTRADAY) -> float:
+        """Deployable pool: broker-reported / configured, never a hardcoded x."""
+        return resolve_buying_power(self.portfolio_cfg.total_capital,
+                                    self.buying_power_cfg, product, self.rms)
+
+    def available_capital(self,
+                          product: Product = Product.INTRADAY) -> float:
+        """One pool, allocated dynamically across the open slots."""
+        return max(0.0, self.buying_power(product)
                    * self.portfolio_cfg.max_capital_deployed
                    - self.capital_deployed())
 
@@ -324,12 +344,18 @@ class PaperEngine:
             if stop_pct is None:
                 return None
             stop_pct = min(stop_pct, self.risk.hard_stop_pct)
+        product = (Product.INTRADAY
+                   if next(s.meta.holding_scope for s in self.strategies
+                           if s.name == opp.strategy) == HoldingScope.INTRADAY
+                   else Product.DELIVERY)
         stake = size_position(
-            capital=self.portfolio_cfg.total_capital,
-            available_capital=self.available_capital(),
+            capital=self.portfolio_cfg.total_capital,     # equity: risk basis
+            available_capital=self.available_capital(product),
+            pool=self.buying_power(product),              # buying power: notional
             stop_pct=stop_pct, confidence=opp.confidence,
             risk_budget_left=self._risk_budget_left(),
             config=self.sizing_cfg) * size_multiplier
+        stake = min(stake, self.available_capital(product))
         if stake < self.sizing_cfg.min_stake:
             self._mark_skip(opp, "sized below minimum stake")
             return None
@@ -350,10 +376,7 @@ class PaperEngine:
         position = PaperPosition(
             symbol=opp.symbol, strategy=opp.strategy,
             timeframe=opp.timeframe or "1d",
-            product=(Product.INTRADAY.value
-                     if next(s.meta.holding_scope for s in self.strategies
-                             if s.name == opp.strategy) == HoldingScope.INTRADAY
-                     else Product.DELIVERY.value),
+            product=product.value,
             entry_ts=opp.signal_ts or str(as_of),
             entry_price=entry_price,
             quantity=stake / entry_price, stake=stake,
@@ -363,7 +386,10 @@ class PaperEngine:
             signal_id=opp.signal_id, strategy_id=strategy_id,
             confidence=opp.confidence,
             score=opp.rank_score if opp.rank_score is not None
-            else opp.confidence)
+            else opp.confidence,
+            trail_mode=getattr(
+                next(s.meta for s in self.strategies
+                     if s.name == opp.strategy), "trail_mode", "atr"))
         self.positions[opp.symbol] = position
         self._risk_spent += stake * stop_pct
         logger.info("OPEN paper %s %s @ %.2f stake %.0f stop %.2f "
@@ -381,8 +407,11 @@ class PaperEngine:
             position = self.positions[symbol]
             bars = self.store.read(symbol, position.timeframe, end=as_of)
             new = bars[bars["date"] > pd.Timestamp(position.last_seen_ts)]
-            for _, bar in new.iterrows():
-                exit_price, reason = self._check_exit(position, bar)
+            for i, bar in new.iterrows():
+                # history up to and including this bar - the structure and
+                # volatility trails need it (ATR/percentage ignore it)
+                history = bars.loc[:i].tail(120)
+                exit_price, reason = self._check_exit(position, bar, history)
                 if exit_price is not None:
                     self._close(position, exit_price, reason,
                                 pd.Timestamp(bar["date"]))
@@ -391,11 +420,14 @@ class PaperEngine:
                 position.last_seen_ts = str(pd.Timestamp(bar["date"]))
         return closed
 
-    def _check_exit(self, position: PaperPosition, bar) -> tuple:
+    def _check_exit(self, position: PaperPosition, bar,
+                    bars: Optional[pd.DataFrame] = None) -> tuple:
         low, close = float(bar["low"]), float(bar["close"])
         bar_ts = pd.Timestamp(bar["date"])
         # 1) stop first (conservative, matches the research simulator)
         if low <= position.stop_price:
+            if position.breakeven_armed and not position.trailed:
+                return position.stop_price, "breakeven_stop"
             return position.stop_price, ("trailing_stop" if position.trailed
                                          else "stop_loss")
         # 2) intraday square-off at/after the IST cutoff (market rule)
@@ -405,14 +437,35 @@ class PaperEngine:
             entry_day = pd.Timestamp(position.entry_ts).tz_convert(IST).date()
             if ist >= cutoff or ist.date() > entry_day:
                 return close, "session_squareoff"
-        # 3) ratchet the stop (never widened)
+
+        # 3) ratchet the stop - never widened. Candidates:
+        #    (a) NET break-even once the trade has earned it (A4)
+        #    (b) the strategy's chosen trailing mode + profit-lock ladder (A5)
+        product = Product(position.product)
         profit = close / position.entry_price - 1.0
-        candidate = trailing_stop_price(position.entry_price, close, profit,
-                                        position.atr_at_entry, self.risk)
-        if candidate is not None:
+        candidates = []
+        be = breakeven_candidate(position.entry_price, close, self.costs,
+                                 product, self.breakeven_cfg,
+                                 atr=position.atr_at_entry,
+                                 quantity=position.quantity)
+        if be is not None:
+            candidates.append(("breakeven", be))
+        trail_cfg = TrailConfig(**{**self.trail_cfg.__dict__,
+                                   "mode": position.trail_mode})
+        trail = trail_stop_price(position.entry_price, close, profit,
+                                 position.atr_at_entry, trail_cfg, self.risk,
+                                 bars=bars)
+        if trail is not None:
+            candidates.append(("trail", trail))
+
+        for kind, candidate in candidates:
             raised = min(candidate, close * (1 - 1e-4))
             if raised > position.stop_price:
-                position.stop_price, position.trailed = raised, True
+                position.stop_price = raised
+                if kind == "breakeven":
+                    position.breakeven_armed = True
+                else:
+                    position.trailed = True
         return None, ""
 
     def _close_at_market(self, symbol: str, as_of, reason: str) -> None:

@@ -210,6 +210,55 @@ def test_throttle_enforced_between_requests():
     assert all(0 < s <= 0.4 for s in sleeps)
 
 
+def test_rate_limit_is_retried_with_backoff_not_treated_as_bad_data():
+    """The API rejects bulk downloads with a NON-JSON body, which the SDK
+    raises as a parse error. It must back off and retry, not fail the symbol."""
+    class RateLimited(FakeSmartConnect):
+        def __init__(self):
+            super().__init__()
+            self.attempts = 0
+
+        def getCandleData(self, params):
+            self.attempts += 1
+            if self.attempts < 3:
+                raise Exception("Couldn't parse the JSON response received "
+                                "from the server: b'Access denied because of "
+                                "exceeding access rate'")
+            return super().getCandleData(params)
+
+    client = RateLimited()
+    sleeps = []
+    session = _session(client)
+    instruments = SmartApiInstruments("https://x/m.json",
+                                      downloader=lambda url: SCRIP)
+    instruments.fetch()
+    provider = SmartApiDataProvider(session, instruments,
+                                    sleep_fn=sleeps.append,
+                                    min_request_interval_s=0.0,  # isolate backoff
+                                    rate_limit_backoff_s=1.0)
+    frame = provider.fetch_ohlcv("RELIANCE", "1d", "2024-01-01", "2024-01-10")
+    assert len(frame) == 5                 # succeeded after backing off
+    assert client.attempts == 3
+    backoffs = [s for s in sleeps if s >= 1.0]
+    assert backoffs == [1.0, 2.0]          # exponential
+
+
+def test_rate_limit_gives_up_after_configured_retries():
+    class AlwaysLimited(FakeSmartConnect):
+        def getCandleData(self, params):
+            raise Exception("Access denied because of exceeding access rate")
+
+    session = _session(AlwaysLimited())
+    instruments = SmartApiInstruments("https://x/m.json",
+                                      downloader=lambda url: SCRIP)
+    instruments.fetch()
+    provider = SmartApiDataProvider(session, instruments,
+                                    sleep_fn=lambda s: None,
+                                    rate_limit_retries=2)
+    with pytest.raises(Exception, match="(?i)access rate"):
+        provider.fetch_ohlcv("RELIANCE", "1d", "2024-01-01", "2024-01-10")
+
+
 def test_token_error_triggers_one_refresh_retry():
     client = FakeSmartConnect(fail_first_candles=True)
     provider = _provider(client)

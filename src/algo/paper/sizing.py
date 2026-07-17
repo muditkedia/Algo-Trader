@@ -37,10 +37,11 @@ class SizingConfig:
     #: hard stake limits (account currency)
     min_stake: float = 10_000.0
     max_stake: float = 200_000.0
-    #: no single position may exceed this fraction of TOTAL capital
+    #: no single position may exceed this fraction of the deployable pool
     max_capital_per_trade: float = 0.20
-    #: total stop-loss exposure allowed per day, fraction of capital
-    daily_risk_budget: float = 0.02
+    # NOTE: the daily risk budget lives in PortfolioConfig (one owner). It
+    # reaches sizing through the ``risk_budget_left`` argument, so there is no
+    # second copy here to drift out of sync.
 
     @classmethod
     def from_dict(cls, data) -> "SizingConfig":
@@ -50,8 +51,18 @@ class SizingConfig:
 def size_position(*, capital: float, available_capital: float,
                   stop_pct: Optional[float], confidence: float,
                   risk_budget_left: float,
-                  config: SizingConfig) -> float:
-    """Stake for one new position; 0.0 means 'too small to take'."""
+                  config: SizingConfig,
+                  pool: Optional[float] = None) -> float:
+    """Stake for one new position; 0.0 means 'too small to take'.
+
+    ``capital``  = account EQUITY. Risk parity is sized from equity because a
+                   stop-out loses real equity - leverage never changes the loss,
+                   only how much notional you may hold.
+    ``pool``     = deployable BUYING POWER (equity for cash accounts, more when
+                   the broker's configured intraday allowance applies). Used for
+                   the concentration cap. Defaults to ``capital``.
+    ``available_capital`` = what is left of the pool after open positions.
+    """
     if not stop_pct or stop_pct <= 0 or capital <= 0 \
             or available_capital <= 0:
         return 0.0
@@ -68,7 +79,7 @@ def size_position(*, capital: float, available_capital: float,
     stake = min(stake,
                 budget_cap,
                 available_capital,
-                capital * config.max_capital_per_trade,
+                (pool if pool else capital) * config.max_capital_per_trade,
                 config.max_stake)
     if stake < config.min_stake:
         return 0.0

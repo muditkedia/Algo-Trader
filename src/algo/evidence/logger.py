@@ -192,15 +192,31 @@ class EvidenceLogger:
 
     def record_outcome(self, outcome: SignalOutcome) -> None:
         """Insert/replace the matured outcome for a signal (labeler write)."""
-        if outcome.labeled_at is None:
-            outcome.labeled_at = now_iso()
-        data = {k: _encode(v) for k, v in asdict(outcome).items()}
-        columns = ", ".join(data)
-        placeholders = ", ".join(["?"] * len(data))
+        self.record_outcomes([outcome])
+
+    def record_outcomes(self, outcomes: Iterable[SignalOutcome]) -> int:
+        """Batch-write matured outcomes in ONE transaction.
+
+        A per-row transaction costs a disk sync each; at ~60k signals per
+        strategy that dominates the labeling run.
+        """
+        rows = list(outcomes)
+        if not rows:
+            return 0
+        payloads = []
+        for outcome in rows:
+            if outcome.labeled_at is None:
+                outcome.labeled_at = now_iso()
+            payloads.append({k: _encode(v)
+                             for k, v in asdict(outcome).items()})
+        columns = ", ".join(payloads[0])
+        placeholders = ", ".join(["?"] * len(payloads[0]))
         with self.conn:
-            self.conn.execute(
+            self.conn.executemany(
                 f"INSERT OR REPLACE INTO signal_outcomes ({columns}) "
-                f"VALUES ({placeholders})", list(data.values()))
+                f"VALUES ({placeholders})",
+                [list(p.values()) for p in payloads])
+        return len(rows)
 
     # ----------------------------------------------------------------- trades
 

@@ -55,6 +55,11 @@ class StrategyMeta:
     #: Default minimum history (bars) for warmed-up indicators; strategies with
     #: parameter-dependent warmups override min_history() instead.
     min_bars: int = 2
+    #: Trailing-stop mode this strategy's thesis prefers: atr (default,
+    #: = the promoted engine's behaviour) | percentage | structure |
+    #: volatility. Purely declarative - the execution layer honours it, so
+    #: existing strategies need no changes (see algo.risk.trailing).
+    trail_mode: str = "atr"
 
 
 class StrategyProfile(ABC):

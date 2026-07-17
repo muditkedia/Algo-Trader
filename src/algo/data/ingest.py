@@ -23,7 +23,7 @@ import pandas as pd
 
 from algo.core.logging import get_logger
 from algo.data import ohlcv
-from algo.data.quality import QualityReport, check_ohlcv
+from algo.data.quality import QualityReport, check_ohlcv, invalid_row_mask
 from algo.data.providers.base import DataProvider
 from algo.data.store import MarketDataStore
 
@@ -59,10 +59,30 @@ class IngestionReport:
 
 class IngestionEngine:
     def __init__(self, store: MarketDataStore, provider: DataProvider,
-                 calendar=None) -> None:
+                 calendar=None, max_invalid_row_pct: float = 0.001,
+                 max_invalid_rows: int = 5) -> None:
+        """Tolerance for ISOLATED bad bars.
+
+        Real broker feeds contain rare tick glitches (observed on SmartAPI:
+        ~1 impossible bar per 20,000). Discarding a symbol's entire multi-year
+        history over one such bar loses far more than it protects. So a glitch
+        is DROPPED - always counted and logged, never silently reshaped
+        (L-008) - and the rest admitted; a systematically broken feed is still
+        quarantined whole.
+
+        Tolerance is ``max(max_invalid_rows, max_invalid_row_pct x rows)``. The
+        absolute floor matters because a percentage alone punishes SHORT
+        series: one bad bar in an 877-row daily history is 0.11% and would trip
+        a 0.1% rule, while the same defect in 15m data is 0.005%. The defect is
+        identical; only the sampling differs.
+
+        Set both to 0 for strict all-or-nothing behaviour.
+        """
         self.store = store
         self.provider = provider
         self.calendar = calendar
+        self.max_invalid_row_pct = max_invalid_row_pct
+        self.max_invalid_rows = max_invalid_rows
 
     # ------------------------------------------------------------------ full
 
@@ -116,12 +136,32 @@ class IngestionEngine:
             return SymbolResult(symbol, timeframe, "empty",
                                 detail="provider returned no rows")
         report = check_ohlcv(fetched, symbol, timeframe, self.calendar)
+        dropped = 0
         if not report.ok:
             reasons = "; ".join(f"{i.code}:{i.detail}" for i in report.errors)
-            logger.warning("QUARANTINE %s/%s: %s", symbol, timeframe, reasons)
-            return SymbolResult(symbol, timeframe, "quarantined",
-                                fetched=len(fetched), detail=reasons,
-                                quality=report)
+            mask = invalid_row_mask(fetched)
+            rate = float(mask.mean()) if len(mask) else 1.0
+            n_bad = int(mask.sum())
+            allowance = max(self.max_invalid_rows,
+                            int(self.max_invalid_row_pct * len(fetched)))
+            if 0 < n_bad <= allowance:
+                # isolated glitch bars: drop exactly those, loudly, keep the rest
+                dropped = int(mask.sum())
+                logger.warning(
+                    "%s/%s: dropping %d invalid bar(s) (%.4f%% of %d) then "
+                    "admitting the rest - %s", symbol, timeframe, dropped,
+                    rate * 100, len(fetched), reasons)
+                fetched = fetched[~mask].reset_index(drop=True)
+                report = check_ohlcv(fetched, symbol, timeframe, self.calendar)
+            if not report.ok:
+                reasons = "; ".join(f"{i.code}:{i.detail}"
+                                    for i in report.errors)
+                logger.warning("QUARANTINE %s/%s (%.3f%% bad rows): %s",
+                               symbol, timeframe, rate * 100, reasons)
+                return SymbolResult(symbol, timeframe, "quarantined",
+                                    fetched=len(fetched), detail=reasons,
+                                    quality=report)
         added = self.store.write(symbol, timeframe, fetched)
+        detail = f"dropped {dropped} invalid bar(s)" if dropped else ""
         return SymbolResult(symbol, timeframe, "ok", fetched=len(fetched),
-                            added=added, quality=report)
+                            added=added, detail=detail, quality=report)

@@ -69,7 +69,13 @@ class OutcomeLabeler:
         tf_min = timeframe_minutes(timeframe)
         horizons = (_DAILY_HORIZONS if timeframe == "1d" else _INTRADAY_HORIZONS)
         written = 0
+        pending: list = []
         cache: Dict[str, pd.DataFrame] = {}
+        # date -> row position, built ONCE per symbol. Scanning the frame for
+        # each signal's timestamp instead makes labeling O(signals x bars) -
+        # ~1.3 billion comparisons for 62k signals over 21k bars, which is what
+        # made the first real run intractable.
+        index_cache: Dict[str, dict] = {}
 
         for row in todo.itertuples(index=False):
             frame = cache.get(row.symbol)
@@ -81,24 +87,36 @@ class OutcomeLabeler:
                     frame["swing_low"] = frame["low"].rolling(
                         self.swing_window, min_periods=1).min()
                 cache[row.symbol] = frame
+                index_cache[row.symbol] = {
+                    ts: i for i, ts in enumerate(frame["date"])}
             if frame.empty:
                 continue
             outcome = self._label_one(row, frame, timeframe, tf_min, horizons,
-                                      product, max_hold_bars)
+                                      product, max_hold_bars,
+                                      index_cache[row.symbol])
             if outcome is not None:
-                self.logger_.record_outcome(outcome)
-                written += 1
+                pending.append(outcome)
+                if len(pending) >= 2000:          # batch the disk syncs
+                    written += self.logger_.record_outcomes(pending)
+                    pending = []
+        written += self.logger_.record_outcomes(pending)
         logger.info("labeled %d signals for strategy %s", written, strategy_id)
         return written
 
     def _label_one(self, row, frame: pd.DataFrame, timeframe: str,
                    tf_min: float, horizons: dict, product: Product,
-                   max_hold_bars: int) -> Optional[SignalOutcome]:
+                   max_hold_bars: int,
+                   positions: Optional[dict] = None) -> Optional[SignalOutcome]:
         ts = pd.Timestamp(row.ts)
-        matches = frame.index[frame["date"] == ts]
-        if len(matches) == 0:
-            return None
-        i = int(matches[0])
+        if positions is not None:
+            i = positions.get(ts)
+            if i is None:
+                return None
+        else:
+            matches = frame.index[frame["date"] == ts]
+            if len(matches) == 0:
+                return None
+            i = int(matches[0])
         closes = frame["close"].to_numpy(float)
         entry = float(closes[i])
 

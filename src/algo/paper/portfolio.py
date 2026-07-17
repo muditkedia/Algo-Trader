@@ -43,9 +43,14 @@ class Action(str, Enum):
 @dataclass(frozen=True)
 class PortfolioConfig:
     total_capital: float = 1_000_000.0
-    max_open_positions: int = 5
-    #: max fraction of capital deployed across all open positions
-    max_capital_deployed: float = 0.60
+    #: PRODUCTION RULE: never more than three open positions (Phase 7 A1).
+    max_open_positions: int = 3
+    #: Max fraction of BUYING POWER deployed across all open positions.
+    #: 1.0 = the pool is fully usable - capital is never left idle unless a
+    #: configured risk limit blocks it (Phase 7 A2). Buying power itself is
+    #: resolved from the broker / config (algo.paper.buying_power), never a
+    #: hardcoded leverage assumption.
+    max_capital_deployed: float = 1.0
     #: max simultaneous positions in one sector (correlation proxy)
     max_positions_per_sector: int = 2
     #: size multiplier applied when soft limits bind (REDUCE)
