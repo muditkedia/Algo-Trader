@@ -4,8 +4,78 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 14 (R-001 execution) COMPLETE, uncommitted — awaiting owner approval.**
-Phases 1–13 committed (…`acc52b2`, `e2b054a`).
+**Phase 16 (intraday baseline fidelity audit) COMPLETE — validation report ready
+for review. NOTHING COMMITTED (Phases 15+16 both uncommitted, per instruction).**
+Phases 1–14 committed (…`e2b054a`, `2ee7957`).
+
+## Phase 16 delivered — baseline fidelity audit (D-036, L-016)
+
+Validation, not improvement: are we testing the published strategies or our
+framework's versions of them? Full report:
+`research/BASELINE_FIDELITY_AUDIT.md`. Baselines untouched; frozen things frozen.
+
+- **Part A (fidelity):** entry CONDITIONS faithful for all five; the published
+  SYSTEMS altered by four framework-wide substitutions — long-only, close-of-bar
+  entry, no targets, ATR stops. **All five: category 2 (material differences);
+  zero category-1 verdicts.** vwap_pullback additionally over-fires 5–9× (our
+  encoding of a discretionary setup).
+- **Part B (execution model):** semantics PINNED by 6 new characterization tests
+  (entry at signal-bar close; entry bar can't stop out; at-stop GAP fills =
+  optimistic; no targets exist; trail arms at +0.6%; partial-day square-off).
+- **Part C (costs):** verified vs current Angel One — essentially exact; NSE txn
+  sub-rate marginally outdated (0.00297% vs 0.0030699%, ~0.2% of total,
+  optimistic); slippage 2 bps/side reasonable here. NOT the loss driver.
+  Unchanged per instruction.
+- **Part D (universe):** appropriate for all five; the published-practice gap is
+  DAY-TYPE conditioning (gap/narrow-CPR/trend day), not symbol choice.
+- **Part E (attribution, measured):** gross expectancy ≈ 0 for all five → the
+  net loss IS the 12.2 bps cost stack (rank 1); **close-of-bar entry chase
+  +14..+44 bps above the published trigger** — the largest recoverable component
+  (rank 2); 83–91% of trades ride to square-off as costed noise round-trips
+  (rank 3, distribution-shaping); day-type gates absent (rank 4); universe fine
+  (rank 5).
+- **Part F (readiness):** do NOT start selectivity filters / AI refinement
+  against this baseline — it would optimise against the chase artifact. Owner
+  decision proposed: a **fidelity evaluation mode** (trigger-level entries,
+  published stop/target emulation) as a measurement variant, frozen engines
+  untouched.
+- Tests: **376 pass, 1 skipped** (6 new).
+
+## Phase 15 delivered — production intraday library, batch 1
+
+Objective shift: from strategy discovery to a production-quality intraday
+BASELINE library, backtested and ranked with identical capital/costs/risk. No
+optimisation, no tuning — the published logic, exactly. Frozen things stayed
+frozen (VALIDATION_RULES, D-031, risk/portfolio/research engines, promotion).
+
+- **Part A — spec locked before coding**: `research/INTRADAY_PRODUCTION_BATCH1.md`
+  (rationale, entries, exits, stops, session, no-trade, square-off, assumptions
+  per strategy). Exits are PLATFORM-UNIFORM by design (D-006): ATR/structure
+  stop → chandelier trail → 15:15 square-off; published fixed targets recorded
+  as reference only.
+- **Part B — implementation, no duplication**: `orb_15m` and `vwap_15m` already
+  implemented the ORB and VWAP-Trend-Continuation specs (Phase 4) and are REUSED
+  unchanged. Three new modules: `vwap_pullback_15m` (bounce off rising-VWAP
+  support — distinct from vwap_15m's reclaim-after-loss), `cpr_breakout_15m`
+  (prior-day Central-Pivot-Range break on volume; new causal
+  `central_pivot_range` helper in core/indicators, prior-session-shifted),
+  `first_pullback_15m` (first HOLDING pullback after an OR breakout, one entry
+  per session). Library now 30 strategies.
+- **Part C — validation**: 19 new tests (CPR formula + prior-session causality,
+  session-VWAP reset, ORB window/boundaries, gap-up handling, market-open
+  no-trade, square-off timing via the simulator, entry-timing on crafted
+  sessions, failed-breakout rejection). **370 pass, 1 skipped.**
+- **Part D — backtest** (99 NIFTY-100 symbols × 3.5y of 15m bars, identical
+  100k/unit, full NSE intraday cost stack, uniform risk limits):
+  `user_data/backtest_results/reports/intraday_production_batch1.md`. **All five
+  net-negative** — the D-026 intraday-cost verdict reproduced on the production
+  library. Expectancy −9.7 to −14.0 bps/trade; win rates cluster 33–38%.
+- **Part E — ranking**: **first_pullback_15m is best on nearly every axis**
+  (PF 0.68, win 38.1%, exp −9.7 bps, DD 17.1%, Sharpe −6.14); cpr_breakout 2nd
+  (most selective, 13.2k trades); orb 3rd; vwap_15m 4th; **vwap_pullback last by
+  an order of magnitude** (115k trades — turnover × fixed cost is destiny).
+  Lesson for the AI-improvement phase: SELECTIVITY is the lever; cut false
+  signals, never add entries. Nothing promotable; paper engine stays off.
 
 ## Phase 14 delivered — R-001 executed under governance (D-035)
 

@@ -184,3 +184,27 @@ def opening_range(frame: pd.DataFrame, minutes: int = 15):
     or_low = frame["low"].where(in_range).groupby(day).cummin()
     or_low = or_low.groupby(day).ffill()
     return or_high, or_low, ~in_range
+
+
+def central_pivot_range(frame: pd.DataFrame):
+    """Central Pivot Range from the PRIOR session, per bar: (pivot, top, bottom).
+
+    Standard CPR from the prior day's completed OHLC:
+        pivot = (H + L + C) / 3 ; BC = (H + L) / 2 ; TC = 2*pivot - BC
+    top/bottom are max/min(TC, BC). Each bar receives the PRIOR session's levels
+    (shifted by one session), so the values are known at the current session's
+    open - causal, no lookahead. The first session (no prior day) gets NaN.
+    """
+    day = _session_key(frame)
+    agg = frame.groupby(day).agg(h=("high", "max"), l=("low", "min"),
+                                 c=("close", "last"))
+    pivot = (agg["h"] + agg["l"] + agg["c"]) / 3.0
+    bc = (agg["h"] + agg["l"]) / 2.0
+    tc = 2.0 * pivot - bc
+    top = pd.concat([tc, bc], axis=1).max(axis=1)
+    bot = pd.concat([tc, bc], axis=1).min(axis=1)
+    # each session sees the PRIOR session's levels
+    prior_pivot = pivot.shift(1)
+    prior_top = top.shift(1)
+    prior_bot = bot.shift(1)
+    return (day.map(prior_pivot), day.map(prior_top), day.map(prior_bot))

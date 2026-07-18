@@ -9,6 +9,22 @@ _Phase 13: the AUTHORITATIVE forward backlog is now `docs/RESEARCH_REGISTRY.md`
 §0 below and the registry agree; the registry is the governed source of truth and
 every future idea must be entered there before implementation._
 
+_Phase 15 opened a SEPARATE track — a production intraday strategy LIBRARY (spec:
+`research/INTRADAY_PRODUCTION_BATCH1.md`), five hand-implemented published
+strategies to serve as an objectively-backtested BASELINE for later AI-guided
+improvement. This is production engineering, not research discovery; it is not
+scored by the registry (its promotion still runs through the frozen gate). Batch:
+orb_15m, vwap_pullback_15m, vwap_15m, cpr_breakout_15m, first_pullback_15m._
+
+_Phase 16 audited that baseline BEFORE any improvement work
+(`research/BASELINE_FIDELITY_AUDIT.md`, D-036): all five are category-2
+(material framework substitutions — long-only, close-of-bar entry with a
+measured +14..+44 bps chase, no targets, ATR stops), so the Phase-15 numbers are
+"our execution model trading these entries", not the published systems. GATE on
+this track: no selectivity filters or AI refinement until the owner decides on a
+fidelity evaluation mode (trigger-level entries + published stop/target
+emulation as a measurement variant; frozen engines untouched)._
+
 ---
 
 ## 0. Post-27 research roadmap (Phase 12, ranked by expected value)

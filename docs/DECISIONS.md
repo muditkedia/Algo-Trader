@@ -4,6 +4,41 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-036 — Phase 16: baseline fidelity audit — we test our execution model, not the published systems (2026-07-18)
+
+Audit of the five Phase-15 intraday baselines (`research/BASELINE_FIDELITY_AUDIT.md`;
+no code modified; execution semantics PINNED by 6 new characterization tests).
+
+**Answer to the audit question:** the entry CONDITIONS are faithful, but the
+published SYSTEMS are materially altered by four framework-wide substitutions —
+(1) long-only, (2) entry at the signal candle's CLOSE instead of at the trigger
+level, (3) NO profit targets, (4) wide ATR/structure stops instead of published
+tight structural stops. All four are intentional frozen policy (D-006/D-023),
+but the Phase-15 result must be read as "our platform trading these entries",
+not "the published strategies fail on NSE". **Zero category-1 (faithful)
+verdicts; all five are category 2** (material differences to account for before
+further research); vwap_pullback additionally over-fires 5–9× (our
+too-permissive encoding of a discretionary setup).
+
+**Measured attribution (40-symbol decomposition), ranked:** (1) COSTS — gross
+expectancy is ~zero for all five (−1.6..+3.1 bps), net = gross − 12.2: the loss
+IS the cost stack on zero-edge fills (L-006 again). (2) ENTRY TIMING — the
+close-of-bar fill pays a measured **+14..+44 bps chase** above the published
+trigger; the largest recoverable component, bigger than the entire cost stack
+for 3 of 5 (upper bound: touch-fills include failures). (3) EXITS — 83–91% of
+trades ride to square-off at −2..−7 bps (modal trade = costed noise round-trip);
+reshapes the distribution though crypto evidence says exits don't create mean
+edge. (4) signal/day-type gates absent; (5) universe fine. Execution-model flags:
+at-stop gap fills are OPTIMISTIC (no gap-through); cost model verified vs Angel
+One current — essentially exact, one outdated sub-rate (NSE txn 0.00297% vs
+0.0030699%, ~0.2% of cost, optimistic), unchanged per instruction.
+
+**Decision/recommendation:** do NOT proceed to selectivity filters or AI-guided
+refinement against this baseline — that would optimise against the chase
+artifact. The correction path (owner decision) is a **fidelity evaluation mode**
+(trigger-level entry approximation + published stop/target emulation as a
+measurement variant), leaving frozen engines untouched. Baselines remain frozen.
+
 ## D-035 — Phase 14: R-001 executed — short-horizon per-trade effects do not certify; expiry is the best-ever lead (2026-07-18)
 
 First execution under the research governance process (D-034). Pre-registered

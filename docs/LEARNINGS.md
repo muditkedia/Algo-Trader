@@ -7,6 +7,43 @@ corpus (500 NIFTY-500 symbols, 2015-01..2026-07).
 
 ---
 
+## L-016 — Close-of-bar entry is a hidden ~15–45 bps tax; a backtest tests its execution model as much as its strategy (2026-07-18)
+
+The Phase-16 fidelity audit (D-036) decomposed the five intraday baselines and
+found the platform's OWN execution conventions dominate the result:
+
+- **Gross expectancy at the fill is ~zero for all five** (−1.6..+3.1 bps): net
+  loss = the 12.2 bps cost stack on zero-edge fills. L-006's arithmetic, fourth
+  market/framework combination in a row.
+- **The close-of-bar entry convention pays a measured +14..+44 bps "chase"**
+  above the published trigger level (stop-order execution). For breakout-style
+  entries this single convention costs MORE than the entire cost stack — the
+  strategy fires at the level, but the platform buys the close of a bar that has
+  already run. Every level-triggered backtest on this platform embeds this tax.
+- **The uniform targetless exit makes the modal trade a costed noise
+  round-trip**: 83–91% of intraday trades hit neither stop nor trail and ride to
+  square-off at −2..−7 bps. Stops are 5–13% at ~−100 bps (0% win by
+  construction); the trail banks +34..+57 on only 3–6.5%. That shape — not any
+  directional signal — produces the "every month slightly negative" pattern
+  (214/215 negative strategy-months).
+
+**General lessons:** (1) a backtest verdict is a joint test of signal AND
+execution model — audit the execution model BEFORE optimising the signal, or the
+optimiser will learn to offset platform artifacts; (2) mechanising a
+discretionary setup can silently change its trade count by 5–9× (vwap_pullback)
+— trade-frequency vs the source's described cadence is a cheap fidelity check;
+(3) characterization tests that PIN execution semantics (entry timing, stop-gap
+fills, target absence) make audit claims falsifiable and permanent.
+
+**How to apply:** before any intraday improvement work, decide the fidelity
+evaluation mode (trigger-level entries, published stops/targets) so improvements
+are measured against the published economics, not against the chase artifact.
+Never optimise a strategy on a baseline whose largest P&L component is an
+execution convention. See [[real-measurement-verdict]] and
+[[crypto-validation-lessons]].
+
+---
+
 ## L-015 — Even maximum-power short-horizon per-trade effects do not certify on NSE (2026-07-18)
 
 R-001 executed (D-035): 3 pre-registered short-horizon families on NIFTY-500,
