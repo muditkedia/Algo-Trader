@@ -4,6 +4,11 @@ _Phase 8.5, 2026-07-17. Original candidate ordering below (§1-3). **The current
 forward plan is §0, added Phase 12 after all 27 strategies were measured** — it
 supersedes the batch-implementation ordering, which is retained for provenance._
 
+_Phase 13: the AUTHORITATIVE forward backlog is now `docs/RESEARCH_REGISTRY.md`
+(ranked, scored by the Hypothesis Quality Framework in `docs/RESEARCH_STANDARDS.md`).
+§0 below and the registry agree; the registry is the governed source of truth and
+every future idea must be entered there before implementation._
+
 ---
 
 ## 0. Post-27 research roadmap (Phase 12, ranked by expected value)

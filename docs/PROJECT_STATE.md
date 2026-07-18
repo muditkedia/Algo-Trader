@@ -4,8 +4,31 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 12 (research post-mortem + hypothesis framework) COMPLETE, uncommitted
-— awaiting owner approval.** Phases 1–11 committed (…`d6f8a1a`, `089f39c`).
+**Phase 13 (permanent research governance) COMPLETE, uncommitted — awaiting owner
+approval.** Phases 1–12 committed (…`089f39c`, `acc52b2`).
+
+## Phase 13 delivered — research governance (D-034)
+
+Platform + validation framework are stable/frozen. This phase made the research
+PROCESS permanent policy (docs only; no code, no strategies, no optimisation).
+
+- **`docs/RESEARCH_REGISTRY.md`**: single source of truth for every idea. No idea
+  is built before it exists here. 11 active entries (R-001..R-011) for the
+  post-mortem's unexplored directions + an archived map of the 27
+  explored/rejected by family. Ranked backlog.
+- **`docs/RESEARCH_STANDARDS.md`**: permanent policy — pre-registration,
+  measurable/falsifiable hypotheses, the frozen gate as the ONLY success
+  criterion, reproducibility, promotion workflow, negative-result archival — plus
+  the Hypothesis Quality Framework (7-dim weighted rubric; power ×3, independence
+  ×2.5) that ranks research ORDER, never predicts a PASS.
+- **Backlog:** R-001 short-horizon (4.24, zero new infra) ≈ R-002 portfolio-mode
+  (4.28, owner-gated new mode) at the top; then R-003 earnings, R-004 index flows,
+  R-010 sector-relative.
+- **Readiness (F): READY.** Governance loop closed (idea → registry → prioritise →
+  pre-register → compile → measure → archive). Residual process items (no new
+  infra): enforce multiple-testing discipline as throughput rises; reserve an
+  out-of-sample holdout before screening; R-002's portfolio mode is the one
+  genuinely-required new capability (owner-gated). 351 tests pass.
 
 ## Phase 12 delivered — post-mortem + pivot to automated research (D-033)
 

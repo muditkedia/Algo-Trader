@@ -4,6 +4,54 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-034 — Phase 13: permanent research governance (registry, quality framework, standards) (2026-07-18)
+
+The research platform and validation framework are stable and frozen (no changes
+to VALIDATION_RULES, D-031, the gate, methodology, the hypothesis compiler, the
+components, the framework, or the research engine). This phase made the research
+PROCESS permanent policy — no code, no new strategies, no optimisation.
+
+**Delivered:**
+- **`docs/RESEARCH_REGISTRY.md`** (Parts A/C/D): the single source of truth for
+  every research idea. No idea is implemented before it exists here. 11 active
+  entries (R-001..R-011) for the unexplored directions from the post-mortem, each
+  with the full schema (rationale, source of edge, measurable prediction,
+  falsification criteria, expected power, dependencies, status), plus an ARCHIVED
+  map of the 27 explored/rejected strategies by family so nothing is re-proposed.
+  Ranked backlog by the quality score.
+- **`docs/RESEARCH_STANDARDS.md`** (Parts B/E): permanent policy — pre-
+  registration before implementation, measurable/falsifiable hypotheses, the
+  frozen gate as the only success criterion, reproducibility, documentation, the
+  promotion workflow, and mandatory archival of negative results. Plus the
+  Hypothesis Quality Framework: a 7-dimension weighted rubric that PRIORITISES
+  research order (weighting expected statistical POWER ×3 and INDEPENDENCE from
+  rejected ideas ×2.5 — the project's two hardest lessons). It ranks order, never
+  predicts a PASS.
+
+**Prioritised backlog:** R-001 (short-horizon effects, 4.24, zero new infra) and
+R-002 (portfolio-mode factor evaluation, 4.28, needs a new evaluation MODE — owner
+decision) tie at the top; then R-003 earnings/PEAD, R-004 index flows, R-010
+sector-relative. Abandoned families are archived with evidence.
+
+**Readiness assessment (Part F): the project IS ready for long-term systematic
+research.** The governance loop is complete and closed: idea → registry →
+prioritise (quality framework) → pre-register → compile (framework) → measure
+(frozen gate) → archive (registry). Residual PROCESS weaknesses, none requiring
+major new infrastructure:
+1. **Multiple-testing discipline must be enforced** as screening throughput rises
+   (the registry count is the denominator; a single PASS is provisional pending
+   pre-registered out-of-sample confirmation). Covered by STANDARDS §3; must be
+   applied, not just written.
+2. **No out-of-sample holdout is currently reserved** — all 11 years were used for
+   measurement. Any future PASS must be confirmed on held-out/walk-forward data
+   (VALIDATION_RULES §10, STANDARDS §1.6) before promotion. Reserve a holdout
+   before the first screening batch.
+3. **R-002 (portfolio-evaluation mode) is the one genuinely-required NEW
+   capability** — and only if the owner wants to pursue certifying the
+   directionally-real factors. Owner-gated, registered, not built.
+The frozen gate's low long-horizon power is a DATA property, not a process
+weakness. No other new infrastructure is required.
+
 ## D-033 — Phase 12: research post-mortem + pivot to automated hypothesis research (2026-07-18)
 
 27 strategies measured, 0 certified — treated as a completed research RESULT, not

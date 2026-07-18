@@ -7,6 +7,33 @@ corpus (500 NIFTY-500 symbols, 2015-01..2026-07).
 
 ---
 
+## L-014 — Governance is now the permanent mode; throughput raises the false-discovery risk (2026-07-18)
+
+Phase 13 established permanent research governance (`docs/RESEARCH_REGISTRY.md`,
+`docs/RESEARCH_STANDARDS.md`; D-034). The load-bearing process learning behind it:
+the project's pivot to high-throughput hypothesis screening (Phase 12 framework)
+is exactly the activity that manufactures false discoveries. L-010 already proved
+the danger empirically — random entries passed an un-benchmarked gate. Screening N
+ideas at 95% confidence yields ~N/20 false PASSes by chance.
+
+**So the two lessons that cost the most are now encoded as weighted priorities and
+standing controls, not just prose:** the Hypothesis Quality Framework weights
+expected statistical POWER (×3, from L-012 — horizon beats sample size) and
+INDEPENDENCE from rejected ideas (×2.5, from the wasted re-tests) above
+theoretical fame or novelty; and the standards mandate that the registry's
+tested-count is the multiple-testing denominator, a single PASS is provisional
+pending pre-registered out-of-sample confirmation, and negative results are
+archived (never re-proposed, never deleted).
+
+**How to apply:** before any screening batch, reserve an out-of-sample holdout and
+state the expected hypothesis count; report the full selection-edge DISTRIBUTION,
+not just the max; treat the best result as provisional until confirmed on held-out
+data. Governance is not bureaucracy here — it is the direct countermeasure to the
+specific failure mode (false discovery) that the project's new speed creates. See
+[[long-horizon-gate-null-failure]].
+
+---
+
 ## L-013 — The 27-strategy post-mortem: what the whole search taught (2026-07-18)
 
 After 27 strategies across every major hypothesis family, 0 certified. The
