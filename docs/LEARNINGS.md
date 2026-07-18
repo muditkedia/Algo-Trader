@@ -7,6 +7,48 @@ corpus (500 NIFTY-500 symbols, 2015-01..2026-07).
 
 ---
 
+## L-013 — The 27-strategy post-mortem: what the whole search taught (2026-07-18)
+
+After 27 strategies across every major hypothesis family, 0 certified. The
+process-level learnings (`research/POSTMORTEM.md`):
+
+1. **Relative rank carries signal; absolute level does not.** Every
+   cross-sectional RANK signal (momentum, RS, beta, liquidity, stage) has a
+   positive point selection edge; every per-symbol LEVEL/own-trend signal
+   (tsmom sign, ema200, vwap, hi52 threshold) has ~zero or negative. If a signal
+   can be earned by a rising tide, the drift-adjusted gate strips it. **Rank
+   against peers, don't threshold against a level.**
+2. **The horizon-power tradeoff is THE organising axis.** Selection edge grows
+   with the mechanism (cross-sectional rank) but the CI grows with the horizon,
+   and horizon wins: illiq's +392 bps point over 126d is less certifiable than
+   tom's +75 over 3-7d. Effective n is the independent-BLOCK count. **Choose the
+   horizon where the sample is powered, not where the thesis is prettiest.**
+3. **Directional truth is not tradeable edge, and the gate is right to say so.**
+   12/13 cross-sectional factors are directionally real and beat random on
+   average, yet none certifies — this is the frozen gate correctly declining to
+   bless economically-large but statistically-unresolved edges. A discipline,
+   not a defect.
+4. **Falsified on THIS sample:** the low-volatility anomaly (inverted); that a
+   bigger corpus certifies long-horizon factors (D-032); price-only gaps as a
+   PEAD proxy. **Still untested:** true event-driven, portfolio-level factor
+   evaluation, short-horizon microstructure beyond tom.
+5. **Manual per-strategy research is exhausted.** The 27th hand-written strategy
+   taught almost nothing new; the map is drawn. The next era is DECLARED
+   hypotheses (the Phase-12 framework) screened at powered horizons, plus
+   acquiring event data — not more bespoke strategy classes.
+6. Confidence heuristics carry no signal for the FOURTH time — stop building
+   them; if signal quality is ever modelled it must be learned from evidence,
+   never hand-designed.
+
+**How to apply:** pivot to automated hypothesis generation/screening at
+short/powered horizons; pursue portfolio-mode evaluation as the one route that
+could certify the directionally-real factors WITHOUT touching the frozen gate;
+acquire earnings/index-event data to unblock the strongest untested anomaly. Do
+not write more per-symbol technical strategies or re-test long-horizon single
+factors. See [[long-horizon-gate-null-failure]] and [[crypto-validation-lessons]].
+
+---
+
 ## L-012 — Cross-sectional factors are DIRECTIONALLY real on NSE but not certifiable at long horizons (2026-07-18)
 
 Batch 2: 13 cross-sectional / factor strategies on the 500-symbol × 11-year

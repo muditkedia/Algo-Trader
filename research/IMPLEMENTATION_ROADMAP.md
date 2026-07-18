@@ -1,8 +1,38 @@
 # Implementation Roadmap
 
-_Phase 8.5, 2026-07-17. The formal, evidence-driven ordering of the candidate
-library (`research/CANDIDATE_LIBRARY.md`). Nothing here is implemented; the next
-phase implements exactly ONE strategy._
+_Phase 8.5, 2026-07-17. Original candidate ordering below (§1-3). **The current
+forward plan is §0, added Phase 12 after all 27 strategies were measured** — it
+supersedes the batch-implementation ordering, which is retained for provenance._
+
+---
+
+## 0. Post-27 research roadmap (Phase 12, ranked by expected value)
+
+All 27 hand-written strategies FAIL the frozen gate; the manual per-strategy
+approach has hit diminishing returns (see `research/POSTMORTEM.md`). Directions
+are ranked by expected research value, each justified by project evidence. The
+methodology is frozen — none of these touches the gate.
+
+| # | Direction | Evidence for the ranking | Cost | Gate impact |
+|---|---|---|---|---|
+| **1** | **Short-horizon (2-15d) event & microstructure effects** | tom (3-7d) is the ONLY near-certification (CI-low −7.9); the gate has power where events are many and near-independent. Cross-sectional long-horizon factors cannot be powered on one 11-y market. | low — data in hand, use the hypothesis framework | none |
+| **2** | **Portfolio-level factor evaluation (new MODE, not a gate change)** | 12/13 cross-sectional factors are directionally positive but per-trade-noisy; a monthly-rebalanced decile portfolio has ~130 near-independent monthly returns → potentially certifiable where the per-trade view is not. The single way the directionally-real factors could ever certify. | medium — a portfolio backtest + its own CI | none (separate statistic) |
+| **3** | **True event-driven data (earnings + index-change calendars)** | egap PROXY failed, but PEAD is the strongest documented anomaly and is UNTESTED here; index add/delete flows are short-horizon, high-power. Highest value IF the data is obtainable. | high — external data acquisition | none |
+| **4** | **Multi-factor ensembles via the hypothesis framework** | single factors are directionally real but noisy; combining ORTHOGONAL ones (momentum × beta × liquidity — never two momenta) is standard. combo tried only 2, one inverted. Cheap now (Part C framework). Best paired with #2. | low | none |
+| **5** | **High-throughput hypothesis generation + screening** | the framework (Part C) makes grids a loop; screen many powered-horizon ideas, report the selection-edge DISTRIBUTION with multiple-testing awareness. | low | none |
+| 6 | Regime-conditional / breadth-driven allocation | breadth_regime hinted; conditioning WHICH exposure by regime is untested — but breadth is highly autocorrelated (few independent regimes), so lower power. | low-med | none |
+| 7 | Inter-market / cross-asset signals (NSE vs global, INR, rates) | untested; plausibly orthogonal to everything tried — but needs external feeds and is speculative. | high | none |
+| 8 | Adaptive / walk-forward (Mode B) parameter selection | deferred infra (VALIDATION_RULES §10.1); low immediate value while nothing certifies. | high | requires the frozen §10 protocol |
+
+**Abandon / deprioritise (evidence-based):** more per-symbol technical strategies
+(trend, breakout, compression — no cross-sectional edge); the low-volatility
+factor (INVERTED on this sample); more long-horizon single-factor sorts (CIs
+unpowerable by construction); hand-designed confidence heuristics (zero signal,
+4×).
+
+**The single highest-value next step: #1 (short-horizon effects), executed via
+the hypothesis framework.** It is where the gate demonstrably has power (tom),
+needs no new data, and directly follows the one near-positive result.
 
 ---
 

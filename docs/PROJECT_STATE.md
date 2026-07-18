@@ -4,9 +4,37 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 11 (corpus expansion + cross-sectional seam + batch 2) COMPLETE,
-uncommitted — awaiting owner approval.** Phases 1–10 committed
-(…`c9e7490`, `d6f8a1a`).
+**Phase 12 (research post-mortem + hypothesis framework) COMPLETE, uncommitted
+— awaiting owner approval.** Phases 1–11 committed (…`d6f8a1a`, `089f39c`).
+
+## Phase 12 delivered — post-mortem + pivot to automated research (D-033)
+
+The validation framework is FINAL/frozen. 27 strategies measured, 0 certified —
+a completed research result. This phase improved the PROCESS
+(`research/POSTMORTEM.md`).
+
+- **Post-mortem (A)** by family: cross-sectional RANK signals are directionally
+  real (large positive point edges) but uncertifiable at 21-126d; per-symbol
+  LEVEL signals carry no selection edge; low-vol is INVERTED here; tom (calendar,
+  3-7d, CI-low −7.9) is the lone near-certification. No family exhausted as a
+  phenomenon; all exhausted as long-horizon per-trade tradeables under the gate.
+- **Knowledge gaps (B)**: short-horizon microstructure, event-driven (needs
+  data), portfolio-level factor evaluation, ensembles, regime allocation,
+  inter-market, adaptive selection.
+- **Framework (C) — IMPLEMENTED**: `research/hypothesis.py` + `components.py`.
+  Hypotheses are DECLARED from reusable components; `compile_hypothesis` →
+  measurable `StrategyProfile` on the existing seam, frozen gate untouched.
+  Equivalence-tested (compiled == hand-written, bit-identical). `enabled=False`
+  research objects — no live strategy added. Grids are loops.
+- **Composition (D) — DESIGN ONLY**: rank aggregation / voting / portfolio-mode
+  (the strongest lead: monthly-rebalanced decile → ~130 near-independent returns
+  may certify where per-trade cannot; a new MODE, not a gate change).
+- **Roadmap (E)**: `IMPLEMENTATION_ROADMAP.md` §0 — ranked #1 short-horizon
+  effects → #2 portfolio-mode → #3 event data → #4 ensembles → #5 throughput.
+- **Assessment (F)**: framework sufficient for judging; low long-horizon power is
+  a DATA property; more history is marginal (11y ≈ API limit); **project ready to
+  transition from manual strategies to automated hypothesis generation +
+  screening**. 351 tests pass (+7).
 
 ## Phase 11 delivered — bigger corpus, the cross-sectional class (D-032)
 

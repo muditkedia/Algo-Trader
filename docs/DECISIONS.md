@@ -4,6 +4,58 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-033 — Phase 12: research post-mortem + pivot to automated hypothesis research (2026-07-18)
+
+27 strategies measured, 0 certified — treated as a completed research RESULT, not
+a failure. The validation framework is final (frozen: VALIDATION_RULES, D-031,
+the gate, CIs, baselines, benchmark logic — none may change). This phase reviewed
+the PROCESS and redirected it (`research/POSTMORTEM.md`).
+
+**Post-mortem (A).** By family: cross-sectional RANK signals (momentum, RS,
+liquidity, beta, stage/breakout) are DIRECTIONALLY real (large consistent
+positive point edges) but uncertifiable at 21-126d horizons; per-symbol
+LEVEL/own-trend signals carry no selection edge; intraday is cost-dead; the
+low-volatility anomaly is INVERTED on 2015-2026 NSE; confidence heuristics carry
+no signal (4th time). No family is "exhausted as a phenomenon" — several are
+directionally real — but all are exhausted as LONG-HORIZON per-trade tradeables
+under the gate's power. tom (calendar, 3-7d, CI-low −7.9) is the lone
+near-certification and the signpost: short horizons + many near-independent
+events are where the gate has power.
+
+**Knowledge gaps (B).** Untested, higher-value frontier: short-horizon event/
+microstructure, true event-driven (earnings/index-change — needs data),
+portfolio-level factor evaluation, multi-factor ensembles, regime-conditional
+allocation, inter-market signals, adaptive/walk-forward selection.
+
+**Research-engine evolution (C) — IMPLEMENTED.** `algo/research/hypothesis.py` +
+`components.py`: a hypothesis is now DECLARED from reusable metrics/filters/
+entries and `compile_hypothesis` turns it into a real `StrategyProfile` on the
+existing seam — the frozen gate/measurement untouched. Equivalence-tested
+(compiled momentum == hand-written xsmom, bit-identical; compiled breakout ==
+donchian). Compiled hypotheses are `enabled=False` research objects (never
+live-discovered), so no tradeable strategy or promotion path is added. Grids
+become loops (`compile_all`). This is the requested faster research process; no
+methodology change.
+
+**Composition (D) — DESIGN ONLY.** Rank aggregation of orthogonal directional
+signals (fixed pre-registered weights); weighted voting; and — the strongest lead
+— portfolio-level evaluation (a monthly-rebalanced decile's ~130 near-independent
+monthly returns may certify where the per-trade view cannot; a new measurement
+MODE, not a gate change). None implemented.
+
+**Roadmap (E)** in `IMPLEMENTATION_ROADMAP.md` §0: ranked #1 short-horizon
+effects → #2 portfolio-mode factor evaluation → #3 event data → #4 ensembles →
+#5 throughput. Abandon: more per-symbol technicals, low-vol, long-horizon single
+sorts.
+
+**Final assessment (F).** The framework is sufficient for JUDGING (correctly
+sized, reproducible, exercised on 27); its low long-horizon power is a DATA
+property, not a bug. More history is a marginal lever (11y ≈ SmartAPI limit);
+choosing POWERED horizons + acquiring EVENT data are the real levers. **The
+project is ready to transition from manual strategy implementation to automated
+hypothesis generation + screening** at powered horizons under the frozen gate.
+351 tests pass (+7 framework). Nothing promotable; paper engine off.
+
 ## D-032 — Phase 11: NIFTY-500 × 11-year corpus, the cross-sectional seam, batch 2 (2026-07-18)
 
 The measurement methodology is frozen (D-031 is final). Phase 11 attacks the
