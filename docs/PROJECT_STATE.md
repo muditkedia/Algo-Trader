@@ -4,8 +4,32 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 13 (permanent research governance) COMPLETE, uncommitted — awaiting owner
-approval.** Phases 1–12 committed (…`089f39c`, `acc52b2`).
+**Phase 14 (R-001 execution) COMPLETE, uncommitted — awaiting owner approval.**
+Phases 1–13 committed (…`acc52b2`, `e2b054a`).
+
+## Phase 14 delivered — R-001 executed under governance (D-035)
+
+First research execution under the governance process. Pre-registered
+(`research/PREREGISTRATION_R001.md`) 3 INDEPENDENT short-horizon families (no
+sweep), implemented via the frozen hypothesis framework (`scripts/research_r001.py`),
+measured on NIFTY-500 under the frozen gate. Report:
+`user_data/backtest_results/reports/r001_league.md`.
+
+- **All 3 FAIL, but informatively (Part D):**
+  - **expiry (F&O expiry week): INCONCLUSIVE, the best short-horizon result in the
+    project** — selection +74.4 bps point (clears cost), beats random (rel-PF
+    1.35), 54k signals — yet CI-low −1.6 (short of significance).
+  - gap-fade: FALSIFIED (−45) — NSE down-gaps continue, don't fade.
+  - month-start: rejected (+18) — the turn-of-month edge is pre-END anticipation
+    (tom), not month-START inflow.
+- **Finding:** even at MAXIMUM power (54k signals, 3-7d), a per-trade short-horizon
+  selection edge does not certify — the drift/noise floor of per-trade NSE
+  selection. The short-horizon per-trade thesis is REFUTED for certification.
+- **Recommendation (Part E): ARCHIVE R-001, proceed to R-002 (portfolio-mode)**,
+  carrying the directionally-real expiry effect as R-002's priority test case (a
+  monthly basket's ~130 near-independent returns may certify where per-trade
+  can't). Not a data pause; not more per-trade R-001 variants (parameter-chasing).
+- 30 strategies now on record; nothing certified; paper engine off. 351 tests.
 
 ## Phase 13 delivered — research governance (D-034)
 

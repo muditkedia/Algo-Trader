@@ -7,6 +7,43 @@ corpus (500 NIFTY-500 symbols, 2015-01..2026-07).
 
 ---
 
+## L-015 — Even maximum-power short-horizon per-trade effects do not certify on NSE (2026-07-18)
+
+R-001 executed (D-035): 3 pre-registered short-horizon families on NIFTY-500,
+frozen gate. The decisive result is the F&O **expiry** effect — the best
+short-horizon result the project has produced:
+
+| family | selection point | CI-low | beats random? | verdict |
+|---|---|---|---|---|
+| expiry (F&O expiry week) | **+74.4** | **−1.6** | yes (rel-PF 1.35) | FAIL (inconclusive) |
+| month-start (SIP inflow) | +18.0 | −21.3 | no | FAIL (rejected) |
+| gap-fade (down-gap reversal) | **−44.7** | −167 | no | FAIL (falsified) |
+
+Expiry has a +74 bps point edge that CLEARS the 30.9 cost, beats a random entry,
+and rests on 54,000 signals at a 3-7-day horizon — the most powered configuration
+the platform can build. Its selection CI-low is still −1.6: not distinguishable
+from zero at 95%, let alone from cost. **If the most-powered per-trade
+short-horizon effect on the platform cannot clear even the zero line, per-trade
+short-horizon equity selection on NSE has hit its drift/noise floor.** More
+signals will not fix it — 54k already exhausts the sample.
+
+Two clean secondary findings:
+- **NSE gaps show downward continuation, not mean-reversion:** down-gaps continue
+  (gap-fade −45) and up-gaps don't continue up (egap −84). Gaps are not a
+  tradeable reversal on NSE.
+- **The turn-of-month edge is anticipatory:** the pre-month-END entry (tom, +75)
+  beats the month-START inflow arrival (month-start, +18). The market front-runs
+  the known flow.
+
+**How to apply:** stop searching for a per-trade short-horizon selection edge —
+the expiry result is the ceiling and it does not certify. The directionally-real
+effects (expiry, and the batch-2 factors) can now only be pursued as PORTFOLIOS
+(R-002): a monthly expiry/factor basket's ~130 near-independent monthly returns
+may certify where the per-trade CI cannot. This is the one remaining route that
+does not touch the frozen gate. See [[long-horizon-gate-null-failure]].
+
+---
+
 ## L-014 — Governance is now the permanent mode; throughput raises the false-discovery risk (2026-07-18)
 
 Phase 13 established permanent research governance (`docs/RESEARCH_REGISTRY.md`,

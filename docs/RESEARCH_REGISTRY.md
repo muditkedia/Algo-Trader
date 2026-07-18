@@ -29,9 +29,9 @@ the qualitative probability the work yields a genuinely new, reliable result
 
 | Rank | ID | Title | Status | Priority | Info gain | Effort | P(new finding) |
 |---|---|---|---|---|---|---|---|
-| 1 | R-002 | Portfolio-level factor evaluation | Prioritised | **4.28** | High | Med (new mode) | High |
-| 2 | R-001 | Short-horizon event & microstructure | Prioritised | **4.24** | High | Low | Med-High |
-| 3 | R-003 | Event-driven: earnings / PEAD | Idea | 4.08 | High | High (data) | Med-High |
+| — | R-001 | Short-horizon event & microstructure | **Archived** (Phase 14) | 4.24 | delivered | — | refuted for certification; expiry lead → R-002 |
+| **1** | R-002 | Portfolio-level factor evaluation | Prioritised | **4.28** | High | Med (new mode) | High |
+| 2 | R-003 | Event-driven: earnings / PEAD | Idea | 4.08 | High | High (data) | Med-High |
 | 4 | R-004 | Index inclusion / deletion flows | Idea | 3.76 | Med-High | High (data) | Med |
 | 5 | R-010 | Sector-relative effects | Idea | 3.64 | Med | Med | Med |
 | 6 | R-005 | Multi-factor ensembles | Idea | 3.48 | Med | Low | Med |
@@ -53,24 +53,29 @@ frozen gate). Recommend R-001 next; R-002 as the parallel owner decision.
 
 ## Active entries (Part C)
 
-### R-001 — Short-horizon event & microstructure effects · Prioritised
+### R-001 — Short-horizon event & microstructure effects · **ARCHIVED** (Phase 14)
 - **Category:** microstructure / calendar / short-horizon
 - **Rationale:** the only near-certification in 27 strategies (tom, 3-7d, CI-low
-  −7.9) came from a short horizon with tens of thousands of near-independent
-  events. The frozen gate has statistical power exactly where events are many and
-  holds are short.
-- **Source of edge:** transient demand/liquidity pressure around dated or
-  structural events (month boundaries, day-of-week, expiry, gap fills).
-- **Assumptions:** short-horizon pressure exists and is not fully arbitraged net
-  of delivery cost.
-- **Holding period:** 2–15 days · **Regime:** all
-- **Datasets:** current daily NIFTY-500 store (have it).
-- **Measurable prediction:** ≥1 short-horizon hypothesis has a selection edge
-  whose 95% CI-low exceeds cost, after the multiple-testing count is reported.
-- **Falsification:** the full grid's selection-edge distribution centres at/below
-  zero and no hypothesis clears the CI after adjustment.
-- **Power:** HIGH (short horizon, large sample). **Complexity:** LOW (hypothesis
-  framework). **Value:** HIGH. **Dependencies:** none. **Priority 4.24.**
+  −7.9) came from a short horizon with many near-independent events.
+- **Executed** (Phase 14, `research/PREREGISTRATION_R001.md`): 3 pre-registered
+  independent families on NIFTY-500, frozen gate. **All FAIL** — but the
+  prediction ("≥1 clears the selection CI above cost") was **refuted**, informatively:
+  - **F3 expiry (F&O expiry-week drift): the best short-horizon result in the
+    project** — selection +74 bps point (clears the 30.9 cost), beats random
+    (rel-PF 1.35), 54,000 signals — yet CI-low −1.6 fails to establish even a
+    positive edge at 95%. Directionally supported, NOT certified.
+  - F2 gap-fade: FALSIFIED with a clean negative sign (−45 pt / −167) — NSE
+    down-gaps CONTINUE, they do not fade (with egap's failed up-gap continuation,
+    gaps show downward continuation, no mean-reversion).
+  - F1 month-start: rejected (+18/−21) — the turn-of-month edge lives in the
+    pre-month-END anticipation (tom), not month-START inflow arrival.
+- **Finding:** even at MAXIMUM power (54k signals, short horizon), a per-trade
+  short-horizon selection edge does not certify on NSE. The short-horizon
+  per-trade thesis is answered. **The directionally-real expiry effect is carried
+  forward to R-002 (portfolio mode) as its priority test case** — NOT re-tested
+  as more per-trade R-001 variants (which would be parameter-chasing).
+- **Status: Archived.** Evidence in the DB (r001_expiry/gap_fade/month_start) and
+  `user_data/backtest_results/reports/r001_league.md`.
 
 ### R-002 — Portfolio-level factor evaluation · Prioritised
 - **Category:** factor investing / measurement mode
@@ -93,6 +98,12 @@ frozen gate). Recommend R-001 next; R-002 as the parallel owner decision.
   frozen per-trade gate). **Value:** HIGH — the one route that could certify the
   directionally-real factors. **Dependencies:** owner approval of the new mode.
   **Priority 4.28.**
+- **Priority test cases (Phase 14 evidence):** the R-001 **expiry** effect
+  (per-trade selection +74 bps point, beats random, but per-trade CI-low −1.6) is
+  a near-ideal candidate — a diversified monthly expiry-window portfolio has ~130
+  near-independent monthly returns that may certify where the per-trade view
+  cannot. Then the directionally-strongest batch-2 factors (illiq, bab, hi52rank,
+  xsmom).
 
 ### R-003 — Event-driven: earnings / PEAD · Idea (blocked on data)
 - **Category:** event-driven · **Rationale:** PEAD is the most-replicated anomaly

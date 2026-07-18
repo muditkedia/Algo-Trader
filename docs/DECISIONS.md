@@ -4,6 +4,48 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-035 — Phase 14: R-001 executed — short-horizon per-trade effects do not certify; expiry is the best-ever lead (2026-07-18)
+
+First execution under the research governance process (D-034). Pre-registered
+(`research/PREREGISTRATION_R001.md`) THREE independent short-horizon families —
+quality over quantity, no parameter sweep — implemented via the frozen hypothesis
+framework (entry logic local to `scripts/research_r001.py`; the frozen
+components/compiler/gate untouched) and measured on NIFTY-500. Multiple-testing
+context reported: 3 tested this phase, 30 lifetime.
+
+**Results (all FAIL under the frozen gate), by family (Part D):**
+- **F3 expiry (F&O expiry-week drift): INCONCLUSIVE — directionally supported,
+  the BEST short-horizon result in the project.** Selection +74.4 bps point
+  (clears the 30.9 cost), beats random (excess-vs-random +0.53%, rel-PF 1.35,
+  54,000 signals) — but CI-low **−1.6 bps**, so it fails to establish even a
+  positive selection edge at 95% (tighter than tom's −7.9, but still short of the
+  0 line, let alone cost). Not rejected, not certified.
+- **F2 gap-fade: REJECTED / FALSIFIED** (selection −45 / CI-low −167). NSE
+  down-gaps CONTINUE, they do NOT fade. With egap (up-gaps do not continue up),
+  the gap evidence is: downward continuation, no mean-reversion.
+- **F1 month-start: REJECTED** (+18 / −21). The turn-of-month edge lives in the
+  pre-month-END anticipation (tom), not the month-START inflow arrival.
+
+**The load-bearing finding:** even at MAXIMUM available power (54k signals, a
+3-7-day horizon — the most powered configuration the project can construct), a
+per-trade short-horizon selection edge does not certify. The pre-registered
+short-horizon prediction is REFUTED for certification. This is not a power
+failure to fix with more data — it is the drift/noise floor of per-trade equity
+selection on NSE.
+
+**Recommendation (Part E): ARCHIVE R-001, proceed to R-002 (portfolio-mode).**
+Justification: (1) the short-horizon per-trade thesis is answered — the best case
+(expiry, max power) fails; (2) the directionally-real expiry effect's natural
+next test is PORTFOLIO mode (a monthly expiry-window basket → ~130 near-
+independent monthly returns may certify where the per-trade CI cannot), which is
+R-002 — the registry's top item; (3) continuing R-001 would mean tweaking expiry
+parameters to chase the CI, which is forbidden. Not "pause for data" — R-001
+needed none; R-002 needs none either (only owner sign-off on the portfolio-CI
+evaluation mode). Expiry is carried into R-002 as its priority test case.
+
+No promotion (nothing certified); paper engine off. Evidence persisted
+(r001_expiry/gap_fade/month_start; report `r001_league.md`). 351 tests pass.
+
 ## D-034 — Phase 13: permanent research governance (registry, quality framework, standards) (2026-07-18)
 
 The research platform and validation framework are stable and frozen (no changes
