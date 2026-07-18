@@ -4,6 +4,100 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-032 — Phase 11: NIFTY-500 × 11-year corpus, the cross-sectional seam, batch 2 (2026-07-18)
+
+The measurement methodology is frozen (D-031 is final). Phase 11 attacks the
+POWER problem L-011 identified by strengthening the DATA and adding the strategy
+class the frozen gate was always meant to judge.
+
+**Corpus (Part A).** Expanded the daily research corpus from 99 NIFTY-100 symbols
+× 3.5y to the full **500 NIFTY-500 symbols × up to 11.5y** (2015-01-01 →
+2026-07-16), reusing the D-029 head-gap backfill wholesale: 401 new symbols
+downloaded, 97 existing backfilled to 2015, 0 quarantined, 0 excluded (all 500
+map to live tokens). Median history 2857 bars (~11.3y); 33 short symbols are
+genuine recent IPOs (MEESHO, GROWW, LENSKART…), 193 listed after 2015 — detected
+and reported, not hidden. The NIFTY-500 membership is the committed, dated NSE
+snapshot (`user_data/universe/ind_nifty500_2026-07.csv`), intersected with the
+live master — real exchange data, not fabricated, same discipline as the
+NIFTY-100 snapshot. Intraday (1h/15m) deliberately left at NIFTY-100/3.5y: batch
+2 is entirely daily, and 10y×500 intraday would be a 2.5-hour download of zero
+batch-2 value. **Power gain: independent 20-day blocks/symbol ~44 → ~143 (×3.2),
+usable breadth 99 → 467 (×4.7).** The scarce axis (independent time periods) is
+up ~3.2×.
+
+**Cross-sectional seam (enabling infra, additive — NOT a redesign).** The
+prioritised batch-2 families (cross-sectional momentum, residual momentum, low
+vol, beta, reversal, rank forms) judge a stock by its RANK among peers each day,
+which the per-symbol `entry_signal` cannot express. Added ONE optional hook,
+`StrategyProfile.prepare_cross_section(frames)` (default no-op), which the engine
+calls once per sweep with all prepared frames before computing signals;
+`prepare_signals` branches on `cross_sectional` so the per-symbol path (all of
+batch 1, the six incumbents) stays bit-for-bit identical. Reusable primitives
+(`strategies/cross_section.py`): decile flag, composite percentile, equal-weight
+market return, breadth, edge-trigger, and a DRY `CrossSectionalDecileStrategy`
+base. The measurement and the frozen D-031 gate are UNTOUCHED — a cross-sectional
+strategy is judged by the same selection-edge-vs-random test as everything else;
+the random baseline (random stock, random time) is exactly the right null for
+"did your ranking pick better than a coin flip." Lookahead-safety proven by a
+truncation test (a date's rank uses only that date's values).
+
+**Batch 2 (Parts B-E).** Removed six roadmap candidates that merely
+re-parameterise rejected batch-1 hypotheses (200-DMA trend, VCP, NR7, Darvas/
+Turtle, Elder pullback, and D3 which IS hvol). Pre-registered
+(`research/PREREGISTRATION_BATCH2.md`) and implemented 13 strategies spanning
+every requested family — 11 cross-sectional (xsmom, resmom, dualmom, lowvol, bab,
+xsrev, maxret, hi52rank, illiq, combo, breadth-regime) + 2 per-symbol (tom
+calendar, stage2 Weinstein). The RANK forms of momentum and 52-week-high are
+kept as genuinely different mechanisms from the rejected per-symbol/threshold
+forms; nothing is a tuned variant of a dead idea.
+
+**Measurement (Parts F-H): all 13 FAIL — but the pattern is new and it is not
+"no effect".** Measured on NIFTY-500 under the frozen D-031 gate (report:
+`user_data/backtest_results/reports/batch2_nifty500_league.md`; NIFTY-100
+cross-checked — same pattern, configurable via `--symbols-file`).
+
+* **Selection POINT edges are large, positive and CONSISTENT** — illiq +392,
+  stage2 +383, hi52rank +252, bab +232, breadth +191, xsmom/dualmom +149,
+  resmom +112, tom +75 bps (only lowvol negative, −29). 11 of 13 also BEAT the
+  random baseline at the managed level (excess-vs-random > 0, relative PF > 1;
+  bab PF 1.79× random). Batch 1's per-symbol signals had no consistent
+  direction; **batch 2's cross-sectional signals do — the factor effects are
+  DIRECTIONALLY present on NSE, matching the literature's sign.**
+* **But every selection CI lower bound is deeply negative** (−8 to −1070 bps),
+  so none is statistically established. At 60-126-day horizons even 11 years ×
+  500 names cannot resolve a ~150 bps edge from zero: the independent
+  long-horizon periods are irreducibly few and per-period variance is huge
+  (2015-2026 spans COVID). The non-certification is a POWER statement, not a
+  "no edge" statement.
+* **Every strategy loses to buy & hold** (excess-vs-B&H negative for all 13):
+  long-only, holding a decile for weeks, cannot beat holding the whole universe
+  through an 11-year bull. Long-only truncation of the short leg, as
+  pre-registered.
+* **The standout: tom_daily** (turn-of-month) — selection +75 bps, CI-low
+  −7.9 bps: the CLOSEST any strategy across both batches has come to
+  certification, because it is SHORT-horizon (3-7 days) with a HUGE sample
+  (53,645 signals). Short horizon + many signals = the tight CI the long-horizon
+  factors cannot get. This localises where the frozen gate has power.
+
+**Statuses: all 13 -> `rejected`** (new evaluation generation; incumbents
+untouched; 27 strategies on record). **Nothing is promotable; the paper engine
+stays off. Do not chase these; do not weaken the gate.**
+
+**Meta-analysis (G) & recommendation (H).** Consistently rejected: every family,
+at multi-week/month horizons. Showing promise (directionally, not certifiably):
+cross-sectional momentum, 52-week-high rank, liquidity and stage effects — large
+consistent positive point edges. Recurring pattern: big point edge + enormous CI
++ sub-B&H return. Abandon: long-horizon single-factor sorts on one 11-year market
+— the CI is unpowerable there by construction, and lowvol's negative point edge
+shows the low-vol anomaly is inverted on this bull sample. Deserves exploration:
+SHORT-horizon high-frequency effects where the sample certifies (tom is the
+proof-of-concept). **Single highest-value next step (no methodology change):
+shift research to short-horizon, high-frequency effects following the tom_daily
+lead — where 500 symbols × 11 years yields the tens of thousands of near-
+independent observations the frozen gate needs — NOT another batch of multi-week
+factor sorts whose CIs this data cannot close.** No new strategy will pass a gate
+the data itself cannot power at long horizons.
+
 ## D-031 — Benchmark amendment: the gate is now selection edge over random, and it FAILs all 14 (2026-07-17)
 
 Phase 10 amended the frozen protocol (VALIDATION_RULES §26, owner-approved) to

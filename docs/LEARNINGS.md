@@ -2,8 +2,65 @@
 
 Empirical findings from validation. Newest first. Numbers are net of 0.1%/side
 fees, Binance spot, BTC+ETH, dev corpus 2020-01..2025-06 unless noted.
-L-010+ are Indian equities (NSE, 99 NIFTY-100 symbols, 2023-01..2026-07,
-NseEquityCostModel).
+L-010+ are Indian equities (NSE, NseEquityCostModel). L-012+ use the expanded
+corpus (500 NIFTY-500 symbols, 2015-01..2026-07).
+
+---
+
+## L-012 — Cross-sectional factors are DIRECTIONALLY real on NSE but not certifiable at long horizons (2026-07-18)
+
+Batch 2: 13 cross-sectional / factor strategies on the 500-symbol × 11-year
+corpus, frozen D-031 gate. All FAIL — but differently from batch 1:
+
+| strategy | selection POINT | selection CI-low | excess-vs-random | rel PF | verdict |
+|---|---|---|---|---|---|
+| illiq | +392 | −1070 | +0.0039 | 1.19 | FAIL |
+| stage2 | +383 | −883 | −0.0014 | 0.93 | FAIL |
+| hi52rank | +252 | −762 | +0.0004 | 1.02 | FAIL |
+| bab | +232 | −854 | +0.0157 | 1.79 | FAIL |
+| breadth_regime | +191 | −310 | +0.0021 | 1.10 | FAIL |
+| xsmom / dualmom | +149 | −343 | +0.0017 | 1.05 | FAIL |
+| resmom | +112 | −363 | +0.0018 | 1.08 | FAIL |
+| **tom** | **+75** | **−7.9** | +0.0067 | 1.46 | FAIL |
+| xsrev | +24 | −111 | +0.0007 | 1.02 | FAIL |
+| maxret | +9 | −113 | +0.0001 | 1.02 | FAIL |
+| combo | +33 | −329 | −0.0014 | 0.94 | FAIL |
+| lowvol | −29 | −130 | −0.0041 | 0.82 | FAIL |
+
+**Three findings:**
+
+1. **The effects are directionally present.** Unlike batch 1's mixed-sign
+   point edges, batch 2's cross-sectional selection edges are large, positive
+   and CONSISTENT (12 of 13 positive), and 11 of 13 beat the random baseline on
+   average (rel PF > 1). Cross-sectional momentum, 52-week-high rank, liquidity
+   and stage effects carry the sign the literature predicts, on NSE. **A
+   FAIL under the gate is a POWER verdict here, not "no effect".**
+
+2. **More data did not close the CIs at long horizons.** 3.2× the independent
+   periods and 4.7× the breadth, yet the 60-126-day selection CIs are as wide
+   as ever (−300 to −1070 bps). At those horizons the per-period variance
+   (2015-2026 incl. COVID) swamps the ~150 bps edge, and the independent
+   long-horizon block count is irreducibly small on one 11-year market. **The
+   binding constraint is horizon, not sample size** — you cannot buy power for
+   a 6-month bet by adding stocks that all move together.
+
+3. **Short horizon + many signals is where the gate has power.** tom_daily
+   (3-7 day hold, 53,645 signals) has CI-low −7.9 bps — a hair from
+   certification and the closest of all 26 strategies ever tested. The
+   cross-sectional long-horizon factors, despite far larger POINT edges, have
+   CIs two orders of magnitude wider. **Effective n is the independent-block
+   count, and short horizons maximise it** (L-011 restated at the batch level).
+
+**Also:** every batch-2 strategy loses to buy & hold (long-only can't beat an
+11-year bull by holding a decile), and lowvol's NEGATIVE point edge says the
+low-volatility anomaly is INVERTED on this momentum-led NSE sample. Confidence
+heuristics again carry no signal (|corr| ≤ 0.06) — L-003 a fourth time.
+
+**How to apply:** stop testing multi-week/month factor sorts — the data cannot
+power their CIs, whatever their point edge. Pursue SHORT-horizon high-frequency
+effects (the tom lead) where the sample certifies. Do not deploy directionally-
+real-but-uncertified edges; that is an explicit owner risk decision the frozen
+gate deliberately declines to make.
 
 ---
 

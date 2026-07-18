@@ -134,6 +134,17 @@ strategies may not be re-cut after their verdict.
 
 ---
 
+## 3.7 Batch 2 (Phase 11) — cross-sectional, on the expanded corpus
+
+Phase 11 addressed §3.6's power problem via DATA (NIFTY-500 × 11y, ~3.2×
+independent periods, ~4.7× breadth) and the cross-sectional seam, then
+pre-registered and implemented 13 fundamentally different strategies
+(`research/PREREGISTRATION_BATCH2.md`) — 11 cross-sectional rank strategies + a
+calendar and a stage-analysis strategy. Six roadmap items were dropped as
+rejected-idea variants (200-DMA, VCP, NR7, Darvas/Turtle, Elder, D3=hvol).
+Measured under the frozen D-031 gate on the expanded corpus. Results and the
+resulting priors update: see `docs/DECISIONS.md` D-032 and `docs/LEARNINGS.md`.
+
 ## 3.6 Post-benchmark priors update (Phase 10, D-031/L-011)
 
 The benchmark amendment re-judged everything: **all 14 FAIL; no strategy shows

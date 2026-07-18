@@ -242,6 +242,28 @@ class ResearchEngine:
         if self.store is None:
             raise RuntimeError("prepare_signals needs a MarketDataStore")
         tf = strategy.meta.timeframe
+
+        if getattr(strategy, "cross_sectional", False):
+            # Two-phase: EVERY symbol's per-symbol prepare must complete before
+            # the cross-sectional step can rank them, and only then can the
+            # signal (which reads the injected rank columns) be computed.
+            prepared_all = {}
+            for symbol in symbols:
+                bars = self.store.read(symbol, tf)
+                if bars.empty or len(bars) < strategy.min_history():
+                    continue
+                prepared_all[symbol] = strategy.prepare(bars)
+            prepared_all = strategy.prepare_cross_section(prepared_all)
+            frames, signals = {}, {}
+            for symbol, prepared in prepared_all.items():
+                signal = strategy.entry_signal(prepared)
+                if signal is None or not bool(signal.any()):
+                    continue
+                frames[symbol] = prepared
+                signals[symbol] = signal
+            return SignalSet(frames, signals)
+
+        # Per-symbol path (all of batch 1) - unchanged, bit-for-bit.
         frames, signals = {}, {}
         for symbol in symbols:
             bars = self.store.read(symbol, tf)

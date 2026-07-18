@@ -125,6 +125,26 @@ class StrategyProfile(ABC):
         pass-through for strategies that need only raw OHLCV."""
         return dataframe
 
+    #: A cross-sectional strategy ranks each stock against its peers, so its
+    #: signal cannot be computed from one symbol's frame alone. Overriding this
+    #: declares that need: the engine calls it ONCE per sweep with every
+    #: prepared per-symbol frame, and the override returns them augmented with
+    #: cross-sectional columns (e.g. a top-decile flag) that ``entry_signal``
+    #: then reads per symbol as usual. Purely additive: the default is a no-op,
+    #: so every per-symbol strategy (all of batch 1) is completely unaffected,
+    #: and the measurement / selection gate downstream are untouched.
+    cross_sectional: bool = False
+
+    def prepare_cross_section(
+        self, frames: "dict[str, pd.DataFrame]") -> "dict[str, pd.DataFrame]":
+        """Inject cross-sectional columns across all symbols' prepared frames.
+
+        ``frames`` maps symbol -> the frame returned by ``prepare`` for that
+        symbol (only symbols with enough history are present). Return the same
+        mapping with any cross-sectional columns added in place. Default no-op.
+        """
+        return frames
+
     @abstractmethod
     def entry_signal(self, dataframe: pd.DataFrame) -> pd.Series:
         """Boolean Series: True on bars where an entry candidate exists.

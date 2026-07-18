@@ -4,8 +4,47 @@ _Last updated: 2026-07-17_
 
 ## Current Phase
 
-**Phase 10 (measurement integrity & benchmark framework) COMPLETE, uncommitted
-— awaiting owner approval.** Phases 1–9 committed (…`eba2c60`, `c9e7490`).
+**Phase 11 (corpus expansion + cross-sectional seam + batch 2) COMPLETE,
+uncommitted — awaiting owner approval.** Phases 1–10 committed
+(…`c9e7490`, `d6f8a1a`).
+
+## Phase 11 delivered — bigger corpus, the cross-sectional class (D-032)
+
+The methodology is frozen (D-031). Phase 11 attacks the POWER problem (L-011) via
+data + the strategy class the gate was built to judge.
+
+- **Corpus (Part A)**: daily research corpus expanded 99 NIFTY-100 × 3.5y →
+  **500 NIFTY-500 × up to 11.5y** (2015→2026), reusing the D-029 backfill: 401
+  new, 97 backfilled, 0 quarantined, 0 excluded. Median ~11.3y; 33 short = real
+  recent IPOs. **Independent 20-day blocks/symbol ~44→~143 (×3.2); usable
+  breadth 99→467 (×4.7).** Intraday left at NIFTY-100/3.5y (batch 2 is daily).
+  NIFTY-500 = committed dated NSE snapshot. Report:
+  `scripts/corpus_report.py`.
+- **Cross-sectional seam**: additive `StrategyProfile.prepare_cross_section`
+  hook (default no-op) + `strategies/cross_section.py` primitives + a DRY decile
+  base. The per-symbol path (all incumbents) is bit-identical; the frozen gate
+  and measurement are untouched. Lookahead-safe (truncation-tested).
+- **Batch 2 (Parts B-E)**: removed 6 rejected-idea variants; pre-registered
+  (`research/PREREGISTRATION_BATCH2.md`) and implemented **13 strategies**
+  (11 cross-sectional + tom + stage2) spanning every requested family — the
+  first cross-sectional strategies on the platform.
+- **Validation**: 21 new cross-section tests (seam additivity, decile ranking,
+  lookahead, market/breadth aggregates) + batch-2 metadata; full suite green.
+- **Measurement (Parts F-H): all 13 FAIL** on NIFTY-500 (report:
+  `user_data/backtest_results/reports/batch2_nifty500_league.md`; NIFTY-100
+  cross-checked). But NEW vs batch 1: the cross-sectional selection POINT edges
+  are large, positive and CONSISTENT (illiq +392, stage2 +383, hi52rank +252,
+  bab +232, xsmom +149…), 11/13 beat random (rel PF > 1) — **the factor effects
+  are directionally real on NSE**. They FAIL only because the 60-126-day
+  selection CIs are enormous (−300 to −1070 bps): even 3.2× the periods can't
+  power a long-horizon CI. **tom_daily is the standout** (CI-low −7.9, closest
+  of all 26 strategies) — short horizon + 53k signals. All 13 → `rejected`;
+  incumbents untouched (27 on record). Nothing promotable; paper engine off.
+- **Recommendation (H)**: the binding constraint is statistical power at long
+  horizons on one market, not strategy choice. Highest-value next step (no
+  methodology change): **shift to SHORT-horizon high-frequency effects**
+  (the tom lead), where the sample certifies — not more multi-week factor sorts.
+  See D-032 / L-012.
 
 ## Phase 10 delivered — the benchmark amendment (D-031, L-011)
 

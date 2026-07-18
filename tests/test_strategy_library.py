@@ -327,8 +327,16 @@ def test_ema200_insufficient_history_is_silent():
 
 # ------------------------------------------------------- cross-strategy suite
 
+#: Calendar strategies fire on the date, not on price, so the "flat market ->
+#: no signal" invariant does not apply to them (they legitimately trade a flat
+#: market at the month boundary).
+_CALENDAR_STRATEGIES = {"tom_daily"}
+
+
 @pytest.mark.parametrize("cls", ALL_STRATEGIES, ids=lambda c: c.meta.name)
 def test_no_signal_on_flat_market(cls):
+    if cls.meta.name in _CALENDAR_STRATEGIES:
+        pytest.skip("calendar strategy: signal is date-driven, not price-driven")
     strat = cls()
     tf = strat.meta.timeframe
     if tf == "1d":
