@@ -1,0 +1,223 @@
+/* ALGO TRADER monitoring terminal — professional trading-desk aesthetic.
+   Dark, dense, monospace, colour-coded. Read-only presentation layer. */
+
+:root{
+  --bg:#0a0e14; --panel:#0f141c; --panel2:#121926; --line:#1e2a3a;
+  --txt:#c8d3e0; --dim:#6b7d94; --label:#5b6b80;
+  --amber:#ffb020; --amber-dim:#8a5f12;
+  --green:#31d18a; --red:#ff4d5e; --blue:#4aa8ff; --violet:#a887ff;
+  --mono:"JetBrains Mono","SF Mono",Consolas,"DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt); font-family:var(--mono);
+  font-size:12px; line-height:1.45; padding-bottom:34px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ------------------------------- top bar ------------------------------- */
+#topbar{
+  position:sticky; top:0; z-index:50; display:flex; align-items:center;
+  gap:18px; padding:8px 14px; background:linear-gradient(#111823,#0b1119);
+  border-bottom:2px solid var(--amber-dim);
+}
+.brand{font-size:15px; font-weight:700; letter-spacing:1px; color:var(--amber);
+  white-space:nowrap}
+.brand span{color:var(--txt)}
+.brand em{display:block; font-size:9px; font-style:normal; letter-spacing:2px;
+  color:var(--label); text-transform:uppercase}
+.statusstrip{display:flex; flex:1; gap:14px; flex-wrap:wrap}
+.stat{display:flex; flex-direction:column; gap:2px}
+.stat label{font-size:8.5px; letter-spacing:1px; color:var(--label)}
+.pill{
+  display:inline-block; padding:2px 8px; border-radius:2px; font-size:11px;
+  font-weight:600; letter-spacing:.5px; background:#161f2c;
+  border:1px solid var(--line); color:var(--dim); white-space:nowrap;
+}
+.pill.ok{color:var(--green); border-color:#16613f; background:#0c1f17}
+.pill.warn{color:var(--amber); border-color:var(--amber-dim); background:#211803}
+.pill.bad{color:var(--red); border-color:#5e1b22; background:#210c0f}
+.pill.live{color:#fff; background:#7a1420; border-color:var(--red);
+  animation:pulse 2s infinite}
+.pill.paper{color:var(--blue); border-color:#1d4a7a; background:#0a1826}
+@keyframes pulse{50%{opacity:.55}}
+.clockbox{text-align:right}
+.clock{font-size:18px; font-weight:700; color:var(--amber);
+  letter-spacing:1px; font-variant-numeric:tabular-nums}
+.feedage{font-size:9px; color:var(--label); letter-spacing:.5px}
+.feedage.stale{color:var(--red)}
+
+/* ------------------------------- banner -------------------------------- */
+.banner{
+  padding:7px 14px; font-weight:700; letter-spacing:1px; font-size:12px;
+  background:#3a0d14; color:#ffd7dc; border-bottom:1px solid var(--red);
+}
+.banner.warn{background:#2b2003; color:#ffe6b0; border-color:var(--amber)}
+.hidden{display:none}
+
+/* -------------------------------- grid --------------------------------- */
+main{display:grid; grid-template-columns:repeat(12,1fr); gap:8px; padding:8px}
+.span4{grid-column:span 4}.span6{grid-column:span 6}
+.span8{grid-column:span 8}.span12{grid-column:span 12}
+@media(max-width:1100px){
+  .span4,.span6,.span8{grid-column:span 12}
+}
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:3px;
+  display:flex; flex-direction:column; min-height:0}
+.panel h2{
+  display:flex; align-items:center; gap:10px; font-size:10px; font-weight:700;
+  letter-spacing:1.6px; color:var(--amber); padding:6px 10px;
+  background:var(--panel2); border-bottom:1px solid var(--line);
+  text-transform:uppercase;
+}
+.count{background:#1b2534; color:var(--dim); border-radius:2px;
+  padding:1px 6px; font-size:10px; letter-spacing:0}
+.panel h2 input[type=search]{
+  margin-left:auto; background:#0a1018; border:1px solid var(--line);
+  color:var(--txt); font-family:var(--mono); font-size:11px; padding:3px 8px;
+  border-radius:2px; width:220px; letter-spacing:0;
+}
+.panel h2 .chk{display:flex; align-items:center; gap:4px; font-size:9px;
+  color:var(--label); letter-spacing:.5px; cursor:pointer}
+
+/* --------------------------- key/value grids --------------------------- */
+.kv-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+  background:var(--line)}
+.kv-grid.four{grid-template-columns:repeat(4,1fr)}
+.kv-grid>div{background:var(--panel); padding:8px 10px}
+.kv-grid label{display:block; font-size:8.5px; letter-spacing:1px;
+  color:var(--label); margin-bottom:3px}
+.kv-grid b{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums}
+.num.pos{color:var(--green)} .num.neg{color:var(--red)}
+
+/* ------------------------------- scanner ------------------------------- */
+/* market-data / token-mapping explanation under MARKET OVERVIEW */
+.datadetail{padding:6px 12px 10px; font-size:11px; color:var(--dim);
+            line-height:1.5; border-top:1px solid var(--line)}
+.datadetail.bad{color:var(--red)}
+
+/* header: next-candle countdown replaces the wall clock */
+.clocklabel{font-size:8.5px; letter-spacing:1px; color:var(--label);
+            text-align:right}
+
+/* execution plan (§7): the deterministic if-this-then-that list */
+.plan{border-top:1px solid var(--line); padding:8px 10px 10px}
+.plan .k{display:block; font-size:8.5px; letter-spacing:1px;
+         color:var(--label); margin-bottom:6px}
+.trigger{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
+         gap:8px; padding:3px 0; font-size:11px; align-items:baseline}
+.trigger .cond{color:var(--dim)}
+.trigger .act{color:var(--txt)}
+.trigger.stop .cond{color:var(--red)}
+.trigger.target .cond, .trigger.partial .cond{color:var(--green)}
+.trigger.squareoff .cond{color:var(--amber)}
+.trigger.trail .cond{color:var(--blue)}
+.trailrule{margin-top:6px; font-size:10.5px; color:var(--label)}
+
+/* auto square-off banner on every intraday position (§9) */
+.squareoff{padding:5px 10px; font-size:10.5px; color:var(--amber);
+           border-top:1px solid var(--line); letter-spacing:.5px}
+.squareoff b{color:var(--amber)}
+
+/* price provenance next to the CURRENT price — never a mark without a source */
+.levels .src{font-style:normal; color:var(--label); font-size:8px;
+             letter-spacing:.5px; margin-left:4px}
+
+.headline{padding:10px 12px 4px; font-size:14px; color:var(--txt)}
+.current{padding:0 12px 8px; font-size:12px; color:var(--blue)}
+.current::before{content:"▶ "; color:var(--amber)}
+.activity{max-height:104px; overflow:auto; border-top:1px solid var(--line);
+  padding:6px 12px}
+.activity div{color:var(--dim); font-size:11px; padding:1px 0}
+.activity div span{color:var(--label); margin-right:8px}
+
+/* ------------------------------ positions ------------------------------ */
+.positions{padding:8px; display:grid; grid-template-columns:1fr 1fr; gap:8px}
+@media(max-width:1400px){.positions{grid-template-columns:1fr}}
+.trade{border:1px solid var(--line); border-left:3px solid var(--blue);
+  background:var(--panel2); border-radius:2px}
+.trade.up{border-left-color:var(--green)} .trade.down{border-left-color:var(--red)}
+.trade .th{display:flex; align-items:baseline; gap:10px; padding:8px 10px;
+  border-bottom:1px solid var(--line); flex-wrap:wrap}
+.trade .sym{font-size:16px; font-weight:700; color:var(--amber)}
+.trade .strat{font-size:11px; color:var(--violet)}
+.trade .pnl{margin-left:auto; font-size:16px; font-weight:700;
+  font-variant-numeric:tabular-nums}
+.trade .levels{display:grid; grid-template-columns:repeat(5,1fr); gap:1px;
+  background:var(--line)}
+.trade .levels>div{background:var(--panel); padding:6px 8px}
+.trade .levels label{display:block; font-size:8px; letter-spacing:1px;
+  color:var(--label)}
+.trade .levels b{font-size:12px; font-variant-numeric:tabular-nums}
+.trade .state{padding:6px 10px; font-size:11px; border-top:1px solid var(--line)}
+.trade .state .k{color:var(--label); letter-spacing:1px; font-size:8.5px;
+  display:block}
+.trade .next{padding:6px 10px; background:#0c1622; color:var(--blue);
+  font-size:11.5px; border-top:1px solid var(--line)}
+.trade .next .k{color:var(--label); letter-spacing:1px; font-size:8.5px;
+  display:block}
+.trade details{border-top:1px solid var(--line)}
+.trade summary{padding:6px 10px; cursor:pointer; font-size:10px;
+  letter-spacing:1px; color:var(--label)}
+.trade summary:hover{color:var(--amber)}
+.trade .why{padding:4px 10px 10px; display:grid; gap:3px}
+.trade .why div{display:grid; grid-template-columns:150px 1fr; gap:8px;
+  font-size:11px}
+.trade .why span{color:var(--label); font-size:9px; letter-spacing:.8px;
+  padding-top:2px}
+.trade .why em{font-style:normal; color:var(--txt)}
+.trade .why em::before{content:"✓ "; color:var(--green)}
+
+/* -------------------------------- tables ------------------------------- */
+.tablewrap{overflow:auto; max-height:340px}
+.tablewrap.short{max-height:230px}
+table{width:100%; border-collapse:collapse; font-size:11px}
+thead th{position:sticky; top:0; background:var(--panel2); text-align:left;
+  padding:5px 8px; font-size:8.5px; letter-spacing:1px; color:var(--label);
+  border-bottom:1px solid var(--line); white-space:nowrap}
+tbody td{padding:4px 8px; border-bottom:1px solid #161e29; white-space:nowrap}
+tbody tr:hover{background:#131c28}
+th.r,td.r{text-align:right; font-variant-numeric:tabular-nums}
+td.sym{color:var(--amber); font-weight:600}
+td.pos{color:var(--green)} td.neg{color:var(--red)}
+tr.empty td{color:var(--label); text-align:center; padding:14px}
+.lvl-ERROR{color:var(--red); font-weight:700}
+.lvl-WARN{color:var(--amber)}
+.lvl-INFO{color:var(--dim)}
+td.msg{white-space:normal; color:var(--dim); font-size:10.5px;
+  max-width:900px; word-break:break-word}
+.waiting{padding:6px 10px; font-size:11px; color:var(--label);
+  border-top:1px solid var(--line)}
+
+/* ------------------------------- timeline ------------------------------ */
+.timeline{max-height:340px; overflow:auto; padding:6px 0}
+.timeline .row{display:grid; grid-template-columns:66px 1fr; gap:8px;
+  padding:3px 12px; border-left:2px solid transparent}
+.timeline .row:hover{background:#131c28}
+.timeline time{color:var(--label); font-variant-numeric:tabular-nums}
+.timeline .k-signal{border-left-color:var(--blue)}
+.timeline .k-position{border-left-color:var(--green)}
+.timeline .k-reject{border-left-color:var(--amber-dim)}
+.timeline .k-error{border-left-color:var(--red)}
+.timeline .k-order{border-left-color:var(--violet)}
+.timeline .k-system{border-left-color:var(--label)}
+.timeline .k-error span{color:var(--red)}
+
+/* ------------------------------ components ----------------------------- */
+.components{display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+  background:var(--line); border-top:1px solid var(--line)}
+.components>div{background:var(--panel); padding:7px 10px; display:flex;
+  justify-content:space-between; align-items:center}
+.components label{font-size:9px; letter-spacing:1px; color:var(--label)}
+.trip{padding:8px 10px; background:#2a0d12; color:#ffc9cf;
+  border-top:1px solid var(--red); font-size:11px}
+
+.empty{color:var(--label); text-align:center; padding:16px; font-size:11px}
+
+/* -------------------------------- footer ------------------------------- */
+#footer{
+  position:fixed; bottom:0; left:0; right:0; display:flex; gap:14px;
+  padding:6px 14px; background:#0b1119; border-top:1px solid var(--line);
+  font-size:9.5px; letter-spacing:.8px; color:var(--label); z-index:50;
+}
+#foot-updated{margin-left:auto}

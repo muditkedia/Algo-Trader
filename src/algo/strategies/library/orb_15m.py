@@ -16,6 +16,7 @@ import pandas as pd
 from algo.core.config import from_dict
 from algo.core.enums import Direction, HoldingScope
 from algo.core.indicators import atr, crossed_above, opening_range, volume_ratio
+from algo.execution import structural_intraday
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import (
     Component, ConfidenceScore, clip01, weighted,
@@ -60,6 +61,13 @@ class OpeningRangeBreakout(StrategyProfile):
         enabled=True,
     )
 
+    #: ORB's OWN execution (the published form, research/
+    #: INTRADAY_PRODUCTION_BATCH1.md section 1): stop below the opening-range
+    #: low, target = OR high + 1x the range, no trail, square-off at the
+    #: session's last bar, never overnight.
+    execution = structural_intraday(stop_col="or_low", target_kind="column",
+                                    target_col="or_target")
+
     def __init__(self, settings=None) -> None:
         super().__init__(settings or OrbParams())
 
@@ -75,6 +83,8 @@ class OpeningRangeBreakout(StrategyProfile):
         df["or_high"] = or_high
         df["or_low"] = or_low
         df["after_range"] = after
+        # the published 1x-range target level (execution spec reads it)
+        df["or_target"] = or_high + (or_high - or_low)
         df["atr"] = atr(df, p.atr_period)
         df["volume_ratio"] = volume_ratio(df["volume"], p.volume_window)
         return df

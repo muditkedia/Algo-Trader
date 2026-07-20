@@ -1,0 +1,24 @@
+{
+ "session": "2026-07-20",
+ "open_positions": 0,
+ "closed_trades": 8,
+ "wins": 0,
+ "losses": 8,
+ "realized_pnl": -279646.87,
+ "unrealized_pnl": 0,
+ "deployed_capital": 0,
+ "mode": "paper",
+ "profit_factor": 0.0,
+ "gross_profit": 0,
+ "gross_loss": 279646.87,
+ "by_strategy": {
+  "vwap_pullback_15m": {
+   "trades": 6,
+   "pnl": -279504.14
+  },
+  "orb_15m": {
+   "trades": 2,
+   "pnl": -142.74
+  }
+ }
+}

@@ -1,12 +1,187 @@
 # Project State
 
-_Last updated: 2026-07-17_
+_Last updated: 2026-07-20 (Market Data Architecture v2)_
 
 ## Current Phase
 
-**Phase 16 (intraday baseline fidelity audit) COMPLETE — validation report ready
-for review. NOTHING COMMITTED (Phases 15+16 both uncommitted, per instruction).**
-Phases 1–14 committed (…`e2b054a`, `2ee7957`).
+**Market Data Architecture v2 (the operator's "Phase 7") COMPLETE,
+uncommitted.** The market-data path is now a scheduler-driven subsystem with a
+single source of truth. Phase 19 (production-readiness pass) complete. Phase 18
+(paper-session defect resolution) complete. Phase 17 (fidelity evaluation
+mode) complete, uncommitted — awaiting owner approval. Phases 1–16 committed
+(…`2ee7957`, `eccfb18`).
+
+## Market Data Architecture v2 delivered — scalable market-data subsystem
+
+Full reference: `docs/MARKET_DATA_ARCHITECTURE_V2.md`. Per-stage benchmark:
+`docs/PERFORMANCE_BENCHMARK.md`.
+
+The Phase-6 benchmark found the production bottleneck was the market-data path
+itself: one request per symbol every cycle, three independent pollers, and a
+cost of `symbols × cycles`. v2 replaces it with `algo.marketdata` — a new
+subsystem whose only public surface is `MarketState`.
+
+- **One owner.** `MarketDataService.poll()` is the single fetch path; there is
+  no thread, timer or background loop anywhere in the package. The old
+  `feed.refresh`, the live tier's private quote timer, and the separate bar
+  scheduler are gone. `algo/trading/feed.py` and `algo/trading/scheduler.py`
+  were deleted.
+- **Scheduler / queue / transport / source** cleanly separated (`what` vs
+  `how`). `TimeframeScheduler` emits `DataRequest`s for **only due symbols**,
+  **incrementally** (window starts one bar after what is stored — verified on
+  the recorded REST call, not the store write), and **never early / never
+  skipped**.
+- **SmartAPI batching audited against the installed SDK** (smartapi-python
+  1.5.5): candles **cannot** batch (one `symboltoken`/request); quotes batch
+  **50:1** via `getMarketData` — now implemented (`SmartApiDataProvider.
+  fetch_quotes`), replacing per-symbol `ltpData`. The **5000/hour** cap is the
+  binding constraint at scale; `check_budget()` flags an over-capacity universe
+  at startup.
+- **Adaptive rate limiter** — multi-window sliding budget with AIMD, never
+  sleeps (answers *when*, caller decides). Replaces fixed-sleep + amnesiac
+  backoff.
+- **MarketState is the single truth.** Scanner, strategies, risk, execution and
+  dashboard read it and nothing else; the dashboard computes no freshness,
+  health or portfolio value itself. Freshness stays candle-based (D-039).
+- **Data-quality isolation (§10):** 99 configured, 3 failing → the pass still
+  completes and scans the 96; freshness names the laggards.
+- **Provider abstraction / websocket-ready:** swapping REST for Zerodha,
+  Polygon or a replay/websocket transport is implementing one
+  `MarketDataSource`; no scanner/strategy code moves. `supports_streaming` is
+  the seam.
+- **Validation:** all pre-existing tests pass (838 total, 1 skipped); 3 new
+  suites — `test_marketdata_scheduler.py`, `test_marketdata_service.py`,
+  `test_marketdata_adversarial.py` (44 tests). The adversarial audit found and
+  fixed a real delayed-bar defect (a bar is served only when the stored data
+  reaches it) and a rate-deferral attempt-budget defect (attempts count real
+  fetches, not plan iterations).
+
+## Phase 19 delivered — production readiness from operational feedback (D-039, L-019)
+
+Sixteen items of feedback from the first paper session. Full stage-by-stage
+trace in `docs/LIVE_PIPELINE_AUDIT.md`; decisions in D-039.
+
+**The substantive finding** was one category error wearing several faces: the
+dashboard reported *the exporter's liveness* as *the data's freshness*. A
+candle **4,261 minutes old** was displayed as "0.0 s" old. The same confusion
+made `data_fresh` read the store rather than the fetch, which is why the failed
+session logged `status: ok` all day while fetching nothing.
+
+- **Freshness (§1, §12)** — `algo/trading/freshness.py` measures per-symbol lag
+  against the bar the exchange should have completed, in **bars not seconds**.
+  Four distinct states: `FRESH` / `STALE` (with the reason) / `MARKET CLOSED`
+  (old candles are *correct* when none are due) / `MISSING`. New MARKET DATA
+  panel: configured universe, resolved, live, fresh, missing, failed fetches,
+  last successful update, feed status.
+- **Minimum trade allocation (§5)** — configurable, default 25% of
+  `deploy_today`. Sub-floor positions are **skipped, never padded**; a floor
+  must not override a cap. Preflight and the wizard now surface the
+  non-obvious consequence: a floor of F caps concurrency at floor(1/F).
+- **Timeframes (§3)** — strategies are authoritative; config may only
+  *restrict*. Live seeding bounded to `live_lookback_days` (was the ingestion
+  default of 365 days per uncovered symbol).
+- **Session wizard (§4)** — start-of-day dialogue, in memory only; live mode
+  offers the broker's cash. `--no-wizard` for automation.
+- **Tiered refresh (§6)** — `live.json` (<1 KB) every second; the rest every
+  five. Position cards rebuild only on structural change. `refresh_live()` is
+  bounded by open positions, not universe size.
+- **Execution plan / square-off / market status (§7, §9, §10)** — deterministic
+  if-this-then-that triggers in `TradeManager` evaluation order; per-position
+  15:15 countdown; the wall clock replaced by the next-candle countdown.
+- **Single runtime state (§11)** — removed two real duplications
+  (`open_risk` recomputed in the exporter; `portfolio_value` meaning two
+  different things in two panels).
+
+**Verified, not changed:** the scanner (§2) was already correct (traced end to
+end); all 12 intraday strategies pass the exit matrix (§8) and square off
+unconditionally (§9) — *including when the symbol has no market data*;
+participation (§14) is 12 of 35 by design (the other 23 are SWING specs an
+intraday engine would close on entry day).
+
+**§13 universe:** the tiered ADTV-ranked architecture already exists. 99
+symbols is a *development configuration*, and the binding constraint is DATA:
+of 745 candidates only 99 have 15m history (5m has 335). Widening is a
+download, not a code change.
+
+**790 tests pass** (was 671); 119 new across freshness, min-allocation, exit
+matrix, participation, live tier, scanning, consistency and session setup.
+
+**Open:** live-market verification against real credentials during NSE hours
+has not been run — it needs an authenticated session and is the operator's
+call.
+
+## Phase 18 delivered — three paper-session defects resolved (D-038, L-018)
+
+The first live paper session exposed three implementation defects. Two shared
+one root cause: **the SmartAPI instrument master was never loaded in paper
+mode**, so all 99 watchlist symbols failed token lookup while the parsed master
+sat unread on disk. Full analysis in `docs/DECISIONS.md` (D-038).
+
+- **Instrument mapping (defect 1).** `SmartApiInstruments` is now the single
+  self-loading authority: `_lookup` ensures the master on first use (cache
+  first, network only if absent), lookups are O(1) against a normalized index,
+  `-EQ`/case/whitespace forms round-trip, a failed load is remembered rather
+  than retried per symbol, and `resolve_many()` returns one `MappingReport`
+  shared by the provider, the broker adapter, preflight and the dashboard.
+  Verified: **99/99 of the real watchlist resolve from the on-disk cache with
+  zero network calls.**
+- **Market data (defect 3).** Providers may declare `unavailable_reason()`
+  (optional, checked before fetching). Ingestion statuses now separate
+  `NO_NEW_DATA` (`up_to_date`/`empty`) from `CANNOT_FETCH`
+  (`unavailable`/`quarantined`); `diagnosis()` states which in one line.
+  `data_fresh` now reports the FETCH, not the store — the session's own logs
+  said `data_fresh: true` for a store that had stopped updating, and four
+  positions were traded under that banner.
+- **Dashboard export (defect 2).** The atomic `os.replace` is retried briefly
+  (~150 ms) instead of abandoned — on Windows a reader holding the destination
+  blocks it, and the dashboard's own file server was that reader. A lost race
+  now SKIPS the write (the next export restores it) rather than raising; each
+  snapshot is written independently; staging files are per-PID and swept;
+  persistent failures surface on `health.json`.
+- **Operator visibility (defect 4).** 99 warnings per cycle → one summary line
+  with reason and examples, re-stated only when the situation changes. The
+  dashboard gains **TOKEN MAPPING `97 / 99 resolved`** and a **MARKET DATA**
+  state (`OK` / `UNABLE TO FETCH` / `OFFLINE`); preflight verifies mapping at
+  startup (total failure critical, partial a warning).
+- **Test hygiene.** `dashboard_dir` defaults to the real dashboard folder and
+  three tests used the default, so a suite run overwrote a live session's
+  snapshots. Fixed, plus an autouse conftest guard that content-hashes the
+  folder around every test.
+
+**Not touched:** strategies, sizing, risk and execution logic are unchanged —
+every edit is in the data/instrument layer, diagnostics or presentation.
+**655 tests pass** (was 620); 35 new across `tests/test_instrument_mapping.py`
+and `tests/test_dashboard_export.py`.
+
+**Open:** the live-session verification (market data updating with the market
+open, against real credentials) has not been run — it needs an authenticated
+SmartAPI session during NSE hours and is the operator's call.
+
+## Phase 17 delivered — fidelity mode; the chase is the price of information (D-037, L-017)
+
+Built the isolated research execution engine (`src/algo/research/fidelity.py`;
+zero production imports; frozen things untouched): declarative `ExecutionSpec` —
+trigger/close/next-open entries, structural stops (OR low, below-VWAP, dip low,
+CPR bottom, pullback low), 1×-range / floor-pivot R1-R2 / fixed-R targets, one
+partial with breakeven, optional ATR trail, EOD square-off; HONEST gap-through
+fills on stops and targets; 11 semantics tests (387 total pass).
+
+- **Part D (99 symbols, matched signals)**: published execution swings the
+  trigger-entry baselines hugely positive (orb −12.3→+19.7 net bps PF 1.84, cpr
+  −14.0→+13.2 PF 1.96, first_pullback −9.7→+6.8, vwap_pullback −11.4→+2.3);
+  vwap_15m unchanged (its published entry IS close-based — internal control ✓).
+- **Part E ladder**: d_entry (+17..+35 bps) is essentially the entire effect;
+  published stops/targets ≈ nothing (−2..0) — exits-don't-create-edge, 4th time.
+- **The control that decides it**: ORB on a TOUCH basis (real resting order, no
+  foresight) = **−10.2 net bps** vs +21.0 close-confirmed. The trigger fill
+  conditions on the bar's close — unimplementable foresight. The D-036 chase is
+  mostly the PRICE OF INFORMATION; the production baseline is the honest one.
+- **Part F**: orb/vwap_pullback/vwap_15m class 1 (published form lacks edge,
+  realizably executed); cpr/first_pullback class 3 (positive only at the
+  unimplementable bound). **All five remain archived; none is a production
+  candidate; no AI refinement. The intraday track closes** (cost wall D-026 +
+  no realizable published edge). Next: registry R-002 (portfolio mode).
+  Report: `user_data/backtest_results/reports/fidelity_eval.md`.
 
 ## Phase 16 delivered — baseline fidelity audit (D-036, L-016)
 

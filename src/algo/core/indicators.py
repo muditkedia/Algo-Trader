@@ -208,3 +208,96 @@ def central_pivot_range(frame: pd.DataFrame):
     prior_top = top.shift(1)
     prior_bot = bot.shift(1)
     return (day.map(prior_pivot), day.map(prior_top), day.map(prior_bot))
+
+
+def floor_pivot_levels(frame: pd.DataFrame):
+    """Classic floor-pivot levels from the PRIOR session, per bar:
+    (pivot, r1, r2).
+
+    pivot = (H + L + C) / 3 ; R1 = 2*pivot - L ; R2 = pivot + (H - L), all from
+    the prior session's completed OHLC (shifted by one session - causal, no
+    lookahead; the first session gets NaN). The widely-used intraday resistance
+    ladder that CPR-style strategies target.
+    """
+    day = _session_key(frame)
+    agg = frame.groupby(day).agg(h=("high", "max"), l=("low", "min"),
+                                 c=("close", "last"))
+    pivot = (agg["h"] + agg["l"] + agg["c"]) / 3.0
+    r1 = 2.0 * pivot - agg["l"]
+    r2 = pivot + (agg["h"] - agg["l"])
+    return (day.map(pivot.shift(1)), day.map(r1.shift(1)),
+            day.map(r2.shift(1)))
+
+
+def floor_pivot_supports(frame: pd.DataFrame):
+    """Classic floor-pivot SUPPORT levels from the PRIOR session, per bar:
+    (s1, s2). S1 = 2*pivot - H ; S2 = pivot - (H - L). Companion to
+    ``floor_pivot_levels`` (additive - that function's signature is frozen by
+    its existing callers). Causal: prior session only; first session NaN."""
+    day = _session_key(frame)
+    agg = frame.groupby(day).agg(h=("high", "max"), l=("low", "min"),
+                                 c=("close", "last"))
+    pivot = (agg["h"] + agg["l"] + agg["c"]) / 3.0
+    s1 = 2.0 * pivot - agg["h"]
+    s2 = pivot - (agg["h"] - agg["l"])
+    return (day.map(s1.shift(1)), day.map(s2.shift(1)))
+
+
+def prior_session_ohlc(frame: pd.DataFrame):
+    """The PRIOR session's (open, high, low, close) carried onto each bar.
+
+    Causal by one-session shift (the ``central_pivot_range`` pattern); the
+    first session gets NaN. Shared by gap and prior-day-level strategies."""
+    day = _session_key(frame)
+    agg = frame.groupby(day).agg(o=("open", "first"), h=("high", "max"),
+                                 l=("low", "min"), c=("close", "last"))
+    return (day.map(agg["o"].shift(1)), day.map(agg["h"].shift(1)),
+            day.map(agg["l"].shift(1)), day.map(agg["c"].shift(1)))
+
+
+def supertrend(frame: pd.DataFrame, period: int = 10,
+               multiplier: float = 3.0):
+    """Supertrend indicator: (line, direction). Canonical formulation
+    (Olivier Seban; the TradingView/India-standard rules) with Wilder ATR:
+
+    basic upper/lower = hl2 +/- multiplier x ATR(period); the final bands
+    ratchet (upper only falls unless price closed above it; lower only rises
+    unless price closed below it); direction flips to +1 when close crosses
+    above the final upper band and to -1 when close crosses below the final
+    lower band; ``line`` is the active band (lower in an uptrend - a rising
+    stop under price; upper in a downtrend).
+
+    Iterative by definition (each band depends on the prior final band), so
+    this runs a plain loop; deterministic, NaN until ATR warms up.
+    """
+    hl2 = (frame["high"] + frame["low"]) / 2.0
+    band = multiplier * atr(frame, period)
+    upper_basic = (hl2 + band).to_numpy(float)
+    lower_basic = (hl2 - band).to_numpy(float)
+    close = frame["close"].to_numpy(float)
+    n = len(frame)
+    line = np.full(n, np.nan)
+    direction = np.zeros(n)
+    upper = np.nan
+    lower = np.nan
+    trend = 1
+    for i in range(n):
+        if np.isnan(upper_basic[i]):
+            continue
+        if np.isnan(upper):                      # first computable bar
+            upper, lower = upper_basic[i], lower_basic[i]
+        else:
+            upper = (upper_basic[i]
+                     if upper_basic[i] < upper or close[i - 1] > upper
+                     else upper)
+            lower = (lower_basic[i]
+                     if lower_basic[i] > lower or close[i - 1] < lower
+                     else lower)
+        if trend == 1 and close[i] < lower:
+            trend = -1
+        elif trend == -1 and close[i] > upper:
+            trend = 1
+        direction[i] = trend
+        line[i] = lower if trend == 1 else upper
+    return (pd.Series(line, index=frame.index),
+            pd.Series(direction, index=frame.index))

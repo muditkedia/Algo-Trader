@@ -4,6 +4,259 @@ Architecture and strategy decisions, with the evidence behind them. Newest first
 
 ---
 
+## D-039 — Production-readiness pass: freshness is a property of the candles, not of the exporter (2026-07-20)
+
+Sixteen items of operational feedback from the first paper session. The
+substantive finding is one category error with several faces; the rest is
+plumbing that follows from fixing it. Full stage-by-stage trace in
+`docs/LIVE_PIPELINE_AUDIT.md`.
+
+### The category error
+
+`generated_at` on every dashboard snapshot is the time the EXPORTER ran, and
+the UI compared it to the wall clock. It therefore measured the exporter's
+liveness and displayed it as the data's freshness. Measured with the real
+objects: a candle **4,261 minutes old** was reported as **"0.0 s"** old.
+
+The same confusion appeared in the health beat: `data_fresh` was
+`bool(latest_prices())`, which reads the STORE and stays true for a store that
+has not updated in months — which is why the failed session logged
+`status: ok, data_fresh: true, errors: 0` all day while fetching nothing and
+trading four positions on stale bars.
+
+**Decision:** freshness is measured on the CANDLES, per symbol, against the bar
+the exchange should have completed by now (`algo/trading/freshness.py`), and in
+**bars rather than seconds** — one bar behind right after a close is the normal
+fetch window, three bars behind at the same moment is a fault. Four states are
+kept distinct, and the two that were conflated are now separate: `FRESH`,
+`STALE` (market open, behind — shown WITH the reason), `MARKET CLOSED` (no bar
+is due, so old candles are correct) and `MISSING`. `marks()` returns price and
+bar time together so the two cannot be separated by accident, and `data_fresh`
+now reports the fetch.
+
+A second instance of the same class: `feed.freshness()` initially read the WALL
+clock rather than the engine's `MarketClock`, giving the assessment its own
+notion of the session. It was caught by its own test — no injected moment could
+produce a STALE verdict. The clock is the single definition of market time.
+
+### Minimum trade allocation (§5)
+
+`min_trade_allocation` (default 25% of `deploy_today`, configurable). A
+position that cannot reach the floor is **SKIPPED, never padded**: the floor is
+a policy about which trades are worth taking, not a licence to breach the
+per-trade cap, the capital available, or the portfolio risk budget. Sizing up
+to satisfy a minimum would let the softest constraint override the hardest one.
+
+The non-obvious consequence, now surfaced in preflight and in the wizard: a
+floor of F caps CONCURRENCY at floor(1/F) regardless of `max_open_positions` —
+a 25% floor with `max_open_positions=5` can only ever reach 4.
+
+### Timeframes: strategies declare, config may only restrict (§3)
+
+The scheduler already derived timeframes from the strategies, but
+`config.timeframes` was a second hand-maintained list and several call sites
+read `config.timeframes[0]`, so the data fetched and the data scanned could
+diverge. `effective_timeframes(declared)` makes the strategies authoritative;
+config may now only RESTRICT, never extend, because asking for a timeframe no
+strategy trades would download data nothing reads.
+
+Also: the live path seeded an uncovered symbol with the ingestion default of
+**365 days**. Right for a history download, badly wrong for a live top-up —
+adding one uncovered timeframe would have pulled a year per symbol at the first
+refresh. Live now uses `live_lookback_days` (default 5).
+
+### Single runtime state (§11)
+
+Two genuine duplications were found and removed: `open_risk` was recomputed in
+the exporter with the formula the risk engine already owns, and
+`portfolio_value` meant the day's static allowance in one panel and the live
+mark in another — the same name for two different quantities, which is exactly
+how a panel starts contradicting the engine. `PortfolioRisk.portfolio_value` is
+now the one definition; the allowance survives as `capital_base`.
+
+### Tiered refresh (§6)
+
+Prices and P&L change every second; the scanner, signals, explainability,
+timeline and logs cannot change between completed candles. The export is split
+into a fast tier (`live.json`, <1 KB) and the slow set, and position CARDS are
+rebuilt only when their structure changes while the numbers inside are patched
+in place — rebuilding every second closed any open panel and made the page
+flicker. `refresh_live()` is bounded by `max_open_positions`, not by universe
+size, so a 1000-symbol universe costs the same there as a 10-symbol one.
+
+Live last-traded prices are used for **display and P&L only**; every decision
+still reads completed bars, exactly as the strategies were measured.
+
+### Verified, not changed
+
+- **Scanner (§2):** already correct — a bar is evaluated once, the scanner
+  advances to newer bars immediately and never regresses, and only the newest
+  bar can fire. Traced end to end for one symbol.
+- **Exit engine (§8) and square-off (§9):** all 12 intraday strategies verified
+  through the real `TradeManager` for stop, stop-first precedence, honest gap
+  fill, target, partial, breakeven, trailing, ratchet-only and square-off.
+  Square-off holds even when the symbol has NO market data.
+- **Strategy participation (§14):** 12 of 35 scan, and that is the design —
+  the other 23 are SWING specs whose horizons run to 126 days; an engine that
+  squares off at 15:15 would close them on entry day, every day.
+- **Universe (§13):** the tiered, ADTV-ranked architecture already exists
+  (dev 100 / paper 500 / production 1000). The 99 symbols are a DEVELOPMENT
+  CONFIGURATION — `config.universe` defaults to empty, so the explicit
+  `nifty100.txt` is used. The binding constraint is DATA, not code: of 745
+  candidates, only 99 have 15m history (5m has 335). Widening the universe is a
+  download, not a change.
+
+**Scope:** no strategy logic, sizing rule beyond the declared minimum, or
+execution path was altered.
+
+---
+
+## D-038 — First paper session: three defects, one authoritative instrument map, and an absence of evidence read as evidence of absence (2026-07-20)
+
+The first live paper session logged `no instrument token for <symbol> -
+skipping` for **all 99** watchlist symbols while the portfolio simultaneously
+held open positions in several of them (HDFCBANK, RELIANCE, …), reported
+`rows_fetched=0 rows_added=0` on every cycle, and failed to export `logs.json`
+with `Access denied: logs.tmp -> logs.json`. Three defects, two of which shared
+one root cause.
+
+### 1. The instrument master was never loaded (root cause of defects 1 and 3)
+
+`SmartApiInstruments` loads lazily, but `token_for()` had **no lazy trigger**.
+`_lookup()` opened with `if self._master is not None:` and, when the master had
+never been loaded, fell through and returned `None` — **indistinguishable from
+"this symbol is not listed."** Loading was every caller's responsibility, and
+five entry points each remembered it separately:
+
+| caller | calls `ensure()` |
+|---|---|
+| `scripts/download_history.py:77` | yes |
+| `scripts/build_universe.py:84` | yes |
+| `scripts/run_paper.py:104` | yes |
+| `AngelOneBroker.connect()` | yes — **live mode only** |
+| **`scripts/run_trading.py`** (the production runner) | **no** |
+
+In paper mode `build_adapter` returns `PaperBroker`, so the one in-engine
+`ensure()` never runs. Every lookup therefore failed **while the parsed master
+sat on disk unread** (`user_data/data/nse/_instruments/smartapi_nse_eq.parquet`,
+2,406 rows, written 2026-07-17). Nothing was broken but the missing call:
+resolving the real 99-symbol watchlist against that cache now yields **99/99,
+with zero network calls**.
+
+The portfolio/provider "disagreement" was therefore not a disagreement about
+symbol identity at all — the engine's positions came from stored candles, and
+the provider simply had no map loaded to answer with.
+
+**Decision:** the map loads **itself**. `_lookup` ensures the master on first
+use (cache-first, network only if absent), exactly as the index path already
+did. Callers cannot forget because it is no longer their job. Lookups are
+O(1) against a normalized dict, a failed load is remembered (99 symbols × every
+cycle must not become 99 downloads) and clearable via `reset()`, and
+`-EQ`/case/whitespace forms round-trip so the broker's own tradingsymbol
+resolves. Other NSE series (`-BE`, `-SM`) are deliberately NOT folded onto the
+EQ scrip — they are different instruments with different tokens.
+
+### 2. `rows_fetched=0` could mean two opposite things
+
+An unmappable symbol returned an empty frame, which `IngestionEngine` recorded
+as `empty` — the same status a genuinely quiet market produces. **A total
+mapping failure was therefore reported in exactly the vocabulary of a normal
+closed-market cycle.** The engine then compounded it: `data_fresh` was computed
+as `bool(latest_prices())`, which reads the **store**, so it stayed `True` for a
+store that had not been updated all day. The session's own health beats say
+`status: ok, data_fresh: true, errors: 0` while nothing was being fetched — and
+**four positions were opened and closed on stale bars** under that banner.
+
+**Decision:** providers may declare `unavailable_reason(symbol, timeframe)`
+(optional; default `None`), checked BEFORE fetching. Statuses now separate
+`NO_NEW_DATA` (`up_to_date`, `empty`) from `CANNOT_FETCH` (`unavailable`,
+`quarantined`), `IngestionReport.diagnosis()` states which in one line with the
+reason and examples, and `data_fresh` reports the **fetch**, not the store.
+An absence of rows is never again allowed to stand in for an absence of faults.
+
+### 3. `os.replace` loses to the dashboard's own file server on Windows
+
+`os.replace` is atomic on Windows but raises `PermissionError [WinError 5]`
+while another process holds the **destination** open — Python's `open()` does
+not pass `FILE_SHARE_DELETE`, so an ordinary reader blocks it. The reader was
+the dashboard's own static server: the browser polls all ten snapshots every 2 s
+(`POLL_MS = 2000`), and `logs.json` — the largest payload — is held open longest,
+which is why it failed **by name**. A single `try/except` around the whole
+export meant one locked file aborted the rest; `logs.json` being written last
+was luck, not design.
+
+**Decision:** keep the atomic `os.replace` and retry it briefly (5 attempts from
+10 ms, ~150 ms worst case) — the collision lasts one file send. If every attempt
+loses, the write is **skipped, not raised**: each snapshot is a complete picture,
+so the next export restores it. Staging files are per-PID, swept at startup, and
+removed on failure; each snapshot is built and written independently; and a file
+that keeps losing surfaces on `health.json` rather than only in the log.
+
+### Diagnostics (defect 4)
+
+99 identical warnings per cycle became **one** line — `15m: UNABLE TO FETCH
+candles for 99/99 symbols - no instrument token in the NSE master (examples:
+ADANIENT, ADANIPORTS, APOLLOHOSP, ASIANPAINT, AXISBANK, +94 more)` — emitted as
+a `data` event and re-stated only when the situation **changes**, so a standing
+fault does not scroll a session. The dashboard gains `TOKEN MAPPING 97 / 99
+resolved` and a `MARKET DATA` state (`OK` / `UNABLE TO FETCH` / `OFFLINE`), both
+sourced from the same authoritative map the provider and broker resolve through,
+so the panel cannot drift from what trading sees. Preflight now verifies mapping
+at startup: a total failure is **critical** (no data can arrive), a partial one
+is a warning.
+
+### Collateral finding — the test suite overwrote a live session's snapshots
+
+`TradingConfig.dashboard_dir` defaults to the real `dashboard/dashboard_data`,
+and three tests built a `ProductionEngine` without overriding it. Running the
+suite during this work overwrote the snapshots of the actual paper session (the
+authoritative record — `events-*.jsonl`, `portfolio.json`, the daily summary —
+was untouched; those files are derived presentation state). Fixed at the call
+sites, plus an autouse conftest guard that **content-hashes** the live folder
+around every test and fails any test that writes into it. Content hashing, not
+mtimes: NTFS granularity is coarse enough that a fast rewrite can reuse an
+mtime — a flaw the guard's own test caught.
+
+**Scope:** no strategy, sizing, risk or execution logic was modified. Every
+change is in the data/instrument layer, diagnostics, or presentation. 655 tests
+pass (up from 620); 35 new.
+
+---
+
+## D-037 — Phase 17: fidelity mode built; the "chase" is mostly the price of information; intraday track closes (2026-07-18)
+
+Built the Fidelity Evaluation Mode (`research/fidelity.py` — isolated research
+path; zero production imports): declarative `ExecutionSpec` (trigger/close/
+next-open entries, structural stops, fixed-R/level targets, one partial with
+breakeven, optional ATR trail, EOD), honest gap-through fills on stops AND
+targets, stop-before-target same-bar convention, 11 semantics tests. The five
+published specs come from the D-036 audit, fixed, untuned.
+
+**Part D (99 symbols, matched signals):** under published execution the
+trigger-entry strategies swing hugely positive — orb −12.3→+19.7 net bps (PF
+1.84), cpr −14.0→+13.2 (PF 1.96), first_pullback −9.7→+6.8; vwap_pullback
+−11.4→+2.3; vwap_15m unchanged (−12.4→−12.9 — its published entry IS
+close-based: the internal control). **Part E ladder:** d_entry = +17..+35 bps is
+essentially the whole swing; published stops (d_stop −1.5..+0.2) and targets
+(d_target −1.8..−0.5) contribute ≈ NOTHING — D-006's exits-don't-create-edge,
+fourth reproduction.
+
+**The decisive control:** trigger-mode fills condition on the bar CLOSING beyond
+the level — information that does not exist at the fill moment. The ORB
+TOUCH-basis run (a real resting order: every first touch, failures included)
+collapses to **−10.2 net bps** vs +21.0 close-confirmed. So the D-036 "chase" is
+not recoverable dead-weight — it is mostly **the price of knowing the close**,
+and the production close-of-bar baseline is the honest implementable
+measurement.
+
+**Part F:** orb / vwap_pullback / vwap_15m — class 1 (published form lacks edge
+on this corpus, realizably executed); cpr / first_pullback — class 3
+(inconclusive: positive only at the unimplementable bound). ALL remain archived;
+none becomes a production candidate; **no AI-guided refinement** (it would
+optimise toward foresight). The intraday production track closes: cost wall
+(D-026) + no realizable published edge. Next research move: registry top item
+R-002 (portfolio-mode factor evaluation). 387 tests pass.
+
 ## D-036 — Phase 16: baseline fidelity audit — we test our execution model, not the published systems (2026-07-18)
 
 Audit of the five Phase-15 intraday baselines (`research/BASELINE_FIDELITY_AUDIT.md`;

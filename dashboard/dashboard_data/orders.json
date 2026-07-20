@@ -1,0 +1,77 @@
+{
+ "generated_at": "2026-07-20T08:03:18.910186+00:00",
+ "schema": 2,
+ "data": {
+  "count": 4,
+  "orders": [
+   {
+    "client_order_id": "CO-46ac15b8b57f8ee2",
+    "broker_order_id": "PAPER-4",
+    "symbol": "GAIL",
+    "side": "BUY",
+    "quantity": 2.0,
+    "type": "MARKET",
+    "status": "FILLED",
+    "intent": "entry",
+    "filled_quantity": 2.0,
+    "avg_fill_price": 171.83,
+    "strategy": "Opening Range Breakout",
+    "reason": "",
+    "created": "2026-07-20T04:00:33.645848+00:00",
+    "updated": "2026-07-20T04:00:33.645848+00:00",
+    "time": "09:30:33"
+   },
+   {
+    "client_order_id": "CO-c38cece01559719e",
+    "broker_order_id": "PAPER-3",
+    "symbol": "RELIANCE",
+    "side": "BUY",
+    "quantity": 9.0,
+    "type": "MARKET",
+    "status": "FILLED",
+    "intent": "entry",
+    "filled_quantity": 9.0,
+    "avg_fill_price": 1329.07,
+    "strategy": "VWAP Pullback",
+    "reason": "",
+    "created": "2026-07-20T04:00:33.637593+00:00",
+    "updated": "2026-07-20T04:00:33.637593+00:00",
+    "time": "09:30:33"
+   },
+   {
+    "client_order_id": "CO-2b0a9fd5abb7ad4f",
+    "broker_order_id": "PAPER-2",
+    "symbol": "MARUTI",
+    "side": "BUY",
+    "quantity": 10.0,
+    "type": "MARKET",
+    "status": "FILLED",
+    "intent": "entry",
+    "filled_quantity": 10.0,
+    "avg_fill_price": 13826.76,
+    "strategy": "VWAP Pullback",
+    "reason": "",
+    "created": "2026-07-20T04:00:33.630363+00:00",
+    "updated": "2026-07-20T04:00:33.630363+00:00",
+    "time": "09:30:33"
+   },
+   {
+    "client_order_id": "CO-dcdb84e05ebbf922",
+    "broker_order_id": "PAPER-1",
+    "symbol": "HDFCBANK",
+    "side": "BUY",
+    "quantity": 182.0,
+    "type": "MARKET",
+    "status": "FILLED",
+    "intent": "entry",
+    "filled_quantity": 182.0,
+    "avg_fill_price": 820.96,
+    "strategy": "VWAP Pullback",
+    "reason": "",
+    "created": "2026-07-20T04:00:33.613680+00:00",
+    "updated": "2026-07-20T04:00:33.613680+00:00",
+    "time": "09:30:33"
+   }
+  ]
+ }
+}

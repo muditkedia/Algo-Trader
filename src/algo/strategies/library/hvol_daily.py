@@ -17,6 +17,7 @@ import pandas as pd
 from algo.core.config import from_dict
 from algo.core.enums import Direction, HoldingScope
 from algo.core.indicators import crossed_above, volume_ratio
+from algo.execution import atr_trail_swing
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import Component, ConfidenceScore, clip01, weighted
 
@@ -55,6 +56,11 @@ class HighVolumePremium(StrategyProfile):
         enabled=True,
         horizon_bars=(5, 10, 20), max_hold_bars=20,
     )
+
+    #: Swing execution owned by this strategy: ATR/structure stop,
+    #: chandelier trail + profit locks, overnight allowed, horizon end
+    #: at its declared max hold (no session square-off).
+    execution = atr_trail_swing(meta.max_hold_bars)
 
     def __init__(self, settings=None) -> None:
         super().__init__(settings or HvolParams())

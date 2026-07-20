@@ -25,6 +25,14 @@ this track: no selectivity filters or AI refinement until the owner decides on a
 fidelity evaluation mode (trigger-level entries + published stop/target
 emulation as a measurement variant; frozen engines untouched)._
 
+_Phase 17 built that fidelity mode and CLOSED the intraday track (D-037,
+L-017): the apparent fidelity gains are quantified lookahead (trigger fills
+conditioned on the bar's close); the touch-basis control (real resting order)
+is net-negative; published stops/targets contribute ≈ nothing. All five remain
+archived; no AI refinement. Any future intraday work requires finer-than-15m
+data. The forward plan returns to `docs/RESEARCH_REGISTRY.md` — top item
+R-002, portfolio-mode factor evaluation (owner-gated new measurement mode)._
+
 ---
 
 ## 0. Post-27 research roadmap (Phase 12, ranked by expected value)

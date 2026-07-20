@@ -1,0 +1,861 @@
+{
+ "generated_at": "2026-07-20T08:03:18.942357+00:00",
+ "schema": 2,
+ "data": {
+  "count": 142,
+  "logs": [
+   {
+    "time": "13:33:18",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"halted\", \"cycles\": 1, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": false, \"risk_tripped\": true, \"trip_reason\": \"daily loss limit hit (-279647 <= -8000)\", \"last_cycle\": \"2026-07-20T08:03:18.890448+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "13:33:18",
+    "level": "INFO",
+    "source": "data",
+    "message": "{\"timeframe\": \"15m\", \"ok\": false, \"kind\": \"stale\", \"stale\": 3, \"total\": 99, \"bars_behind\": 13, \"examples\": [\"ADANIENT\", \"KOTAKBANK\", \"MRF\"], \"detail\": \"15m: STALE DATA - 3/99 symbols are 13 or more bars behind (examples: ADANIENT, KOTAKBANK, MRF)\"}"
+   },
+   {
+    "time": "13:33:17",
+    "level": "INFO",
+    "source": "data",
+    "message": "{\"timeframe\": \"15m\", \"ok\": false, \"blocked\": 3, \"total\": 99, \"reasons\": {\"fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'\": 3}, \"examples\": [\"ADANIENT\", \"KOTAKBANK\", \"MRF\"], \"detail\": \"15m: UNABLE TO FETCH candles for 3/99 symbols - fetch error: Couldn't parse the JSON response received from the server: b'Access denied becau"
+   },
+   {
+    "time": "13:25:36",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"phase\": \"startup\", \"preflight\": {\"passed\": true, \"checks\": [{\"name\": \"broker_auth\", \"ok\": true, \"critical\": true, \"detail\": \"paper connected\"}, {\"name\": \"market_data\", \"ok\": true, \"critical\": true, \"detail\": \"99/99 symbols have 15m data\"}, {\"name\": \"watchlist\", \"ok\": true, \"critical\": true, \"detail\": \"99 symbols\"}, {\"name\": \"instrument_mapping\", \"ok\": true, \"critical\": false, \"detail\": \"99/99 sy"
+   },
+   {
+    "time": "13:25:35",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"loaded_positions\": 4, \"resumed\": [], \"orphaned_internal\": [\"HDFCBANK-vwap_pullback_15m-1784281500000000000\", \"MARUTI-vwap_pullback_15m-1784281500000000000\", \"RELIANCE-vwap_pullback_15m-1784281500000000000\", \"GAIL-orb_15m-1784281500000000000\"], \"orphaned_broker\": [], \"partial_fills\": [], \"working_orders\": 0, \"reconciled_orders\": 0}"
+   },
+   {
+    "time": "13:25:35",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"action\": \"orphaned_internal\", \"symbol\": \"GAIL\", \"position\": \"GAIL-orb_15m-1784281500000000000\"}"
+   },
+   {
+    "time": "13:25:35",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"action\": \"orphaned_internal\", \"symbol\": \"RELIANCE\", \"position\": \"RELIANCE-vwap_pullback_15m-1784281500000000000\"}"
+   },
+   {
+    "time": "13:25:35",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"action\": \"orphaned_internal\", \"symbol\": \"MARUTI\", \"position\": \"MARUTI-vwap_pullback_15m-1784281500000000000\"}"
+   },
+   {
+    "time": "13:25:35",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"action\": \"orphaned_internal\", \"symbol\": \"HDFCBANK\", \"position\": \"HDFCBANK-vwap_pullback_15m-1784281500000000000\"}"
+   },
+   {
+    "time": "12:03:34",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"phase\": \"eod\", \"summary\": {\"session\": \"2026-07-20\", \"open_positions\": 4, \"closed_trades\": 4, \"wins\": 0, \"losses\": 4, \"realized_pnl\": -59.99, \"unrealized_pnl\": -59.99, \"deployed_capital\": 299988.39, \"mode\": \"paper\", \"profit_factor\": 0.0, \"gross_profit\": 0, \"gross_loss\": 59.99, \"by_strategy\": {\"vwap_pullback_15m\": {\"trades\": 3, \"pnl\": -59.92}, \"orb_15m\": {\"trades\": 1, \"pnl\": -0.07}}}}"
+   },
+   {
+    "time": "12:02:44",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 5, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T06:32:44.786337+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 3, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T06:31:43.286853+00:00\", \"opened\": 4, \"open_positions\": 4}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"UNITDSPR\", \"strategy\": \"vwap_pullback_15m\", \"reason\": \"cannot size a whole lot at 1376.50: stop distance 3.96/share needs >8,947 risk budget or >12 capital for one lot\"}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"UNITDSPR\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 1376.5, \"stop\": 1372.5351752236368, \"target\": 1384.4296495527265, \"confidence\": 1.0}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"PNB\", \"strategy\": \"vwap_pullback_15m\", \"reason\": \"cannot size a whole lot at 106.01: stop distance 0.75/share needs >8,947 risk budget or >12 capital for one lot\"}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"PNB\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 106.01, \"stop\": 105.25869096467795, \"target\": 107.51261807064411, \"confidence\": 1.0}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"PNB\", \"strategy\": \"first_pullback_15m\", \"reason\": \"cannot size a whole lot at 106.01: stop distance 0.58/share needs >8,947 risk budget or >12 capital for one lot\"}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"PNB\", \"strategy\": \"first_pullback_15m\", \"entry\": 106.01, \"stop\": 105.43, \"target\": 107.17, \"confidence\": 0.9548}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"ICICIPRULI\", \"strategy\": \"cpr_reversal_15m\", \"reason\": \"cannot size a whole lot at 497.45: stop distance 2.30/share needs >8,947 risk budget or >12 capital for one lot\"}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"ICICIPRULI\", \"strategy\": \"cpr_reversal_15m\", \"entry\": 497.45, \"stop\": 495.15, \"target\": 513.8000000000001, \"confidence\": 1.0}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"GAIL\", \"strategy\": \"vwap_pullback_15m\", \"reason\": \"symbol already held: GAIL\"}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"GAIL\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 171.8, \"stop\": 171.0585769008447, \"target\": 173.2828461983106, \"confidence\": 1.0}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "position",
+    "message": "{\"action\": \"open\", \"symbol\": \"GAIL\", \"strategy\": \"orb_15m\", \"price\": 171.83436, \"qty\": 2.0, \"stop\": 169.47}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"GAIL\", \"strategy\": \"orb_15m\", \"entry\": 171.8, \"stop\": 169.47, \"target\": 173.83, \"confidence\": 0.6412}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "position",
+    "message": "{\"action\": \"open\", \"symbol\": \"RELIANCE\", \"strategy\": \"vwap_pullback_15m\", \"price\": 1329.06576, \"qty\": 9.0, \"stop\": 1321.1931755484027}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"RELIANCE\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 1328.8, \"stop\": 1321.1931755484027, \"target\": 1344.0136489031945, \"confidence\": 1.0}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "position",
+    "message": "{\"action\": \"open\", \"symbol\": \"MARUTI\", \"strategy\": \"vwap_pullback_15m\", \"price\": 13826.764799999999, \"qty\": 10.0, \"stop\": 13787.489697113666}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"MARUTI\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 13824.0, \"stop\": 13787.489697113666, \"target\": 13897.020605772668, \"confidence\": 1.0}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "position",
+    "message": "{\"action\": \"open\", \"symbol\": \"HDFCBANK\", \"strategy\": \"vwap_pullback_15m\", \"price\": 820.96416, \"qty\": 182.0, \"stop\": 818.0789313618217}"
+   },
+   {
+    "time": "12:01:43",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"HDFCBANK\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 820.8, \"stop\": 818.0789313618217, \"target\": 826.2421372763565, \"confidence\": 0.9377}"
+   },
+   {
+    "time": "12:00:18",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 1, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T06:30:18.714830+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "12:00:17",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"phase\": \"startup\", \"preflight\": {\"passed\": true, \"checks\": [{\"name\": \"broker_auth\", \"ok\": true, \"critical\": true, \"detail\": \"paper connected\"}, {\"name\": \"market_data\", \"ok\": true, \"critical\": true, \"detail\": \"99/99 symbols have 15m data\"}, {\"name\": \"watchlist\", \"ok\": true, \"critical\": true, \"detail\": \"99 symbols\"}, {\"name\": \"strategies\", \"ok\": true, \"critical\": true, \"detail\": \"12 enabled intrad"
+   },
+   {
+    "time": "12:00:16",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"loaded_positions\": 4, \"resumed\": [], \"orphaned_internal\": [\"HDFCBANK-vwap_pullback_15m-1784281500000000000\", \"MARUTI-vwap_pullback_15m-1784281500000000000\", \"RELIANCE-vwap_pullback_15m-1784281500000000000\", \"GAIL-orb_15m-1784281500000000000\"], \"orphaned_broker\": [], \"partial_fills\": [], \"working_orders\": 0, \"reconciled_orders\": 0}"
+   },
+   {
+    "time": "12:00:16",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"action\": \"orphaned_internal\", \"symbol\": \"GAIL\", \"position\": \"GAIL-orb_15m-1784281500000000000\"}"
+   },
+   {
+    "time": "12:00:16",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"action\": \"orphaned_internal\", \"symbol\": \"RELIANCE\", \"position\": \"RELIANCE-vwap_pullback_15m-1784281500000000000\"}"
+   },
+   {
+    "time": "12:00:16",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"action\": \"orphaned_internal\", \"symbol\": \"MARUTI\", \"position\": \"MARUTI-vwap_pullback_15m-1784281500000000000\"}"
+   },
+   {
+    "time": "12:00:16",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"action\": \"orphaned_internal\", \"symbol\": \"HDFCBANK\", \"position\": \"HDFCBANK-vwap_pullback_15m-1784281500000000000\"}"
+   },
+   {
+    "time": "10:30:04",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"phase\": \"eod\", \"summary\": {\"session\": \"2026-07-20\", \"open_positions\": 4, \"closed_trades\": 0, \"wins\": 0, \"losses\": 0, \"realized_pnl\": 0.0, \"unrealized_pnl\": -59.99, \"deployed_capital\": 299988.39, \"mode\": \"paper\", \"profit_factor\": null, \"gross_profit\": 0, \"gross_loss\": 0, \"by_strategy\": {}}}"
+   },
+   {
+    "time": "10:29:39",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 150, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:59:39.560584+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:28:38",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 148, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:58:38.396313+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:27:37",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 146, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:57:37.272085+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:26:36",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 144, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:56:36.039687+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:25:34",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 142, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:55:34.833168+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:24:33",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 140, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:54:33.671581+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:23:32",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 138, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:53:32.477724+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:22:31",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 136, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:52:31.254698+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:21:30",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 134, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:51:30.142349+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:20:28",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 132, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:50:28.974540+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:19:27",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 130, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:49:27.814662+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:18:26",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 128, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:48:26.675910+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:17:25",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 126, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:47:25.332921+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:16:24",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 124, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:46:24.140212+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:15:23",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 122, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:45:23.006345+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:15:21",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 121, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:45:21.557269+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:14:37",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 119, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:44:37.382412+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:13:36",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 117, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:43:36.226248+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:12:34",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 115, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:42:34.974253+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:11:33",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 113, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:41:33.829924+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:10:32",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 111, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:40:32.707432+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:09:31",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 109, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:39:31.617597+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:08:30",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 107, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:38:30.536070+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:07:29",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 105, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:37:29.407331+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:06:28",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 103, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:36:28.286133+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:05:27",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 101, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:35:27.122580+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:04:26",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 99, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:34:26.035129+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:03:24",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 97, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:33:24.925572+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:02:23",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 95, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:32:23.719296+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:01:22",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 93, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:31:22.644758+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "10:00:21",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 91, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:30:21.524707+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:59:37",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 89, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:29:37.165197+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:58:36",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 87, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:28:36.096881+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:57:34",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 85, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:27:34.909770+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:56:33",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 83, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:26:33.760052+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:55:32",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 81, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:25:32.611131+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:54:31",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 79, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:24:31.507164+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:53:30",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 77, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:23:30.394756+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:52:29",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 75, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:22:29.299727+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:51:28",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 73, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:21:28.219862+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:50:27",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 71, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:20:27.114309+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:49:25",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 69, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:19:25.968988+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:48:24",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 67, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:18:24.896532+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:47:23",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 65, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:17:23.755032+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:46:22",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 63, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:16:22.714082+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:45:21",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 61, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:15:21.563677+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:44:49",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 59, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:14:49.749744+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:43:48",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 57, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:13:48.591041+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:42:47",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 55, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:12:47.471410+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:41:46",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 53, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:11:46.364281+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:40:45",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 51, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:10:45.269433+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:39:44",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 49, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:09:44.206745+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:38:43",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 47, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:08:43.056214+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:37:41",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 45, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:07:41.889721+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:36:40",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 43, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:06:40.789552+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:35:39",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 41, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:05:39.434116+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:34:38",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 39, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:04:38.303459+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:33:37",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 37, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:03:37.153072+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:32:36",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 35, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:02:36.035401+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:31:34",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 33, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:01:34.798108+00:00\", \"opened\": 0, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 31, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T04:00:33.660789+00:00\", \"opened\": 4, \"open_positions\": 4}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"UNITDSPR\", \"strategy\": \"vwap_pullback_15m\", \"reason\": \"cannot size a whole lot at 1376.50: stop distance 3.96/share needs >9,007 risk budget or >12 capital for one lot\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"UNITDSPR\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 1376.5, \"stop\": 1372.5351752236368, \"target\": 1384.4296495527265, \"confidence\": 1.0}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"PNB\", \"strategy\": \"vwap_pullback_15m\", \"reason\": \"cannot size a whole lot at 106.01: stop distance 0.75/share needs >9,007 risk budget or >12 capital for one lot\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"PNB\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 106.01, \"stop\": 105.25869096467795, \"target\": 107.51261807064411, \"confidence\": 1.0}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"PNB\", \"strategy\": \"first_pullback_15m\", \"reason\": \"cannot size a whole lot at 106.01: stop distance 0.58/share needs >9,007 risk budget or >12 capital for one lot\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"PNB\", \"strategy\": \"first_pullback_15m\", \"entry\": 106.01, \"stop\": 105.43, \"target\": 107.17, \"confidence\": 0.9548}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"ICICIPRULI\", \"strategy\": \"cpr_reversal_15m\", \"reason\": \"cannot size a whole lot at 497.45: stop distance 2.30/share needs >9,007 risk budget or >12 capital for one lot\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"ICICIPRULI\", \"strategy\": \"cpr_reversal_15m\", \"entry\": 497.45, \"stop\": 495.15, \"target\": 513.8000000000001, \"confidence\": 1.0}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "WARN",
+    "source": "risk_block",
+    "message": "{\"symbol\": \"GAIL\", \"strategy\": \"vwap_pullback_15m\", \"reason\": \"symbol already held: GAIL\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"GAIL\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 171.8, \"stop\": 171.0585769008447, \"target\": 173.2828461983106, \"confidence\": 1.0}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "position",
+    "message": "{\"action\": \"open\", \"symbol\": \"GAIL\", \"strategy\": \"orb_15m\", \"price\": 171.83436, \"qty\": 2.0, \"stop\": 169.47}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "order",
+    "message": "{\"intent\": \"entry\", \"symbol\": \"GAIL\", \"side\": \"BUY\", \"qty\": 2.0, \"cid\": \"CO-46ac15b8b57f8ee2\", \"status\": \"FILLED\", \"broker_id\": \"PAPER-4\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"GAIL\", \"strategy\": \"orb_15m\", \"entry\": 171.8, \"stop\": 169.47, \"target\": 173.83, \"confidence\": 0.6412}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "position",
+    "message": "{\"action\": \"open\", \"symbol\": \"RELIANCE\", \"strategy\": \"vwap_pullback_15m\", \"price\": 1329.06576, \"qty\": 9.0, \"stop\": 1321.1931755484027}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "order",
+    "message": "{\"intent\": \"entry\", \"symbol\": \"RELIANCE\", \"side\": \"BUY\", \"qty\": 9.0, \"cid\": \"CO-c38cece01559719e\", \"status\": \"FILLED\", \"broker_id\": \"PAPER-3\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"RELIANCE\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 1328.8, \"stop\": 1321.1931755484027, \"target\": 1344.0136489031945, \"confidence\": 1.0}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "position",
+    "message": "{\"action\": \"open\", \"symbol\": \"MARUTI\", \"strategy\": \"vwap_pullback_15m\", \"price\": 13826.764799999999, \"qty\": 10.0, \"stop\": 13787.489697113666}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "order",
+    "message": "{\"intent\": \"entry\", \"symbol\": \"MARUTI\", \"side\": \"BUY\", \"qty\": 10.0, \"cid\": \"CO-2b0a9fd5abb7ad4f\", \"status\": \"FILLED\", \"broker_id\": \"PAPER-2\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"MARUTI\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 13824.0, \"stop\": 13787.489697113666, \"target\": 13897.020605772668, \"confidence\": 1.0}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "position",
+    "message": "{\"action\": \"open\", \"symbol\": \"HDFCBANK\", \"strategy\": \"vwap_pullback_15m\", \"price\": 820.96416, \"qty\": 182.0, \"stop\": 818.0789313618217}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "order",
+    "message": "{\"intent\": \"entry\", \"symbol\": \"HDFCBANK\", \"side\": \"BUY\", \"qty\": 182.0, \"cid\": \"CO-dcdb84e05ebbf922\", \"status\": \"FILLED\", \"broker_id\": \"PAPER-1\"}"
+   },
+   {
+    "time": "09:30:33",
+    "level": "INFO",
+    "source": "signal",
+    "message": "{\"symbol\": \"HDFCBANK\", \"strategy\": \"vwap_pullback_15m\", \"entry\": 820.8, \"stop\": 818.0789313618217, \"target\": 826.2421372763565, \"confidence\": 0.9377}"
+   },
+   {
+    "time": "09:29:31",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 29, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:59:31.666469+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:28:30",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 27, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:58:30.534725+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:27:29",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 25, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:57:29.383537+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:26:28",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 23, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:56:28.353106+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:25:27",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 21, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:55:27.290327+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:24:26",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 19, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:54:26.163851+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:23:25",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 17, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:53:25.068813+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:22:24",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 15, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:52:24.029929+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:21:22",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 13, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:51:22.925966+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:20:21",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 11, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:50:21.838604+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:19:20",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 9, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:49:20.742532+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:18:19",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 7, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:48:19.628560+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:17:18",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 5, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:47:18.506139+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:16:17",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 3, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:46:17.333167+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:15:16",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 1, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T03:45:16.221021+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "09:00:44",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"phase\": \"startup\", \"preflight\": {\"passed\": true, \"checks\": [{\"name\": \"broker_auth\", \"ok\": true, \"critical\": true, \"detail\": \"paper connected\"}, {\"name\": \"market_data\", \"ok\": true, \"critical\": true, \"detail\": \"99/99 symbols have 15m data\"}, {\"name\": \"watchlist\", \"ok\": true, \"critical\": true, \"detail\": \"99 symbols\"}, {\"name\": \"strategies\", \"ok\": true, \"critical\": true, \"detail\": \"12 enabled intrad"
+   },
+   {
+    "time": "09:00:43",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"loaded_positions\": 0, \"resumed\": [], \"orphaned_internal\": [], \"orphaned_broker\": [], \"partial_fills\": [], \"working_orders\": 0, \"reconciled_orders\": 0}"
+   },
+   {
+    "time": "05:32:40",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"status\": \"ok\", \"cycles\": 1, \"errors\": 0, \"adapter_ok\": true, \"data_fresh\": true, \"risk_tripped\": false, \"trip_reason\": \"\", \"last_cycle\": \"2026-07-20T00:02:40.900833+00:00\", \"opened\": 0, \"open_positions\": 0}"
+   },
+   {
+    "time": "05:32:39",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"phase\": \"startup\", \"preflight\": {\"passed\": true, \"checks\": [{\"name\": \"broker_auth\", \"ok\": true, \"critical\": true, \"detail\": \"paper connected\"}, {\"name\": \"market_data\", \"ok\": true, \"critical\": true, \"detail\": \"99/99 symbols have 15m data\"}, {\"name\": \"watchlist\", \"ok\": true, \"critical\": true, \"detail\": \"99 symbols\"}, {\"name\": \"strategies\", \"ok\": true, \"critical\": true, \"detail\": \"12 enabled intrad"
+   },
+   {
+    "time": "05:32:39",
+    "level": "INFO",
+    "source": "recovery",
+    "message": "{\"loaded_positions\": 0, \"resumed\": [], \"orphaned_internal\": [], \"orphaned_broker\": [], \"partial_fills\": [], \"working_orders\": 0, \"reconciled_orders\": 0}"
+   },
+   {
+    "time": "05:31:21",
+    "level": "INFO",
+    "source": "health",
+    "message": "{\"phase\": \"eod\", \"summary\": {\"session\": \"2026-07-20\", \"open_positions\": 0, \"closed_trades\": 0, \"wins\": 0, \"losses\": 0, \"realized_pnl\": 0.0, \"unrealized_pnl\": 0, \"deployed_capital\": 0, \"mode\": \"paper\", \"profit_factor\": null, \"gross_profit\": 0, \"gross_loss\": 0, \"by_strategy\": {}}}"
+   }
+  ]
+ }
+}

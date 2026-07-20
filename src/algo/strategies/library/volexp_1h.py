@@ -18,6 +18,7 @@ from algo.core.enums import Direction, HoldingScope
 from algo.core.indicators import (
     atr, bollinger, bollinger_bandwidth, crossed_above, volume_ratio,
 )
+from algo.execution import atr_trail_intraday
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import (
     Component, ConfidenceScore, clip01, weighted,
@@ -60,6 +61,12 @@ class VolatilityExpansionBreakout1h(StrategyProfile):
         ),
         enabled=True,
     )
+
+    #: This strategy's OWN execution: no published exit is recorded for it
+    #: anywhere in this repository, so it declares its pre-reset behaviour as
+    #: its own - ATR/structure stop, chandelier trail + profit locks, session
+    #: square-off, never overnight.
+    execution = atr_trail_intraday()
 
     def __init__(self, settings=None) -> None:
         super().__init__(settings or VolExpParams())

@@ -1,0 +1,291 @@
+{
+ "generated_at": "2026-07-20T08:03:18.918490+00:00",
+ "schema": 2,
+ "data": {
+  "potential_count": 18,
+  "rejected_count": 10,
+  "potential": [
+   {
+    "ts": "2026-07-20T06:31:43.284810+00:00",
+    "time": "12:01:43",
+    "symbol": "UNITDSPR",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 1376.5,
+    "stop": 1372.5351752236368,
+    "target": 1384.4296495527265,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T06:31:43.281806+00:00",
+    "time": "12:01:43",
+    "symbol": "PNB",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 106.01,
+    "stop": 105.25869096467795,
+    "target": 107.51261807064411,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T06:31:43.278292+00:00",
+    "time": "12:01:43",
+    "symbol": "PNB",
+    "strategy_id": "first_pullback_15m",
+    "strategy": "First Pullback After Breakout",
+    "entry": 106.01,
+    "stop": 105.43,
+    "target": 107.17,
+    "confidence": 95.5
+   },
+   {
+    "ts": "2026-07-20T06:31:43.278292+00:00",
+    "time": "12:01:43",
+    "symbol": "ICICIPRULI",
+    "strategy_id": "cpr_reversal_15m",
+    "strategy": "CPR Reversal",
+    "entry": 497.45,
+    "stop": 495.15,
+    "target": 513.8000000000001,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T06:31:43.274861+00:00",
+    "time": "12:01:43",
+    "symbol": "GAIL",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 171.8,
+    "stop": 171.0585769008447,
+    "target": 173.2828461983106,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T06:31:43.268560+00:00",
+    "time": "12:01:43",
+    "symbol": "GAIL",
+    "strategy_id": "orb_15m",
+    "strategy": "Opening Range Breakout",
+    "entry": 171.8,
+    "stop": 169.47,
+    "target": 173.83,
+    "confidence": 64.1
+   },
+   {
+    "ts": "2026-07-20T06:31:43.262565+00:00",
+    "time": "12:01:43",
+    "symbol": "RELIANCE",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 1328.8,
+    "stop": 1321.1931755484027,
+    "target": 1344.0136489031945,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T06:31:43.255933+00:00",
+    "time": "12:01:43",
+    "symbol": "MARUTI",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 13824.0,
+    "stop": 13787.489697113666,
+    "target": 13897.020605772668,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T06:31:43.250325+00:00",
+    "time": "12:01:43",
+    "symbol": "HDFCBANK",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 820.8,
+    "stop": 818.0789313618217,
+    "target": 826.2421372763565,
+    "confidence": 93.8
+   },
+   {
+    "ts": "2026-07-20T04:00:33.659534+00:00",
+    "time": "09:30:33",
+    "symbol": "UNITDSPR",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 1376.5,
+    "stop": 1372.5351752236368,
+    "target": 1384.4296495527265,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T04:00:33.656100+00:00",
+    "time": "09:30:33",
+    "symbol": "PNB",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 106.01,
+    "stop": 105.25869096467795,
+    "target": 107.51261807064411,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T04:00:33.656100+00:00",
+    "time": "09:30:33",
+    "symbol": "PNB",
+    "strategy_id": "first_pullback_15m",
+    "strategy": "First Pullback After Breakout",
+    "entry": 106.01,
+    "stop": 105.43,
+    "target": 107.17,
+    "confidence": 95.5
+   },
+   {
+    "ts": "2026-07-20T04:00:33.655072+00:00",
+    "time": "09:30:33",
+    "symbol": "ICICIPRULI",
+    "strategy_id": "cpr_reversal_15m",
+    "strategy": "CPR Reversal",
+    "entry": 497.45,
+    "stop": 495.15,
+    "target": 513.8000000000001,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T04:00:33.653754+00:00",
+    "time": "09:30:33",
+    "symbol": "GAIL",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 171.8,
+    "stop": 171.0585769008447,
+    "target": 173.2828461983106,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T04:00:33.643659+00:00",
+    "time": "09:30:33",
+    "symbol": "GAIL",
+    "strategy_id": "orb_15m",
+    "strategy": "Opening Range Breakout",
+    "entry": 171.8,
+    "stop": 169.47,
+    "target": 173.83,
+    "confidence": 64.1
+   },
+   {
+    "ts": "2026-07-20T04:00:33.635593+00:00",
+    "time": "09:30:33",
+    "symbol": "RELIANCE",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 1328.8,
+    "stop": 1321.1931755484027,
+    "target": 1344.0136489031945,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T04:00:33.626968+00:00",
+    "time": "09:30:33",
+    "symbol": "MARUTI",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 13824.0,
+    "stop": 13787.489697113666,
+    "target": 13897.020605772668,
+    "confidence": 100.0
+   },
+   {
+    "ts": "2026-07-20T04:00:33.590145+00:00",
+    "time": "09:30:33",
+    "symbol": "HDFCBANK",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 820.8,
+    "stop": 818.0789313618217,
+    "target": 826.2421372763565,
+    "confidence": 93.8
+   }
+  ],
+  "rejected": [
+   {
+    "ts": "2026-07-20T06:31:43.284810+00:00",
+    "time": "12:01:43",
+    "symbol": "UNITDSPR",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "cannot size a whole lot at 1376.50: stop distance 3.96/share needs >8,947 risk budget or >12 capital for one lot"
+   },
+   {
+    "ts": "2026-07-20T06:31:43.283812+00:00",
+    "time": "12:01:43",
+    "symbol": "PNB",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "cannot size a whole lot at 106.01: stop distance 0.75/share needs >8,947 risk budget or >12 capital for one lot"
+   },
+   {
+    "ts": "2026-07-20T06:31:43.281806+00:00",
+    "time": "12:01:43",
+    "symbol": "PNB",
+    "strategy_id": "first_pullback_15m",
+    "strategy": "First Pullback After Breakout",
+    "reason": "cannot size a whole lot at 106.01: stop distance 0.58/share needs >8,947 risk budget or >12 capital for one lot"
+   },
+   {
+    "ts": "2026-07-20T06:31:43.278292+00:00",
+    "time": "12:01:43",
+    "symbol": "ICICIPRULI",
+    "strategy_id": "cpr_reversal_15m",
+    "strategy": "CPR Reversal",
+    "reason": "cannot size a whole lot at 497.45: stop distance 2.30/share needs >8,947 risk budget or >12 capital for one lot"
+   },
+   {
+    "ts": "2026-07-20T06:31:43.277279+00:00",
+    "time": "12:01:43",
+    "symbol": "GAIL",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "symbol already held: GAIL"
+   },
+   {
+    "ts": "2026-07-20T04:00:33.659534+00:00",
+    "time": "09:30:33",
+    "symbol": "UNITDSPR",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "cannot size a whole lot at 1376.50: stop distance 3.96/share needs >9,007 risk budget or >12 capital for one lot"
+   },
+   {
+    "ts": "2026-07-20T04:00:33.656100+00:00",
+    "time": "09:30:33",
+    "symbol": "PNB",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "cannot size a whole lot at 106.01: stop distance 0.75/share needs >9,007 risk budget or >12 capital for one lot"
+   },
+   {
+    "ts": "2026-07-20T04:00:33.656100+00:00",
+    "time": "09:30:33",
+    "symbol": "PNB",
+    "strategy_id": "first_pullback_15m",
+    "strategy": "First Pullback After Breakout",
+    "reason": "cannot size a whole lot at 106.01: stop distance 0.58/share needs >9,007 risk budget or >12 capital for one lot"
+   },
+   {
+    "ts": "2026-07-20T04:00:33.656100+00:00",
+    "time": "09:30:33",
+    "symbol": "ICICIPRULI",
+    "strategy_id": "cpr_reversal_15m",
+    "strategy": "CPR Reversal",
+    "reason": "cannot size a whole lot at 497.45: stop distance 2.30/share needs >9,007 risk budget or >12 capital for one lot"
+   },
+   {
+    "ts": "2026-07-20T04:00:33.654767+00:00",
+    "time": "09:30:33",
+    "symbol": "GAIL",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "symbol already held: GAIL"
+   }
+  ],
+  "waiting_condition": "Waiting for the next completed candle on 15m, 1h."
+ }
+}

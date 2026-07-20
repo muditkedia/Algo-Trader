@@ -1,0 +1,345 @@
+{
+ "generated_at": "2026-07-20T08:03:18.925762+00:00",
+ "schema": 2,
+ "data": {
+  "count": 56,
+  "events": [
+   {
+    "time": "13:25:36",
+    "text": "Engine started - preflight complete",
+    "kind": "system",
+    "ts": "2026-07-20T07:55:36.168243+00:00"
+   },
+   {
+    "time": "13:25:35",
+    "text": "Recovery: reconciled",
+    "kind": "system",
+    "ts": "2026-07-20T07:55:35.658273+00:00"
+   },
+   {
+    "time": "13:25:35",
+    "text": "Recovery: orphaned_internal",
+    "kind": "system",
+    "ts": "2026-07-20T07:55:35.654327+00:00"
+   },
+   {
+    "time": "13:25:35",
+    "text": "Recovery: orphaned_internal",
+    "kind": "system",
+    "ts": "2026-07-20T07:55:35.647321+00:00"
+   },
+   {
+    "time": "13:25:35",
+    "text": "Recovery: orphaned_internal",
+    "kind": "system",
+    "ts": "2026-07-20T07:55:35.638197+00:00"
+   },
+   {
+    "time": "13:25:35",
+    "text": "Recovery: orphaned_internal",
+    "kind": "system",
+    "ts": "2026-07-20T07:55:35.629200+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "UNITDSPR rejected - cannot size a whole lot at 1376.50: stop distance 3.96/share needs >8,947 risk budget or >12 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-20T06:31:43.284810+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "UNITDSPR qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.284810+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "PNB rejected - cannot size a whole lot at 106.01: stop distance 0.75/share needs >8,947 risk budget or >12 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-20T06:31:43.283812+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "PNB qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.281806+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "PNB rejected - cannot size a whole lot at 106.01: stop distance 0.58/share needs >8,947 risk budget or >12 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-20T06:31:43.281806+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "PNB qualified First Pullback After Breakout",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.278292+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "ICICIPRULI rejected - cannot size a whole lot at 497.45: stop distance 2.30/share needs >8,947 risk budget or >12 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-20T06:31:43.278292+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "ICICIPRULI qualified CPR Reversal",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.278292+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "GAIL rejected - symbol already held: GAIL",
+    "kind": "reject",
+    "ts": "2026-07-20T06:31:43.277279+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "GAIL qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.274861+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "BUY filled GAIL @ Rs 171.83",
+    "kind": "position",
+    "ts": "2026-07-20T06:31:43.271573+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "GAIL qualified Opening Range Breakout",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.268560+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "BUY filled RELIANCE @ Rs 1,329.07",
+    "kind": "position",
+    "ts": "2026-07-20T06:31:43.267619+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "RELIANCE qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.262565+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "BUY filled MARUTI @ Rs 13,826.76",
+    "kind": "position",
+    "ts": "2026-07-20T06:31:43.261464+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "MARUTI qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.255933+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "BUY filled HDFCBANK @ Rs 820.96",
+    "kind": "position",
+    "ts": "2026-07-20T06:31:43.254702+00:00"
+   },
+   {
+    "time": "12:01:43",
+    "text": "HDFCBANK qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T06:31:43.250325+00:00"
+   },
+   {
+    "time": "12:00:17",
+    "text": "Engine started - preflight complete",
+    "kind": "system",
+    "ts": "2026-07-20T06:30:17.315557+00:00"
+   },
+   {
+    "time": "12:00:16",
+    "text": "Recovery: reconciled",
+    "kind": "system",
+    "ts": "2026-07-20T06:30:16.877753+00:00"
+   },
+   {
+    "time": "12:00:16",
+    "text": "Recovery: orphaned_internal",
+    "kind": "system",
+    "ts": "2026-07-20T06:30:16.873472+00:00"
+   },
+   {
+    "time": "12:00:16",
+    "text": "Recovery: orphaned_internal",
+    "kind": "system",
+    "ts": "2026-07-20T06:30:16.865727+00:00"
+   },
+   {
+    "time": "12:00:16",
+    "text": "Recovery: orphaned_internal",
+    "kind": "system",
+    "ts": "2026-07-20T06:30:16.856993+00:00"
+   },
+   {
+    "time": "12:00:16",
+    "text": "Recovery: orphaned_internal",
+    "kind": "system",
+    "ts": "2026-07-20T06:30:16.846078+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "UNITDSPR rejected - cannot size a whole lot at 1376.50: stop distance 3.96/share needs >9,007 risk budget or >12 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-20T04:00:33.659534+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "UNITDSPR qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.659534+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "PNB rejected - cannot size a whole lot at 106.01: stop distance 0.75/share needs >9,007 risk budget or >12 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-20T04:00:33.656100+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "PNB qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.656100+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "PNB rejected - cannot size a whole lot at 106.01: stop distance 0.58/share needs >9,007 risk budget or >12 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-20T04:00:33.656100+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "PNB qualified First Pullback After Breakout",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.656100+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "ICICIPRULI rejected - cannot size a whole lot at 497.45: stop distance 2.30/share needs >9,007 risk budget or >12 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-20T04:00:33.656100+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "ICICIPRULI qualified CPR Reversal",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.655072+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "GAIL rejected - symbol already held: GAIL",
+    "kind": "reject",
+    "ts": "2026-07-20T04:00:33.654767+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "GAIL qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.653754+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "BUY filled GAIL @ Rs 171.83",
+    "kind": "position",
+    "ts": "2026-07-20T04:00:33.652953+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "BUY entry GAIL qty 2.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-20T04:00:33.647882+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "GAIL qualified Opening Range Breakout",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.643659+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "BUY filled RELIANCE @ Rs 1,329.07",
+    "kind": "position",
+    "ts": "2026-07-20T04:00:33.642376+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "BUY entry RELIANCE qty 9.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-20T04:00:33.639696+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "RELIANCE qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.635593+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "BUY filled MARUTI @ Rs 13,826.76",
+    "kind": "position",
+    "ts": "2026-07-20T04:00:33.634593+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "BUY entry MARUTI qty 10.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-20T04:00:33.632369+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "MARUTI qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.626968+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "BUY filled HDFCBANK @ Rs 820.96",
+    "kind": "position",
+    "ts": "2026-07-20T04:00:33.625918+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "BUY entry HDFCBANK qty 182.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-20T04:00:33.613680+00:00"
+   },
+   {
+    "time": "09:30:33",
+    "text": "HDFCBANK qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-20T04:00:33.590145+00:00"
+   },
+   {
+    "time": "09:00:44",
+    "text": "Engine started - preflight complete",
+    "kind": "system",
+    "ts": "2026-07-20T03:30:44.137049+00:00"
+   },
+   {
+    "time": "09:00:43",
+    "text": "Recovery: reconciled",
+    "kind": "system",
+    "ts": "2026-07-20T03:30:43.244580+00:00"
+   },
+   {
+    "time": "05:32:39",
+    "text": "Engine started - preflight complete",
+    "kind": "system",
+    "ts": "2026-07-20T00:02:39.815297+00:00"
+   },
+   {
+    "time": "05:32:39",
+    "text": "Recovery: reconciled",
+    "kind": "system",
+    "ts": "2026-07-20T00:02:39.253116+00:00"
+   }
+  ]
+ }
+}

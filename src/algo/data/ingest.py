@@ -40,11 +40,23 @@ from algo.data.store import MarketDataStore
 logger = get_logger("data.ingest")
 
 
+#: Statuses that mean "the request was served; there was simply nothing new".
+NO_NEW_DATA = ("up_to_date", "empty")
+#: Statuses that mean "the candles could not be fetched" - an OPERATOR PROBLEM,
+#: never to be reported as a quiet market (D-038).
+CANNOT_FETCH = ("unavailable", "quarantined")
+
+
 @dataclass
 class SymbolResult:
     symbol: str
     timeframe: str
-    status: str                 # ok | backfilled | up_to_date | empty | quarantined
+    #: ok | backfilled | up_to_date | empty | unavailable | quarantined
+    #:
+    #: ``empty``       - fetched, provider had no bars in the window
+    #: ``unavailable`` - could not be addressed at all (no token, bad timeframe)
+    #: ``quarantined`` - fetch raised, or the data failed the quality gate
+    status: str
     fetched: int = 0
     added: int = 0
     detail: str = ""
@@ -64,7 +76,52 @@ class IngestionReport:
             added += r.added
             fetched += r.fetched
         return {"symbols": len(self.results), "by_status": by_status,
-                "rows_fetched": fetched, "rows_added": added}
+                "rows_fetched": fetched, "rows_added": added,
+                "unable_to_fetch": self.count(CANNOT_FETCH),
+                "no_new_candles": self.count(NO_NEW_DATA)}
+
+    def count(self, statuses) -> int:
+        return sum(1 for r in self.results if r.status in statuses)
+
+    def symbols_with(self, statuses) -> List[str]:
+        return [r.symbol for r in self.results if r.status in statuses]
+
+    def diagnosis(self, examples: int = 5) -> dict:
+        """ONE operator-readable verdict for the whole update.
+
+        ``rows_added=0`` has two completely different meanings and the operator
+        must never have to work out which from the logs: either every symbol was
+        already current / the market is shut (fine), or nothing could be fetched
+        (broken). This states which, names the reason, and lists examples -
+        once, rather than one log line per symbol.
+        """
+        blocked = [r for r in self.results if r.status in CANNOT_FETCH]
+        total = len(self.results)
+        reasons: dict = {}
+        for r in blocked:
+            reasons[r.detail or r.status] = reasons.get(r.detail or r.status,
+                                                        0) + 1
+        names = [r.symbol for r in blocked]
+        if not blocked:
+            updated = sum(1 for r in self.results
+                          if r.status in ("ok", "backfilled") and r.added)
+            headline = (f"{self.timeframe}: no new candles "
+                        f"({total} symbols current)" if not updated else
+                        f"{self.timeframe}: updated {updated}/{total} symbols")
+            return {"ok": True, "headline": headline, "timeframe": self.timeframe,
+                    "blocked": 0, "total": total, "reasons": {},
+                    "examples": []}
+        shown = ", ".join(names[:examples])
+        more = f", +{len(names) - examples} more" if len(names) > examples else ""
+        top = max(reasons.items(), key=lambda kv: kv[1])[0] if reasons else ""
+        return {
+            "ok": False, "timeframe": self.timeframe,
+            "blocked": len(blocked), "total": total,
+            "reasons": reasons, "examples": names[:examples],
+            "headline": (f"{self.timeframe}: UNABLE TO FETCH candles for "
+                         f"{len(blocked)}/{total} symbols - {top} "
+                         f"(examples: {shown}{more})"),
+        }
 
 
 class IngestionEngine:
@@ -102,7 +159,7 @@ class IngestionEngine:
         for symbol in symbols:
             report.results.append(
                 self._ingest(symbol, timeframe, start, end))
-        logger.info("full_import %s: %s", timeframe, report.summary())
+        self._log_outcome(report)
         return report
 
     # ----------------------------------------------------------- incremental
@@ -150,12 +207,30 @@ class IngestionEngine:
                     detail=f"stored through {cov['end'] if cov else None}"))
                 continue
             report.results.append(self._ingest(symbol, timeframe, start, end))
-        logger.info("incremental_update %s: %s", timeframe, report.summary())
+        self._log_outcome(report)
         return report
+
+    @staticmethod
+    def _log_outcome(report: IngestionReport) -> None:
+        """One line per update, at the level the situation deserves."""
+        diagnosis = report.diagnosis()
+        if diagnosis["ok"]:
+            logger.info("%s | %s", diagnosis["headline"], report.summary())
+        else:
+            logger.error("%s | %s", diagnosis["headline"], report.summary())
 
     # --------------------------------------------------------------- per-symbol
 
     def _ingest(self, symbol: str, timeframe: str, start, end) -> SymbolResult:
+        # ask the provider up front whether it can address this request at all.
+        # An unaddressable symbol must not be fetched and then reported as an
+        # empty (= quiet) result - that is precisely the conflation that hid an
+        # entire unresolved watchlist behind "rows_fetched=0" (D-038).
+        reason = self.provider.unavailable_reason(symbol, timeframe) \
+            if hasattr(self.provider, "unavailable_reason") else None
+        if reason:
+            logger.debug("cannot fetch %s/%s: %s", symbol, timeframe, reason)
+            return SymbolResult(symbol, timeframe, "unavailable", detail=reason)
         try:
             fetched = self.provider.fetch_ohlcv(symbol, timeframe, start, end)
         except NotImplementedError:
@@ -166,7 +241,7 @@ class IngestionEngine:
                                 detail=f"fetch error: {exc}")
         if ohlcv.is_empty(fetched):
             return SymbolResult(symbol, timeframe, "empty",
-                                detail="provider returned no rows")
+                                detail="no candles in the requested window")
         report = check_ohlcv(fetched, symbol, timeframe, self.calendar)
         dropped = 0
         if not report.ok:

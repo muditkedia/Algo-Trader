@@ -19,6 +19,7 @@ import pandas as pd
 from algo.core.config import from_dict
 from algo.core.enums import Direction, HoldingScope
 from algo.core.indicators import atr, crossed_above, session_vwap, volume_ratio
+from algo.execution import structural_intraday
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import Component, ConfidenceScore, clip01, weighted
 
@@ -60,6 +61,13 @@ class VwapPullback(StrategyProfile):
         ),
         enabled=True,
     )
+
+    #: This strategy's OWN execution (its published form, recorded in the
+    #: Phase-17 fidelity audit): stop just below VWAP (the tagged support
+    #: level, frozen at entry), 2R target, no trail, session square-off,
+    #: never overnight.
+    execution = structural_intraday(stop_col="vwap", target_kind="r",
+                                    target_r=2.0)
 
     def __init__(self, settings=None) -> None:
         super().__init__(settings or VwapPullbackParams())

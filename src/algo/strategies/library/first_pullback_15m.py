@@ -20,6 +20,7 @@ import pandas as pd
 from algo.core.config import from_dict
 from algo.core.enums import Direction, HoldingScope
 from algo.core.indicators import atr, crossed_above, opening_range, volume_ratio
+from algo.execution import structural_intraday
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import Component, ConfidenceScore, clip01, weighted
 
@@ -57,6 +58,13 @@ class FirstPullbackAfterBreakout(StrategyProfile):
         enabled=True,
     )
 
+    #: This strategy's OWN execution (the published defined-risk form,
+    #: research/INTRADAY_PRODUCTION_BATCH1.md section 5): stop below the
+    #: first pullback's low, 2R target, no trail, session square-off,
+    #: never overnight.
+    execution = structural_intraday(stop_col="pullback_low", target_kind="r",
+                                    target_r=2.0)
+
     def __init__(self, settings=None) -> None:
         super().__init__(settings or FirstPullbackParams())
 
@@ -83,6 +91,8 @@ class FirstPullbackAfterBreakout(StrategyProfile):
         first_pb = is_pullback & (is_pullback.groupby(day).cumsum() == 1)
         # the first pullback's high, carried forward; and the post-pullback flag
         df["pullback_high"] = df["high"].where(first_pb).groupby(day).ffill()
+        # ... and its LOW - this strategy's published stop level
+        df["pullback_low"] = df["low"].where(first_pb).groupby(day).ffill()
         df["after_first_pb"] = first_pb.groupby(day).cummax().groupby(day).shift(
             1, fill_value=False).astype(float)
         df["atr"] = atr(df, p.atr_period)

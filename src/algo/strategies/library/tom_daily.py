@@ -21,6 +21,7 @@ import pandas as pd
 
 from algo.core.config import from_dict
 from algo.core.enums import Direction, HoldingScope
+from algo.execution import atr_trail_swing
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, weighted, Component
 
@@ -54,6 +55,11 @@ class TurnOfMonth(StrategyProfile):
         enabled=True,
         horizon_bars=(3, 5, 7), max_hold_bars=7,
     )
+
+    #: Swing execution owned by this strategy: ATR/structure stop,
+    #: chandelier trail + profit locks, overnight allowed, horizon end
+    #: at its declared max hold (no session square-off).
+    execution = atr_trail_swing(meta.max_hold_bars)
 
     def __init__(self, settings=None) -> None:
         super().__init__(settings or TomParams())

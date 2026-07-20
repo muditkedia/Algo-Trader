@@ -137,6 +137,24 @@ class SmartApiDataProvider(DataProvider):
             raise SmartApiDataError(f"getCandleData failed: {detail}")
         return response.get("data") or []
 
+    def unavailable_reason(self, symbol: str,
+                           timeframe: str) -> Optional[str]:
+        """Why this request CANNOT be served at all, or None if it is
+        well-formed.
+
+        Separates "unable to fetch" from "nothing new to fetch". An empty frame
+        alone cannot tell those apart, and conflating them is what let an
+        unresolvable watchlist look exactly like a quiet market (D-038): the
+        engine reported ``rows_fetched=0`` all session and traded on stale
+        stored candles without one error being raised.
+        """
+        if INTERVALS.get(timeframe) is None:
+            return (f"unsupported timeframe {timeframe!r} "
+                    f"(known: {', '.join(sorted(INTERVALS))})")
+        if self.instruments.token_for(symbol) is None:
+            return "no instrument token in the NSE master"
+        return None
+
     def fetch_ohlcv(self, symbol: str, timeframe: str, start, end) -> pd.DataFrame:
         empty = pd.DataFrame(columns=list(OHLCV_COLUMNS))
         interval = INTERVALS.get(timeframe)
@@ -146,7 +164,10 @@ class SmartApiDataProvider(DataProvider):
             return empty
         token = self.instruments.token_for(symbol)
         if token is None:
-            logger.warning("no instrument token for %s - skipping", symbol)
+            # per-symbol detail only: the operator-facing message is the ONE
+            # per-cycle mapping summary (IngestionReport.diagnosis), not 99
+            # identical warnings that bury everything else in the log.
+            logger.debug("no instrument token for %s - skipping", symbol)
             return empty
 
         start_ts, end_ts = to_utc(start), day_end(end)
@@ -180,7 +201,7 @@ class SmartApiDataProvider(DataProvider):
         token = self.instruments.token_for(symbol)
         tradingsymbol = self.instruments.tradingsymbol_for(symbol)
         if token is None or tradingsymbol is None:
-            logger.warning("no instrument mapping for %s", symbol)
+            logger.debug("no instrument mapping for %s", symbol)
             return None
         self._throttle()
         client = self.session.ensure().client
@@ -191,3 +212,56 @@ class SmartApiDataProvider(DataProvider):
                            if isinstance(response, dict) else response)
             return None
         return response.get("data") or None
+
+    #: Symbols one ``getMarketData`` call will serve. Angel One publishes this
+    #: endpoint as a 50-symbol bulk fetch; tokens beyond the cap come back in
+    #: the response's ``unfetched`` array rather than raising, so exceeding it
+    #: would silently drop symbols instead of failing loudly.
+    QUOTE_BATCH = 50
+
+    def fetch_quotes(self, symbols: List[str]) -> Dict[str, float]:
+        """Last traded price for MANY symbols in ONE request.
+
+        ``getMarketData(mode, {exchange: [token, ...]})`` is the only bulk
+        route this provider has - historical candles have no array form at all
+        (verified against smartapi-python 1.5.5: ``getCandleData`` takes a
+        single ``symboltoken``). Marking 50 positions therefore costs one
+        request here versus 50 through ``latest_quote``, which is the whole
+        reason the quote channel can serve a large watchlist while candles stay
+        bounded by their own per-symbol budget.
+
+        Caller batches to ``QUOTE_BATCH``; this asks for exactly what it was
+        given. Symbols the API could not resolve are simply absent from the
+        result - a missing mark leaves the last known price standing, and is
+        never escalated into a data fault, because quotes are display-only.
+        """
+        tokens = {}
+        for symbol in symbols:
+            token = self.instruments.token_for(symbol)
+            if token is not None:
+                tokens[str(token)] = symbol
+        if not tokens:
+            return {}
+        self._throttle()
+        client = self.session.ensure().client
+        response = client.getMarketData("LTP", {self.exchange: list(tokens)})
+        if not isinstance(response, dict) or not response.get("status", False):
+            logger.warning("getMarketData failed: %s",
+                           (response or {}).get("message", "?")
+                           if isinstance(response, dict) else response)
+            return {}
+        data = response.get("data") or {}
+        out: Dict[str, float] = {}
+        for row in data.get("fetched") or []:
+            symbol = tokens.get(str(row.get("symbolToken")))
+            try:
+                price = float(row.get("ltp"))
+            except (TypeError, ValueError):
+                continue
+            if symbol and price > 0:
+                out[symbol] = price
+        unfetched = data.get("unfetched") or []
+        if unfetched:
+            logger.debug("getMarketData returned %d unfetched token(s)",
+                         len(unfetched))
+        return out

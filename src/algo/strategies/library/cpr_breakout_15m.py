@@ -17,8 +17,10 @@ import pandas as pd
 from algo.core.config import from_dict
 from algo.core.enums import Direction, HoldingScope
 from algo.core.indicators import (
-    atr, central_pivot_range, crossed_above, opening_range, volume_ratio,
+    atr, central_pivot_range, crossed_above, floor_pivot_levels, opening_range,
+    volume_ratio,
 )
+from algo.execution import structural_intraday
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import Component, ConfidenceScore, clip01, weighted
 
@@ -59,6 +61,15 @@ class CprBreakout(StrategyProfile):
         enabled=True,
     )
 
+    #: This strategy's OWN execution (the published CPR-trade form,
+    #: research/INTRADAY_PRODUCTION_BATCH1.md section 4 + Phase-17 audit):
+    #: stop below the CPR bottom, first target at the prior-day floor-pivot
+    #: R1 where HALF is booked and the stop moves to breakeven, remainder
+    #: runs to R2 / stop / square-off. No trail, never overnight.
+    execution = structural_intraday(
+        stop_col="cpr_bot", target_kind="column", target_col="fp_r1",
+        partial_fraction=0.5, target2_col="fp_r2")
+
     def __init__(self, settings=None) -> None:
         super().__init__(settings or CprBreakoutParams())
 
@@ -71,6 +82,10 @@ class CprBreakout(StrategyProfile):
         _, cpr_top, cpr_bot = central_pivot_range(df)
         df["cpr_top"] = cpr_top
         df["cpr_bot"] = cpr_bot
+        # prior-day floor-pivot targets (this strategy's published R1/R2 ladder)
+        _, fp_r1, fp_r2 = floor_pivot_levels(df)
+        df["fp_r1"] = fp_r1
+        df["fp_r2"] = fp_r2
         _, _, after = opening_range(df, p.range_minutes)
         df["after_range"] = after
         df["atr"] = atr(df, p.atr_period)

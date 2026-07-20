@@ -1,0 +1,110 @@
+"""TradeManager - live interpretation of each position's ExecutionSpec.
+
+This is the production twin of the backtest engine's per-bar management loop
+(`algo.execution.engine.execute_signal`), applied to LIVE positions one bar at
+a time. It reuses the SAME conventions the verified engine pins:
+
+  * stop first (pessimistic same-bar), honest gap fill at the open,
+  * target (with the optional partial -> breakeven -> second target),
+  * trailing (chandelier via the promoted risk fn, or a strategy `column`),
+  * intraday square-off at/after the session cutoff.
+
+It does NOT place orders itself - it returns a decision (hold / exit / partial
+/ trail-move) plus the honest fill price, which the engine turns into an order
+through the OrderManager. Keeping decision and execution separate is what lets
+paper and live share this exact code: only the adapter differs.
+
+Trailing-stop STATE lives on the Position (``stop``, ``trailed``), persisted by
+the portfolio, so a restart resumes management from the ratcheted stop.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Optional
+
+import numpy as np
+import pandas as pd
+
+from algo.execution.spec import ExecutionSpec
+from algo.risk.engine import RiskParams, trailing_stop_price
+from algo.trading.models import Position
+
+
+@dataclass
+class ManageDecision:
+    action: str                 # hold | exit | partial | trail
+    price: Optional[float] = None
+    reason: str = ""
+    new_stop: Optional[float] = None
+    partial_qty: float = 0.0
+    gap_fill: bool = False
+
+
+class TradeManager:
+    def __init__(self, specs: dict, params: Optional[RiskParams] = None) -> None:
+        #: strategy name -> ExecutionSpec (frozen; loaded from the registry)
+        self.specs = specs
+        self.params = params or RiskParams()
+
+    def spec_for(self, position: Position) -> ExecutionSpec:
+        return self.specs[position.strategy]
+
+    def manage(self, position: Position, bar: pd.Series,
+               spec: Optional[ExecutionSpec] = None,
+               past_squareoff: bool = False) -> ManageDecision:
+        """Evaluate one just-closed bar against a position's spec. Order of
+        checks matches the backtest engine exactly."""
+        spec = spec or self.spec_for(position)
+        o, h, l, c = (float(bar["open"]), float(bar["high"]),
+                      float(bar["low"]), float(bar["close"]))
+        stop = position.stop
+        entry = position.entry_price
+
+        # 1) stop first, honest gap fill at the open
+        if l <= stop or o <= stop:
+            gap = o < stop
+            price = o if o < stop else stop
+            reason = ("breakeven_stop" if position.partial_done
+                      and stop >= entry else
+                      ("trailing_stop" if position.trailed else "stop_loss"))
+            return ManageDecision("exit", price=price, reason=reason,
+                                  gap_fill=gap)
+
+        # 2) target (honest gap fill), optional partial at the first target
+        target = position.target
+        if target is not None and (h >= target or o >= target):
+            fill = max(target, o)
+            if spec.partial_fraction > 0 and not position.partial_done:
+                qty = position.open_quantity * spec.partial_fraction
+                return ManageDecision("partial", price=fill, reason="partial",
+                                      partial_qty=qty,
+                                      new_stop=max(stop, entry),
+                                      gap_fill=o > target)
+            return ManageDecision("exit", price=fill, reason="target",
+                                  gap_fill=o > target)
+
+        # 3) intraday square-off (session rule)
+        if spec.intraday and past_squareoff:
+            return ManageDecision("exit", price=c, reason="session_squareoff")
+
+        # 4) trailing (ratchet only), per the declaration
+        new_stop = None
+        if spec.trail == "chandelier":
+            cand = trailing_stop_price(entry, c, c / entry - 1.0,
+                                       position.atr_at_entry, self.params)
+            if cand is not None:
+                raised = min(cand, c * (1 - 1e-4))
+                if raised > stop:
+                    new_stop = raised
+        elif spec.trail == "column" and spec.trail_col:
+            cand = bar.get(spec.trail_col)
+            if cand is not None and np.isfinite(cand):
+                raised = min(float(cand), c * (1 - 1e-4))
+                if raised > stop:
+                    new_stop = raised
+        if new_stop is not None:
+            return ManageDecision("trail", new_stop=new_stop, reason="trail")
+
+        # 5) swing horizon (only swing specs carry a bar cap - intraday never)
+        return ManageDecision("hold")

@@ -1,0 +1,28 @@
+{
+ "generated_at": "2026-07-20T08:03:18.900764+00:00",
+ "schema": 2,
+ "data": {
+  "engine_running": true,
+  "mode": "paper",
+  "live_armed": false,
+  "market_open": true,
+  "market_status": "OPEN",
+  "current_time_ist": "2026-07-20 13:33:18",
+  "session_date": "2026-07-20",
+  "broker": {
+   "name": "paper",
+   "is_live": false,
+   "connected": true
+  },
+  "data_feed_connected": false,
+  "data_feed_status": "UNABLE TO FETCH",
+  "scanner_status": "HALTED",
+  "scheduler_status": "ACTIVE",
+  "recovery_status": "COMPLETE",
+  "trading_halted": true,
+  "halt_reason": "daily loss limit hit (-279647 <= -8000)",
+  "started_at": "2026-07-20T07:55:35.582074+00:00",
+  "squareoff_time": "15:15",
+  "entry_cutoff_time": "15:00"
+ }
+}

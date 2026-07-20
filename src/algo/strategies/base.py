@@ -97,6 +97,17 @@ class StrategyProfile(ABC):
     #: MUST be overridden by every concrete subclass.
     meta: StrategyMeta = None  # type: ignore[assignment]
 
+    #: The strategy's OWN execution declaration (an
+    #: ``algo.execution.ExecutionSpec``): entry timing, stop-loss, profit
+    #: target, trailing rules, session restrictions, holding limit and
+    #: square-off. The execution engine interprets this declaration - there is
+    #: no platform-imposed stop/trail/exit (project-reset design change,
+    #: 2026-07-18; supersedes the D-006 uniform-exit model for the execution
+    #: path). Every registered strategy MUST declare one (enforced by test).
+    #: The frozen research simulator does not read it, so recorded research
+    #: verdicts are unaffected.
+    execution = None  # type: ignore[assignment]
+
     def __init__(self, settings=None) -> None:
         """``settings`` is the strategy's own frozen-dataclass parameters
         (optional); the research engine can hand these to the sensitivity sweep.

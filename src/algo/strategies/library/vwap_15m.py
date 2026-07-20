@@ -16,6 +16,7 @@ import pandas as pd
 from algo.core.config import from_dict
 from algo.core.enums import Direction, HoldingScope
 from algo.core.indicators import atr, crossed_above, session_vwap, volume_ratio
+from algo.execution import structural_intraday
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import (
     Component, ConfidenceScore, clip01, weighted,
@@ -60,6 +61,13 @@ class VwapTrendContinuation(StrategyProfile):
         enabled=True,
     )
 
+    #: This strategy's OWN execution (its published form, recorded in the
+    #: Phase-17 fidelity audit): stop below the dip's low (the reclaimed
+    #: excursion's 4-bar session low), 2R target, no trail, session
+    #: square-off, never overnight.
+    execution = structural_intraday(stop_col="dip_low", target_kind="r",
+                                    target_r=2.0)
+
     def __init__(self, settings=None) -> None:
         super().__init__(settings or VwapParams())
 
@@ -78,6 +86,10 @@ class VwapTrendContinuation(StrategyProfile):
         df["above_share"] = above.groupby(day).transform(
             lambda s: s.shift(1).expanding().mean())
         df["session_bar"] = df.groupby(day).cumcount()
+        # the dip's low (this strategy's published stop level): the recent
+        # session low of the excursion below VWAP that the entry bar reclaims
+        df["dip_low"] = (df["low"].groupby(day).rolling(4, min_periods=1)
+                         .min().reset_index(level=0, drop=True))
         df["atr"] = atr(df, p.atr_period)
         df["volume_ratio"] = volume_ratio(df["volume"], p.volume_window)
         return df

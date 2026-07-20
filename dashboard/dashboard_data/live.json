@@ -1,0 +1,40 @@
+{
+ "generated_at": "2026-07-20T08:03:18.894885+00:00",
+ "schema": 2,
+ "data": {
+  "timing": {
+   "market_open": true,
+   "status": "OPEN",
+   "session_date": "2026-07-20",
+   "squareoff_time": "15:15",
+   "entry_cutoff_time": "15:00",
+   "timeframes": [
+    "15m",
+    "1h"
+   ],
+   "next_candle": {
+    "15m": 701,
+    "1h": 2501
+   },
+   "seconds_to_squareoff": 6101,
+   "seconds_to_entry_cutoff": 5201,
+   "seconds_to_open": null,
+   "session_seconds_remaining": 7001
+  },
+  "positions": [],
+  "position_count": 0,
+  "portfolio_value": -179646.87,
+  "deployed_capital": 0.0,
+  "available_capital": 100000.0,
+  "realized_pnl": -279646.87,
+  "unrealized_pnl": 0.0,
+  "total_pnl": -279646.87,
+  "open_risk": 0,
+  "remaining_risk_budget": 0.0,
+  "quotes_live": false,
+  "quote_age_seconds": null,
+  "data_status": "STALE",
+  "data_headline": "15m: STALE DATA - 3/99 symbols are 13 or more bars behind (examples: ADANIENT, KOTAKBANK, MRF)",
+  "data_age_seconds": 1098.9
+ }
+}

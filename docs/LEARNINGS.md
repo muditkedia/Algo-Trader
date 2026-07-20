@@ -7,6 +7,130 @@ corpus (500 NIFTY-500 symbols, 2015-01..2026-07).
 
 ---
 
+## L-019 — Measure the thing, not a proxy for the thing (2026-07-20)
+
+The production-readiness pass (D-039) turned up the same mistake in four
+places, each time with a plausible proxy standing in for the real quantity:
+
+| Question | Proxy that was used | What it actually measured |
+|---|---|---|
+| How old is this price? | `generated_at` on the snapshot | when the EXPORTER last ran |
+| Is the data fresh? | `bool(latest_prices())` | whether the STORE has anything at all |
+| What is the portfolio worth? | `deploy_today` | the day's ALLOWANCE, not the mark |
+| How much risk is open? | a formula copied into the exporter | the same thing, computed twice |
+
+Each proxy is correlated with the truth most of the time, which is exactly why
+none of them was noticed: they only diverge when something is already wrong.
+The exporter runs fine while the feed is dead; the store is full while nothing
+arrives. **A proxy that tracks the truth in the healthy case and diverges in
+the broken case is worse than no measurement at all** — it produces confident,
+wrong reassurance precisely when attention is needed.
+
+Three further lessons from the same pass:
+
+1. **Pick the unit the system works in.** Staleness in seconds fires at every
+   bar boundary (one bar behind right after a close is normal). Staleness in
+   BARS, against the bar the exchange should have completed, is quiet when
+   things are normal and loud when they are not. The right unit removed the
+   need for a fudge factor.
+
+2. **A floor must never override a cap.** The minimum trade allocation could
+   have been implemented by sizing UP to reach it. That would let the softest
+   constraint (a policy about what is worth trading) override the hardest ones
+   (capital available, per-trade cap, risk budget). A position that cannot
+   reach the floor within every other limit is skipped, not padded.
+
+3. **Single source of truth applies to NAMES, not just values.**
+   `portfolio_value` meant the static allowance in one panel and the live mark
+   in another. Both quantities were legitimate and both were computed
+   correctly; the bug was that one name carried two meanings, so two panels
+   could show different numbers and both be "right".
+
+The pass also produced a durable testing lesson: `feed.freshness()` initially
+read the wall clock instead of the injected `MarketClock`, and this was caught
+by its own test — no injected moment could produce a STALE verdict. **A
+component that cannot be driven to its failure state in a test is not yet
+observable enough to run in production.**
+
+---
+
+## L-018 — A silent failure that reports success is worse than a crash: the first paper session traded on stale data while every health check said "ok" (2026-07-20)
+
+The first live paper session (D-038) ran a full day with **zero errors logged**,
+`status: ok`, `adapter_ok: true`, `data_fresh: true` — and fetched **not one
+candle**. It opened and closed four positions on stored bars that had stopped
+updating. The instrument master had never been loaded, so every symbol→token
+lookup returned `None`. Four lessons, all about how the failure stayed invisible:
+
+1. **A missing precondition must not read as a negative answer.** `token_for()`
+   returned `None` both for "this symbol is not listed" and for "no master is
+   loaded". One is a fact about the symbol; the other is a fact about the
+   system, and only the second is an outage. Any lookup that can fail for
+   structural reasons must distinguish *not found* from *cannot answer* — the
+   whole defect lived in that conflation.
+
+2. **Lazy loading needs a lazy trigger, not a convention.** `ensure()` was
+   documented, and four of five entry points called it. Correctness that
+   depends on every caller remembering will be wrong at the call site that
+   matters least often — here, the production runner, in the mode that skips
+   the one in-engine `ensure()`. Load-on-use is not a convenience; it removes
+   an entire class of caller error.
+
+3. **Freshness must measure the fetch, not the cache.** `data_fresh =
+   bool(latest_prices())` reads the *store*, which happily serves months-old
+   candles. A health signal derived from what you already have cannot detect
+   that you are no longer getting anything. Measure the arrival, not the
+   inventory.
+
+4. **An empty result is not a diagnosis.** `rows_fetched=0` was the same output
+   for "the market is quiet" and "we cannot address a single instrument". The
+   operator was asked to infer which — for hours. Statuses now split
+   NO_NEW_DATA from CANNOT_FETCH, and the engine states the reason once per
+   cycle instead of repeating a symptom 99 times.
+
+The generalisable form: **the system reported the absence of evidence as
+evidence of absence.** No exception was raised at any point, which is precisely
+why it survived a full session. Loud failure is cheap; silent success is not.
+
+Corollary from the same work: `TradingConfig.dashboard_dir` defaults to the real
+dashboard folder, so running the test suite overwrote a live session's
+snapshots. A default that points at production is a trap for every test that
+forgets to override it — the guard now content-hashes the folder around each
+test rather than trusting the convention.
+
+---
+
+## L-017 — The entry "chase" is mostly the price of information: fidelity gains vanish under realizable fills (2026-07-18)
+
+Phase 17 (D-037) resolved L-016's open question. Under published trigger-level
+execution the baselines LOOK transformed (orb +19.7 net bps PF 1.84, cpr +13.2
+PF 1.96) — but the trigger fill conditions on the bar CLOSING beyond the level,
+which is 15 minutes of foresight. The touch-basis control (a real resting order,
+touch-and-fail bars included) collapses ORB to **−10.2 net bps**. Three durable
+lessons:
+
+1. **A trigger fill validated by the same bar's close is lookahead**, however
+   natural it feels. The 15–45 bps "chase" between trigger and close is largely
+   what the market charges for the information in the close. Backtests must
+   never fill at a level using a condition evaluated after the level traded.
+2. **The internal controls did their job**: vwap_15m (published entry genuinely
+   close-based) was UNCHANGED under fidelity mode — the engine manufactures no
+   edge where no execution deviation exists. And published structural stops /
+   targets moved results by ≈ −2..0 bps — exits neither created nor destroyed
+   edge, for the fourth time (L-006, D-006, L-016, here).
+3. **Bracket, don't point-estimate, unimplementable assumptions**: the honest
+   answer for trigger entries is an interval [touch-basis, close-confirmed] =
+   [−10, +21] bps for ORB — and the tradeable end is negative. Reporting only
+   the flattering end would have "rescued" five dead strategies.
+
+**How to apply:** the production close-of-bar convention stands as the honest
+executable baseline; do not "fix" it toward trigger fills without tick/subbar
+data. Any future intraday work needs finer-than-15m data to resolve intrabar
+sequencing honestly — on this data, the intraday question is answered and
+closed. See [[real-measurement-verdict]] and [[crypto-validation-lessons]].
+
+---
+
 ## L-016 — Close-of-bar entry is a hidden ~15–45 bps tax; a backtest tests its execution model as much as its strategy (2026-07-18)
 
 The Phase-16 fidelity audit (D-036) decomposed the five intraday baselines and

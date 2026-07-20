@@ -1,0 +1,107 @@
+{
+ "generated_at": "2026-07-20T08:03:18.902893+00:00",
+ "schema": 2,
+ "data": {
+  "token_mapping": {
+   "total": 99,
+   "resolved": 99,
+   "unresolved": 0,
+   "unresolved_symbols": [],
+   "examples": [],
+   "master_loaded": true,
+   "master_rows": 2406,
+   "error": "",
+   "summary": "instrument mapping OK - 99/99 resolved",
+   "applicable": true,
+   "status": "OK"
+  },
+  "market_data": {
+   "status": "UNABLE TO FETCH",
+   "headline": "15m: UNABLE TO FETCH candles for 3/99 symbols - fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate' (examples: ADANIENT, KOTAKBANK, MRF)",
+   "reasons": {
+    "fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'": 3
+   },
+   "examples": [
+    "ADANIENT",
+    "KOTAKBANK",
+    "MRF"
+   ],
+   "timeframes": {
+    "15m": {
+     "ok": false,
+     "timeframe": "15m",
+     "blocked": 3,
+     "total": 99,
+     "reasons": {
+      "fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'": 3
+     },
+     "examples": [
+      "ADANIENT",
+      "KOTAKBANK",
+      "MRF"
+     ],
+     "headline": "15m: UNABLE TO FETCH candles for 3/99 symbols - fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate' (examples: ADANIENT, KOTAKBANK, MRF)",
+     "offline": false
+    }
+   }
+  },
+  "watchlist_size": 99,
+  "universe_size": 99,
+  "universe_tier": "explicit list",
+  "universe_target": 99,
+  "registered_strategies": 35,
+  "scanning_strategies": 12,
+  "strategies_enabled": 12,
+  "strategy_ids": [
+   "cpr_breakout_15m",
+   "cpr_reversal_15m",
+   "first_pullback_15m",
+   "gapgo_15m",
+   "insidebar_15m",
+   "nr7_intraday_15m",
+   "orb_15m",
+   "pullback_15m",
+   "supertrend_15m",
+   "volexp_1h",
+   "vwap_15m",
+   "vwap_pullback_15m"
+  ],
+  "strategy_names": [
+   "CPR Breakout",
+   "CPR Reversal",
+   "First Pullback After Breakout",
+   "Gap and Go",
+   "Inside Bar Breakout",
+   "NR7 Intraday",
+   "Opening Range Breakout",
+   "EMA Pullback Continuation",
+   "Supertrend Continuation",
+   "Bollinger Squeeze Breakout (1h)",
+   "VWAP Trend Continuation",
+   "VWAP Pullback"
+  ],
+  "timeframes": [
+   "15m",
+   "1h"
+  ],
+  "headline": "Looking for opportunities across 99 stocks using 12 strategies.",
+  "next_scan_seconds": 60,
+  "session_seconds_remaining": 7001,
+  "progress": null,
+  "current_activity": "Waiting for next completed candle.",
+  "activity": [
+   {
+    "ts": "2026-07-20T08:03:17.563670+00:00",
+    "time": "13:33:17",
+    "message": "Market data: 15m: UNABLE TO FETCH candles for 3/99 symbols - fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate' (examples: ADANIENT, KOTAKBANK, MRF)",
+    "detail": ""
+   },
+   {
+    "ts": "2026-07-20T07:55:36.169252+00:00",
+    "time": "13:25:36",
+    "message": "Engine started",
+    "detail": "Preflight complete"
+   }
+  ]
+ }
+}

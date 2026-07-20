@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALGO TRADER — Monitoring Terminal</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============================ TOP STATUS BAR ============================ -->
+<header id="topbar">
+  <div class="brand">ALGO<span>TRADER</span><em>monitoring terminal</em></div>
+  <div class="statusstrip">
+    <div class="stat"><label>ENGINE</label><span id="s-engine" class="pill">—</span></div>
+    <div class="stat"><label>MODE</label><span id="s-mode" class="pill">—</span></div>
+    <div class="stat"><label>MARKET</label><span id="s-market" class="pill">—</span></div>
+    <div class="stat"><label>BROKER</label><span id="s-broker" class="pill">—</span></div>
+    <div class="stat"><label>DATA FEED</label><span id="s-feed" class="pill">—</span></div>
+    <div class="stat"><label>SCANNER</label><span id="s-scanner" class="pill">—</span></div>
+    <div class="stat"><label>SCHEDULER</label><span id="s-sched" class="pill">—</span></div>
+    <div class="stat"><label>RECOVERY</label><span id="s-recovery" class="pill">—</span></div>
+  </div>
+  <div class="clockbox">
+    <div id="s-clocklabel" class="clocklabel">NEXT CANDLE</div>
+    <div id="s-clock" class="clock">—</div>
+    <div id="s-feedage" class="feedage">no data</div>
+  </div>
+</header>
+
+<div id="banner" class="banner hidden"></div>
+
+<!-- ============================== MAIN GRID =============================== -->
+<main>
+
+  <!-- MARKET OVERVIEW + SCANNER -->
+  <section class="panel span4">
+    <h2>MARKET OVERVIEW</h2>
+    <div class="kv-grid">
+      <div><label>SESSION</label><b id="m-session">—</b></div>
+      <div><label>TIME REMAINING</label><b id="m-remaining">—</b></div>
+      <div><label>UNIVERSE SIZE</label><b id="m-watchlist">—</b></div>
+      <div><label>REGISTERED STRATEGIES</label><b id="m-registered">—</b></div>
+      <div><label>SCANNING STRATEGIES</label><b id="m-strategies">—</b></div>
+      <div><label>NEXT CANDLE</label><b id="m-nextcandle">—</b></div>
+      <div><label>AUTO SQUARE-OFF</label><b id="m-squareoff">—</b></div>
+      <div><label>TOKEN MAPPING</label><b id="m-mapping">—</b></div>
+      <div><label>MARKET DATA</label><b id="m-datastate">—</b></div>
+    </div>
+    <div id="m-datadetail" class="datadetail">—</div>
+  </section>
+
+  <!-- MARKET DATA QUALITY (§12) -->
+  <section class="panel span12">
+    <h2>MARKET DATA</h2>
+    <div class="kv-grid four">
+      <div><label>CONFIGURED UNIVERSE</label><b id="md-universe" class="num">—</b></div>
+      <div><label>RESOLVED SYMBOLS</label><b id="md-resolved" class="num">—</b></div>
+      <div><label>LIVE SYMBOLS</label><b id="md-live" class="num">—</b></div>
+      <div><label>FRESH SYMBOLS</label><b id="md-fresh" class="num">—</b></div>
+      <div><label>MISSING SYMBOLS</label><b id="md-missing" class="num">—</b></div>
+      <div><label>FAILED FETCHES</label><b id="md-failed" class="num">—</b></div>
+      <div><label>LAST SUCCESSFUL UPDATE</label><b id="md-lastupdate" class="num">—</b></div>
+      <div><label>FEED STATUS</label><b id="md-status" class="num">—</b></div>
+    </div>
+    <div id="md-detail" class="datadetail">—</div>
+  </section>
+
+  <section class="panel span8">
+    <h2>SCANNER</h2>
+    <div id="sc-headline" class="headline">—</div>
+    <div id="sc-current" class="current">—</div>
+    <div id="sc-activity" class="activity"></div>
+  </section>
+
+  <!-- PORTFOLIO / PERFORMANCE -->
+  <section class="panel span6">
+    <h2>PORTFOLIO</h2>
+    <div class="kv-grid four">
+      <div><label>TOTAL P&L</label><b id="p-total" class="num">—</b></div>
+      <div><label>REALIZED</label><b id="p-realized" class="num">—</b></div>
+      <div><label>UNREALIZED</label><b id="p-unreal" class="num">—</b></div>
+      <div><label>OPEN RISK</label><b id="p-risk" class="num">—</b></div>
+      <div><label>DEPLOYED</label><b id="p-deployed" class="num">—</b></div>
+      <div><label>AVAILABLE</label><b id="p-available" class="num">—</b></div>
+      <div><label>EXPOSURE</label><b id="p-exposure" class="num">—</b></div>
+      <div><label>POSITIONS</label><b id="p-positions" class="num">—</b></div>
+      <div><label>PORTFOLIO VALUE</label><b id="p-value" class="num">—</b></div>
+    </div>
+    <div class="kv-grid four">
+      <div><label>PORTFOLIO OPEN RISK</label><b id="r-open" class="num">—</b></div>
+      <div><label>RESERVED PENDING</label><b id="r-reserved" class="num">—</b></div>
+      <div><label>REMAINING BUDGET</label><b id="r-remaining" class="num">—</b></div>
+      <div><label>RISK UTILIZATION</label><b id="r-util" class="num">—</b></div>
+    </div>
+  </section>
+
+  <section class="panel span6">
+    <h2>TODAY'S PERFORMANCE</h2>
+    <div class="kv-grid four">
+      <div><label>TRADES</label><b id="f-trades" class="num">—</b></div>
+      <div><label>WINS</label><b id="f-wins" class="num pos">—</b></div>
+      <div><label>LOSSES</label><b id="f-losses" class="num neg">—</b></div>
+      <div><label>WIN RATE</label><b id="f-winrate" class="num">—</b></div>
+      <div><label>P&L</label><b id="f-pnl" class="num">—</b></div>
+      <div><label>LARGEST WIN</label><b id="f-bigwin" class="num pos">—</b></div>
+      <div><label>LARGEST LOSS</label><b id="f-bigloss" class="num neg">—</b></div>
+      <div><label>OPEN RISK</label><b id="f-risk" class="num">—</b></div>
+    </div>
+  </section>
+
+  <!-- ACTIVE TRADES -->
+  <section class="panel span12">
+    <h2>ACTIVE TRADES <span id="pos-count" class="count">0</span></h2>
+    <div id="positions" class="positions"><div class="empty">No open positions.</div></div>
+  </section>
+
+  <!-- SIGNALS -->
+  <section class="panel span6">
+    <h2>OPPORTUNITIES <span id="sig-count" class="count">0</span></h2>
+    <div class="tablewrap">
+      <table id="t-signals">
+        <thead><tr><th>TIME</th><th>SYMBOL</th><th>STRATEGY</th><th class="r">ENTRY</th><th class="r">STOP</th><th class="r">CONF</th></tr></thead>
+        <tbody><tr class="empty"><td colspan="6">No signals yet.</td></tr></tbody>
+      </table>
+    </div>
+    <div id="sig-waiting" class="waiting">—</div>
+  </section>
+
+  <section class="panel span6">
+    <h2>REJECTED <span id="rej-count" class="count">0</span></h2>
+    <div class="tablewrap">
+      <table id="t-rejected">
+        <thead><tr><th>TIME</th><th>SYMBOL</th><th>STRATEGY</th><th>REASON REJECTED</th></tr></thead>
+        <tbody><tr class="empty"><td colspan="4">Nothing rejected yet.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TIMELINE + HEALTH -->
+  <section class="panel span6">
+    <h2>SESSION TIMELINE</h2>
+    <div id="timeline" class="timeline"><div class="empty">No events yet.</div></div>
+  </section>
+
+  <section class="panel span6">
+    <h2>SYSTEM HEALTH</h2>
+    <div class="kv-grid four">
+      <div><label>CPU</label><b id="h-cpu" class="num">n/a</b></div>
+      <div><label>RAM</label><b id="h-ram" class="num">n/a</b></div>
+      <div><label>CYCLES</label><b id="h-cycles" class="num">—</b></div>
+      <div><label>ERRORS TODAY</label><b id="h-errors" class="num">—</b></div>
+    </div>
+    <div id="h-components" class="components"></div>
+    <div id="h-trip" class="trip hidden"></div>
+  </section>
+
+  <!-- CLOSED TRADES -->
+  <section class="panel span12">
+    <h2>COMPLETED TRADES <span id="ct-count" class="count">0</span></h2>
+    <div class="tablewrap">
+      <table id="t-closed">
+        <thead><tr><th>SYMBOL</th><th>STRATEGY</th><th class="r">ENTRY</th><th class="r">EXIT</th><th class="r">QTY</th><th>EXIT REASON</th><th class="r">P&L</th></tr></thead>
+        <tbody><tr class="empty"><td colspan="7">No completed trades today.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ORDERS -->
+  <section class="panel span12">
+    <h2>ORDERS <span id="ord-count" class="count">0</span></h2>
+    <div class="tablewrap short">
+      <table id="t-orders">
+        <thead><tr><th>UPDATED</th><th>SYMBOL</th><th>SIDE</th><th>INTENT</th><th class="r">QTY</th><th class="r">FILL</th><th>STATUS</th><th>BROKER ID</th></tr></thead>
+        <tbody><tr class="empty"><td colspan="8">No orders yet.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- LOGS -->
+  <section class="panel span12">
+    <h2>ENGINE LOG
+      <input id="logsearch" type="search" placeholder="filter logs…" autocomplete="off">
+      <label class="chk"><input type="checkbox" id="notif-toggle"> notifications</label>
+    </h2>
+    <div class="tablewrap short">
+      <table id="t-logs">
+        <thead><tr><th>TIME</th><th>LEVEL</th><th>SOURCE</th><th>MESSAGE</th></tr></thead>
+        <tbody><tr class="empty"><td colspan="4">No log entries.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer id="footer">
+  READ-ONLY MONITOR — this dashboard cannot start, stop, pause or modify the trading engine.
+  <span id="foot-updated">awaiting data…</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

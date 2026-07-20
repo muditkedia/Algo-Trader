@@ -16,6 +16,7 @@ import pandas as pd
 from algo.core.config import from_dict
 from algo.core.enums import Direction, HoldingScope
 from algo.core.indicators import atr, crossed_above, ema, rsi, volume_ratio
+from algo.execution import atr_trail_intraday
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import (
     Component, ConfidenceScore, clip01, weighted,
@@ -61,6 +62,12 @@ class PullbackContinuation15m(StrategyProfile):
         ),
         enabled=True,
     )
+
+    #: This strategy's OWN execution: no published exit is recorded for it
+    #: anywhere in this repository, so it declares its pre-reset behaviour as
+    #: its own - ATR/structure stop, chandelier trail + profit locks, session
+    #: square-off, never overnight.
+    execution = atr_trail_intraday()
 
     def __init__(self, settings=None) -> None:
         super().__init__(settings or PullbackParams())

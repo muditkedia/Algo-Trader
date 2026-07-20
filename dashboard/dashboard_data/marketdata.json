@@ -1,0 +1,29 @@
+{
+ "generated_at": "2026-07-20T08:03:18.895893+00:00",
+ "schema": 2,
+ "data": {
+  "timeframe": "15m",
+  "configured_universe": 99,
+  "resolved_symbols": 99,
+  "mapping_applicable": true,
+  "live_symbols": 99,
+  "fresh_symbols": 96,
+  "missing_symbols": 0,
+  "stale_symbols": 3,
+  "failed_fetches": 3,
+  "last_successful_update": "2026-07-20T08:03:17.562523+00:00",
+  "last_successful_update_ist": "13:33:17",
+  "feed_status": "UNABLE TO FETCH",
+  "headline": "15m: STALE DATA - 3/99 symbols are 13 or more bars behind (examples: ADANIENT, KOTAKBANK, MRF)",
+  "stale_examples": [
+   "ADANIENT",
+   "KOTAKBANK",
+   "MRF"
+  ],
+  "missing_examples": [],
+  "worst_bars_behind": 13,
+  "newest_bar": "2026-07-20 07:45:00+00:00",
+  "expected_bar": "2026-07-20 07:45:00+00:00",
+  "market_open": true
+ }
+}

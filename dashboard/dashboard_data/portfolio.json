@@ -1,0 +1,26 @@
+{
+ "generated_at": "2026-07-20T08:03:18.911864+00:00",
+ "schema": 2,
+ "data": {
+  "mode": "paper",
+  "deploy_today": 100000.0,
+  "portfolio_value": 100000.0,
+  "max_per_trade": 50000.0,
+  "deployed_capital": 0.0,
+  "available_capital": 100000.0,
+  "exposure_pct": 0.0,
+  "realized_pnl": -279646.87,
+  "unrealized_pnl": 0.0,
+  "total_pnl": -279646.87,
+  "open_positions": 0,
+  "max_open_positions": 5,
+  "open_risk": 0,
+  "max_daily_loss": 8000.0,
+  "portfolio_open_risk": 0,
+  "reserved_pending_risk": 0.0,
+  "remaining_risk_budget": 0.0,
+  "risk_utilization_pct": 3495.6,
+  "realized_loss": 279646.87,
+  "unrealized_loss": 0.0
+ }
+}

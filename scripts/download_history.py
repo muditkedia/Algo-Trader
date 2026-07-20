@@ -21,8 +21,10 @@ import sys
 from pathlib import Path
 
 from algo.core.logging import configure
+from algo.data import manifest
 from algo.data.ingest import IngestionEngine
 from algo.data.providers.smartapi import SmartApiConfig, build_provider
+from algo.data.providers.smartapi.instruments import INDEX_SYMBOLS
 from algo.data.store import MarketDataStore
 
 DEFAULT_STORE = "user_data/data/nse"
@@ -44,6 +46,10 @@ def main() -> int:
     parser.add_argument("--symbols", help="comma-separated NSE symbols "
                         "(e.g. RELIANCE,TCS,INFY)")
     parser.add_argument("--symbols-file", help="file with one symbol per line")
+    parser.add_argument("--context", action="store_true",
+                        help="include the market-context series "
+                             f"({','.join(INDEX_SYMBOLS)}); may be used "
+                             "alone or with --symbols/--symbols-file")
     parser.add_argument("--timeframes", default=DEFAULT_TIMEFRAMES)
     parser.add_argument("--start", default="2023-01-01",
                         help="history start when a symbol has no data yet")
@@ -53,8 +59,10 @@ def main() -> int:
     configure(level=logging.INFO)
 
     symbols = parse_symbols(args)
+    if args.context:
+        symbols += [s for s in INDEX_SYMBOLS if s not in symbols]
     if not symbols:
-        print("no symbols given - use --symbols or --symbols-file")
+        print("no symbols given - use --symbols, --symbols-file or --context")
         return 2
 
     config = SmartApiConfig.from_env()
@@ -67,6 +75,13 @@ def main() -> int:
 
     provider = build_provider(cache_dir=Path(args.store) / "_instruments")
     provider.instruments.ensure()
+    if args.context:
+        resolved = provider.instruments.ensure_indices()
+        absent = sorted(set(INDEX_SYMBOLS) - set(resolved["symbol"]))
+        if absent:
+            print(f"WARNING: provider does not list these indices: {absent} "
+                  "- they will be skipped (documented, not fatal)")
+            symbols = [s for s in symbols if s not in absent]
     unknown = [s for s in symbols if provider.instruments.token_for(s) is None]
     if unknown:
         print(f"WARNING: not in the NSE instrument master: {unknown}")
@@ -78,6 +93,7 @@ def main() -> int:
         print(f"\n=== {timeframe}: {len(symbols)} symbols ===")
         report = engine.incremental_update(
             symbols, timeframe, end=args.end, start_if_empty=args.start)
+        manifest.record(store, report, provider.name)
         summary = report.summary()
         print(f"    {summary}")
         for result in report.results:
