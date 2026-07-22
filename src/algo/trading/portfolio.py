@@ -58,6 +58,21 @@ class PortfolioEngine:
         return any(p.symbol == symbol and p.active_conflict_group == group
                    for p in self.open_positions())
 
+    def session_blocked(self, symbol: str, groups: tuple, session: str) -> bool:
+        wanted = set(groups)
+        if not wanted:
+            return False
+        if any(p.symbol == symbol and p.session_block_group in wanted
+               and p.session == session for p in self.open_positions()):
+            return True
+        if any(t.get("symbol") == symbol
+               and t.get("session_block_group") in wanted
+               and t.get("session") == session for t in self.closed_trades):
+            return True
+        return any(o.symbol == symbol and o.intent == "entry"
+                   and o.session_block_group in wanted
+                   and o.session == session for o in self.pending_orders())
+
     def deployed_capital(self) -> float:
         return sum(p.entry_price * p.open_quantity for p in self.open_positions())
 
@@ -110,6 +125,7 @@ class PortfolioEngine:
             "direction": position.direction,
             "exclusive_group": position.exclusive_group,
             "active_conflict_group": position.active_conflict_group,
+            "session_block_group": position.session_block_group,
         }
         self.closed_trades.append(record)
         self.persist()

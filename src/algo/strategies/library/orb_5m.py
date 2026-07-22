@@ -67,6 +67,7 @@ class OpeningRangeBreakout(StrategyProfile):
         name="orb_5m", version="2.0.0", spec_id="STRAT-01",
         exclusive_group="opening_breakout", direction=Direction.BOTH,
         active_conflict_group="opening_or_retest",
+        blocked_by_session_groups=("opening_drive",),
         holding_scope=HoldingScope.INTRADAY, timeframe="5m", min_bars=1502,
         required_columns=(
             "close", "or_high", "or_low", "or_mid", "after_range", "atr",

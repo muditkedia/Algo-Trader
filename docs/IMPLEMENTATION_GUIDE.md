@@ -323,6 +323,18 @@ boundary/VWAP failure, and stagnation exit. See
     depth/duration caps; volume-signature filter; RVOL on the impulse; index
     alignment; time cutoff; breakeven-after-1R.
 
+## 5A. Opening Drive Momentum — `opening_drive_5m`
+
+STRAT-03 is implemented from the master specification as a bidirectional
+5-minute opening-candle momentum strategy. The configured drive bar must meet
+body-dominance, counter-wick, same-slot RVOL, ATR-range, VWAP, ADT20, NIFTY,
+gap-alignment, and exact-time gates. The implementation preserves the raw
+`0.60 × RVOL + 0.40 × body/range` ranking and fixed full-risk sizing. It owns
+its directional drive-candle stop, 1.5R half exit, breakeven transition,
+post-partial chandelier, VWAP invalidation, stagnation exit, and square-off.
+An accepted drive blocks STRAT-01/02 on that symbol for the rest of the
+session. See `docs/STRAT03_OPENING_DRIVE_5M.md`.
+
 ## 6. EMA Pullback Continuation — `pullback_15m`
 
 1. **Original strategy name:** intraday EMA pullback (trend-pullback
@@ -439,6 +451,7 @@ loses consistently-recommended context; L = near-faithful already).
 | `cpr_breakout_15m` | Causal CPR; TC break + volume; BC stop; R1 partial→BE→R2; square-off | Same trade but ONLY on narrow-CPR days with supportive two-day relationship and sane gap; morning entries | Narrow-CPR gate; two-day relationship; gap rejection; virgin-CPR context; RVOL; index gate; morning window | **High** — day-type selection *is* the CPR method |
 | `vwap_15m` | 60% buyer-control; reclaim cross; dip-low stop; 2R; square-off | Reclaim on RISING VWAP, first/second reclaim only, trend-day context, volume signature | Slope requirement; reclaim-count cap; range-day rejection; index gate; time cutoff | **Medium** |
 | `orb_retest_5m` | Specification STRAT-02; see `STRAT02_ORB_RETEST_5M.md` | Implemented | Optional spread/membership inputs substituted conservatively; sector cap awaits metadata | **Complete except documented sector-metadata dependency** |
+| `opening_drive_5m` | Specification STRAT-03; see `STRAT03_OPENING_DRIVE_5M.md` | Implemented | Optional sector-relative input unavailable; sector cap awaits metadata | **Complete except documented sector-metadata dependency** |
 | `pullback_15m` | EMA20/50 regime; touch + reclaim; ATR/swing stop + chandelier | Same template but gated on trend STRENGTH, not merely EMA order; overextension rejection; index aligned | Trend-strength gate; overextension rejection; index gate; time window | **Medium** |
 | `volexp_1h` | Absolute bandwidth ≤0.03 for 3 prior bars; close above band; ATR/trail | Bandwidth at a RELATIVE low of its own history; direction filter; volume gate; event skip | Relative-bandwidth definition; direction filter; volume gate; event skip | **Medium** (the definition item is faithfulness, not tuning) |
 

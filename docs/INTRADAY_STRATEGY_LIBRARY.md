@@ -9,11 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **12 intraday strategies** via auto-discovery:
+registers **13 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **12** | 2 × 5m, 9 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **13** | 3 × 5m, 9 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -77,6 +77,7 @@ them; the other two declare their pre-reset profile as their own):
 | `vwap_pullback_15m` | just below VWAP (level at entry) | 2R | none |
 | `cpr_breakout_15m` | below the CPR bottom | floor-pivot R1 (50% partial, stop→breakeven) then R2 | none |
 | `orb_retest_5m` | beyond retest pivot by 0.2 ATR, capped at 1.25 ATR | 1.5R (1.0R Grade C), 50% | breakeven then post-partial 2 ATR chandelier |
+| `opening_drive_5m` | beyond drive candle by 0.1 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `pullback_15m` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
 | `volexp_1h` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
 | `gapgo_15m` | below the first bar's low | 2R | none |
@@ -107,7 +108,7 @@ no capital constraint, fractional share quantities).
 
 ---
 
-## 2. Intraday strategies (12) — the current intraday library
+## 2. Intraday strategies (13) — the current intraday library
 
 ### 2.1 Opening Range Breakout — `orb_5m`
 
@@ -444,6 +445,18 @@ See `docs/STRAT02_ORB_RETEST_5M.md`.
    helper). 8. Fails on downward resolutions and big gap-overs.
 9. Liquid NSE names. 10–12. Implemented + gate-tested; **not yet
    backtested**; `library/nr7_intraday_15m.py`; complete.
+
+### 2.13 Opening Drive Momentum — `opening_drive_5m`
+
+The sole STRAT-03 implementation is a bidirectional 5-minute strategy that
+evaluates the configured opening candle. It requires dominant body geometry,
+a small counter-wick, same-slot RVOL of at least 2.5, a 0.75–2.5 ATR range,
+VWAP alignment, ₹50 crore ADT20, NIFTY alignment, an aligned gap, and the exact
+decision time. It uses the specification's raw RVOL/body ranking and fixed
+full-risk sizing. Execution is a collared confirmed fill with a directional
+drive stop, 1.5R partial, breakeven, chandelier, VWAP/no-progress invalidation,
+and square-off. A filled drive suppresses STRAT-01/02 for the session. See
+`docs/STRAT03_OPENING_DRIVE_5M.md`.
 
 ---
 

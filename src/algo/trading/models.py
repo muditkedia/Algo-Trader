@@ -85,6 +85,7 @@ class Order:
     exclusive_group: str = ""
     active_conflict_group: str = ""
     entry_target_r: float = 0.0
+    session_block_group: str = ""
     last_managed_bar: str = ""
 
     def to_dict(self) -> dict:
@@ -142,6 +143,7 @@ class Position:
     lowest_since_entry: float = 0.0
     exclusive_group: str = ""
     active_conflict_group: str = ""
+    session_block_group: str = ""
     last_managed_bar: str = ""
 
     def __post_init__(self) -> None:

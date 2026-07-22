@@ -45,6 +45,8 @@ class TradingSignal:
     reason: str = ""
     exclusive_group: str = ""
     active_conflict_group: str = ""
+    session_block_group: str = ""
+    blocked_by_session_groups: tuple = ()
     atr_at_entry: float = 0.0
     structural_stop: float = 0.0
 
@@ -91,8 +93,9 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
         scored = None
         conf = 0.0
     regime = float(strategy.regime_score(prepared.iloc[: index + 1], direction))
-    priority = float(strategy.priority_score(conf, regime))
-    grade = 1.0 if conf >= 0.85 else (0.75 if conf >= 0.70 else 0.50)
+    priority = float(strategy.signal_priority(
+        prepared, index, direction, conf, regime))
+    grade = float(strategy.grade_multiplier(conf))
     trigger = float(strategy.entry_trigger(prepared, index, direction))
     limit = None
     if spec.entry == "limit_collar":
@@ -110,6 +113,8 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
         reason=(scored.reason if scored else ""),
         exclusive_group=strategy.meta.exclusive_group,
         active_conflict_group=strategy.meta.active_conflict_group,
+        session_block_group=strategy.meta.session_block_group,
+        blocked_by_session_groups=strategy.meta.blocked_by_session_groups,
         atr_at_entry=float(atr_value),
         structural_stop=float(row[(spec.stop_long_col
                                    if direction == Direction.LONG

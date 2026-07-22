@@ -47,6 +47,10 @@ class StrategyMeta:
     #: Signals sharing this group cannot coexist on the same symbol, but a
     #: later setup may trade after the earlier position has closed.
     active_conflict_group: str = ""
+    #: A filled (or working) position with this group suppresses strategies
+    #: that list it in ``blocked_by_session_groups`` for the session.
+    session_block_group: str = ""
+    blocked_by_session_groups: tuple = ()
     #: Indicator columns the entry_signal needs; the missing-column guard uses
     #: this, and the research engine records it as the strategy's contract.
     required_columns: tuple = ()
@@ -200,6 +204,16 @@ class StrategyProfile(ABC):
     def priority_score(self, confidence: float, regime: float) -> float:
         """Portfolio ranking metric; strategies may override spec weights."""
         return 0.60 * confidence + 0.40 * regime
+
+    def signal_priority(self, dataframe: pd.DataFrame, index: int,
+                        direction: Direction, confidence: float,
+                        regime: float) -> float:
+        return self.priority_score(confidence, regime)
+
+    def grade_multiplier(self, confidence: float) -> float:
+        """Risk allocation grade; strategies without grading may return 1."""
+        return 1.0 if confidence >= 0.85 else (0.75 if confidence >= 0.70
+                                               else 0.50)
 
     def entry_trigger(self, dataframe: pd.DataFrame, index: int,
                       direction: Direction) -> float:

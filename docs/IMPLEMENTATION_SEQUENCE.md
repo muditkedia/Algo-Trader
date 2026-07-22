@@ -89,6 +89,7 @@ order can be changed at review):
 |---|---|---|
 | 3.1 | `orb_5m` **complete** | STRAT-01: bidirectional 5m OR, same-slot RVOL, regime/confidence gates, collared fill, partial/BE/chandelier |
 | 3.2 | `orb_retest_5m` **complete** | STRAT-02: wave-extension/retest state, depth/time invalidation, directional pivot stop, grade target |
+| 3.2a | `opening_drive_5m` **complete** | STRAT-03: opening-candle geometry/RVOL, index and gap alignment, fixed sizing, session suppression |
 | 3.3 | `cpr_breakout_15m` | narrow-CPR gate + two-day relation + gap context (F10/F3), RVOL, index alignment, morning window |
 | 3.4 | `vwap_15m` | slope requirement, reclaim cap, range-day rejection, index alignment, window |
 | 3.5 | retired `first_pullback_15m` | Superseded by completed STRAT-02 `orb_retest_5m`; no duplicate implementation retained |

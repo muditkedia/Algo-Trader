@@ -1,6 +1,25 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-02 canonical replacement)_
+_Last updated: 2026-07-23 (STRAT-03 Opening Drive Momentum)_
+
+## STRAT-03 Opening Drive Momentum complete (2026-07-23)
+
+`opening_drive_5m` is the sole registered STRAT-03 implementation. The new
+bidirectional 5-minute strategy evaluates the configured opening candle,
+enforces body/wick geometry, same-slot RVOL, ATR-normalized range, VWAP,
+liquidity, NIFTY, gap, and exact-time gates, and uses the specification's raw
+RVOL/body ranking with fixed full-risk sizing.
+
+Orders, positions, closed trades, and risk checks now carry a reusable
+session-block group. An opening-drive fill therefore suppresses STRAT-01 and
+STRAT-02 for that symbol for the remainder of the session, even after the
+drive position closes or after restart. Strategy hooks now support exact raw
+ranking and strategy-defined grade sizing while preserving existing defaults.
+Full detail and deviations are in `docs/STRAT03_OPENING_DRIVE_5M.md`.
+
+Validation: Python compilation succeeded and the complete suite passed with
+801 tests. All 13 registered strategies passed the exit verification matrix
+and participated in scanning.
 
 ## STRAT-02 canonical replacement complete (2026-07-23)
 
@@ -51,8 +70,8 @@ forbid overnight holding. Historical research reports and the generic research
 framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
-STRAT-01 and STRAT-02 are complete. Sequential implementation continues with
-STRAT-03.
+STRAT-01 through STRAT-03 are complete. Sequential implementation continues
+with STRAT-04.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

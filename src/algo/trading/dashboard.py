@@ -49,6 +49,7 @@ STRATEGY_NAMES = {
     "vwap_pullback_15m": "VWAP Pullback",
     "cpr_breakout_15m": "CPR Breakout",
     "orb_retest_5m": "ORB Retest Continuation (STRAT-02)",
+    "opening_drive_5m": "Opening Drive Momentum (STRAT-03)",
     "pullback_15m": "EMA Pullback Continuation",
     "volexp_1h": "Bollinger Squeeze Breakout (1h)",
     "gapgo_15m": "Gap and Go",
@@ -71,6 +72,9 @@ ENTRY_RULES = {
                         "volume >= 1.5x its 20-bar average",
     "orb_retest_5m": "A sufficiently extended opening break retested and "
                      "held the boundary, then resumed on renewed RVOL",
+    "opening_drive_5m": "The configured opening 5-minute candle formed a "
+                        "high-RVOL directional drive aligned with VWAP, "
+                        "NIFTY and the opening gap",
     "pullback_15m": "In an EMA20>EMA50 uptrend, price dipped to the fast EMA "
                     "and closed back above it",
     "volexp_1h": "Bollinger bandwidth was compressed for 3 bars and price "

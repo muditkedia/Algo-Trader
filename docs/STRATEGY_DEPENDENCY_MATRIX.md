@@ -14,6 +14,7 @@ documented in `IMPLEMENTATION_GUIDE.md`:_
 | `vwap_pullback_15m` | **R** | Rec | Rec | Rec | **R** | **R** | **R** | — | — | O | — | O | O | O | Rec |
 | `cpr_breakout_15m` | **R** | **R** | **R** | Rec | **R** | — | — | O | **R** | Rec | — | — | Rec | O | Rec |
 | `orb_retest_5m` | **R** | **R** | **R** | Rec | **R** | — | — | **R** | — | **R** | — | **R** | O | **R** | Rec |
+| `opening_drive_5m` | **R** | **R** | **R** | Rec | **R** | — | — | — | — | **R** | — | — | O | **R** | Rec |
 | `pullback_15m` | **R** | Rec | O | Rec | **R** | — | — | — | — | O | — | **R** | O | O | Rec |
 | `volexp_1h` | **R** | Rec | O | Rec | Rec | — | — | — | — | Rec | **R** | Rec | Rec | O | Rec |
 

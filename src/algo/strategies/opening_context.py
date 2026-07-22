@@ -74,7 +74,8 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
     nifty = context.get("NIFTY50", pd.DataFrame())
     nifty_exact = pd.DataFrame()
     if not nifty.empty:
-        nifty_exact = nifty[["date"]].copy()
+        nifty_exact = nifty[["date", "open"]].copy().rename(
+            columns={"open": "nifty_open"})
         nifty_exact["nifty_vwap"] = session_vwap(nifty)
         nifty_exact["nifty_close"] = nifty["close"].to_numpy()
         nifty_exact = nifty_exact.sort_values("date")
@@ -100,6 +101,7 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
         else:
             merged["nifty_vwap"] = np.nan
             merged["nifty_close"] = np.nan
+            merged["nifty_open"] = np.nan
         if not trend.empty:
             merged = pd.merge_asof(merged.sort_values("date"), trend,
                                    on="date", direction="backward")

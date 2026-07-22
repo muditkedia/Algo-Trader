@@ -118,6 +118,7 @@ class OrderManager:
             structural_stop=getattr(signal, "structural_stop", signal.stop),
             exclusive_group=signal.exclusive_group,
             active_conflict_group=signal.active_conflict_group,
+            session_block_group=signal.session_block_group,
             entry_target_r=(abs(float(signal.target) - signal.entry_ref)
                             / signal.risk_per_unit
                             if signal.target is not None

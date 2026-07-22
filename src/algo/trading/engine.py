@@ -812,6 +812,7 @@ class ProductionEngine:
             atr_at_entry=atr_value, direction=order.direction,
             exclusive_group=order.exclusive_group,
             active_conflict_group=order.active_conflict_group,
+            session_block_group=order.session_block_group,
             last_managed_bar=order.signal_bar_time)
         self.portfolio.add_position(pos)
         self.events.emit("position", action="open", symbol=order.symbol,
