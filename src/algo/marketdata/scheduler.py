@@ -340,6 +340,10 @@ class TimeframeScheduler:
         if request.kind != CANDLES:
             return
         timeframe, symbol = request.timeframe, request.symbol
+        current = self._serving_bar.get(timeframe)
+        if (request.due_bar is not None and current is not None
+                and pd.Timestamp(request.due_bar) < pd.Timestamp(current)):
+            return
         # one real fetch happened: count it here, so the attempt budget tracks
         # executions, not plan iterations (see _candle_request)
         key = (timeframe, symbol)

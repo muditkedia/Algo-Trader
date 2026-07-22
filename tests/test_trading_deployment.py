@@ -15,7 +15,7 @@ from algo.trading.adapters.angelone import AngelOneBroker
 from algo.trading.clock import MarketClock
 from algo.trading.config import LIVE_ENV_KEY, TradingConfig
 from algo.trading.engine import ProductionEngine
-from algo.marketdata import MarketState, TimeframeScheduler
+from algo.marketdata import MarketState, PollReport, TimeframeScheduler
 from algo.trading.models import Order, OrderStatus, Side
 from algo.strategies.library import OpeningRangeBreakout
 
@@ -307,7 +307,7 @@ def test_paper_and_live_open_identical_positions_only_adapter_differs(
 def test_tick_manages_without_scan_when_nothing_due(tmp_path, monkeypatch):
     eng = _engine(tmp_path, "paper", monkeypatch)
     eng.startup()
-    # force scheduler to report nothing due -> tick still runs a mgmt pass
-    eng.scheduler.due = lambda at=None: []
+    # force market data to report nothing due -> tick still runs a mgmt pass
+    monkeypatch.setattr(eng.marketdata, "poll", lambda **kwargs: PollReport())
     result = eng.tick()
     assert result["due"] == [] and result["opened"] == 0

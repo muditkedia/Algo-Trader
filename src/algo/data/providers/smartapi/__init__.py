@@ -28,7 +28,9 @@ from algo.data.providers.smartapi.session import SmartApiAuthError, SmartApiSess
 
 
 def build_provider(cache_dir=None, env_file: str = ".env",
-                   evidence_logger=None) -> SmartApiDataProvider:
+                   evidence_logger=None,
+                   transport_managed_pacing: bool = False
+                   ) -> SmartApiDataProvider:
     """One-call production wiring: .env -> config -> session -> instruments ->
     provider. Nothing authenticates until the first request needs it."""
     config = SmartApiConfig.from_env(env_file=env_file)
@@ -36,7 +38,9 @@ def build_provider(cache_dir=None, env_file: str = ".env",
     instruments = SmartApiInstruments(config.instruments_url,
                                       cache_dir=cache_dir,
                                       evidence_logger=evidence_logger)
-    return SmartApiDataProvider(session, instruments)
+    return SmartApiDataProvider(
+        session, instruments,
+        transport_managed_pacing=transport_managed_pacing)
 
 
 __all__ = [

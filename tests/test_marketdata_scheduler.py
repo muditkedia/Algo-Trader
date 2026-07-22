@@ -355,6 +355,71 @@ def test_the_queue_deduplicates_identical_requests():
     assert len(q) == 1
 
 
+def test_the_queue_coalesces_a_newer_due_bar_for_the_same_symbol():
+    """When a pass overlaps the next bar, the queued request must widen to the
+    newer bar instead of preserving a stale window that can no longer complete
+    the current scheduler obligation."""
+    q = RequestQueue()
+    old = DataRequest(
+        CANDLES, TF, ("RELIANCE",),
+        start=pd.Timestamp("2026-07-20 05:15:00", tz="UTC"),
+        end=pd.Timestamp("2026-07-20 05:29:00", tz="UTC"),
+        due_bar=pd.Timestamp("2026-07-20 05:15:00", tz="UTC"))
+    new = DataRequest(
+        CANDLES, TF, ("RELIANCE",),
+        start=pd.Timestamp("2026-07-20 05:15:00", tz="UTC"),
+        end=pd.Timestamp("2026-07-20 05:44:00", tz="UTC"),
+        due_bar=pd.Timestamp("2026-07-20 05:30:00", tz="UTC"))
+
+    assert q.push(old) is True
+    assert q.push(new) is True
+    assert len(q) == 1
+    assert q.peek() is new
+    assert q.pop() is new
+    assert not q
+
+
+def test_overlap_replanning_updates_queued_windows_in_place(tmp_path):
+    clock = _clock()
+    source = RecordingSource()
+    symbols = [f"S{i}" for i in range(5)]
+    state = _state(tmp_path, symbols,
+                   seed_bars_until="2026-07-20 05:00:00")
+    service = MarketDataService(
+        state, TimeframeScheduler(clock, [TF], grace_seconds=0,
+                                  capabilities=source.capabilities),
+        _transport(source), source, clock=clock, max_requests_per_poll=0)
+
+    service.poll(at=MONDAY)
+    assert len(service.queue) == len(symbols)
+    assert "05:29:00" in service.queue.peek().describe()
+
+    later = datetime(2026, 7, 20, 11, 20, tzinfo=IST)
+    service.poll(at=later)
+
+    assert len(service.queue) == len(symbols)
+    assert "05:44:00" in service.queue.peek().describe()
+
+
+def test_a_stale_response_cannot_resolve_a_newer_pass(tmp_path):
+    clock = _clock()
+    source = RecordingSource()
+    state = _state(tmp_path, ["RELIANCE"],
+                   seed_bars_until="2026-07-20 05:00:00")
+    sched = TimeframeScheduler(clock, [TF], grace_seconds=0)
+    sched.bind_source(source)
+    old_request = sched.plan(state, at=MONDAY)[0]
+    later = datetime(2026, 7, 20, 11, 20, tzinfo=IST)
+    sched.plan(state, at=later)
+
+    state.store.write("RELIANCE", TF, source.fetch_candles(
+        "RELIANCE", TF, old_request.start, old_request.end))
+    sched.mark_served(old_request, state, success=True)
+
+    assert sched.pending_count(TF) == 1
+    assert state.last_bar("RELIANCE", TF) == old_request.due_bar
+
+
 def test_the_queue_serves_by_priority_then_arrival():
     """A held position outranks a routine scan outranks a backfill; equal
     priorities keep arrival order, so ordering is deterministic."""

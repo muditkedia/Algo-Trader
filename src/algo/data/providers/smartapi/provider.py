@@ -17,6 +17,9 @@ API constraints, not magic numbers. A ``TokenException``-style failure triggers
 ONE session refresh + retry.
 
 Latest quote uses the documented ``ltpData(exchange, tradingsymbol, token)``.
+For live Market Data v2, pacing and rate-limit retries are owned by
+``algo.marketdata.Transport`` so the scheduler can requeue, reprioritize and
+report provider pressure without hidden sleeps inside this provider.
 """
 
 from __future__ import annotations
@@ -64,7 +67,8 @@ class SmartApiDataProvider(DataProvider):
                  min_request_interval_s: float = 1.0,
                  rate_limit_retries: int = 4,
                  rate_limit_backoff_s: float = 2.0,
-                 sleep_fn: Optional[Callable] = None) -> None:
+                 sleep_fn: Optional[Callable] = None,
+                 transport_managed_pacing: bool = False) -> None:
         self.session = session
         self.instruments = instruments
         self.exchange = exchange
@@ -74,8 +78,11 @@ class SmartApiDataProvider(DataProvider):
         # exceeding access rate" at 2.5 req/s), so the default is conservative
         # and rate-limit rejections are retried with exponential backoff rather
         # than being mistaken for bad data.
-        self.min_interval = min_request_interval_s
-        self.rate_limit_retries = rate_limit_retries
+        self.transport_managed_pacing = bool(transport_managed_pacing)
+        self.min_interval = 0.0 if self.transport_managed_pacing \
+            else min_request_interval_s
+        self.rate_limit_retries = 0 if self.transport_managed_pacing \
+            else rate_limit_retries
         self.rate_limit_backoff_s = rate_limit_backoff_s
         self.sleep = sleep_fn or time_mod.sleep
         self._last_request = 0.0

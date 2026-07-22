@@ -22,7 +22,7 @@ from __future__ import annotations
 import heapq
 import itertools
 from dataclasses import dataclass, field
-from typing import Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
 
@@ -83,7 +83,7 @@ class RequestQueue:
 
     def __init__(self, max_depth: int = 100_000) -> None:
         self._heap: List[tuple] = []
-        self._queued: set = set()
+        self._queued: Dict[Tuple, DataRequest] = {}
         self._counter = itertools.count()
         #: a bound, so a provider that never serves anything cannot turn a
         #: queue into a memory leak over a session
@@ -91,39 +91,51 @@ class RequestQueue:
         self.dropped = 0
 
     def __len__(self) -> int:
-        return len(self._heap)
+        return len(self._queued)
 
     def __bool__(self) -> bool:
-        return bool(self._heap)
+        return bool(self._queued)
 
     def push(self, request: DataRequest) -> bool:
         """Queue a request. Returns False if it was a duplicate or the queue is
         full - never raises, because a full queue is a load condition, not a
         programming error."""
-        if request.key in self._queued:
-            return False
-        if len(self._heap) >= self.max_depth:
+        existing = self._queued.get(request.key)
+        if existing is not None:
+            if not self._supersedes(existing, request):
+                return False
+            self._queued[request.key] = request
+            heapq.heappush(self._heap,
+                           (request.priority, next(self._counter), request))
+            return True
+        if len(self._queued) >= self.max_depth:
             self.dropped += 1
             return False
         # (priority, insertion order) is a total order: equal priorities keep
         # arrival order, so the same inputs always produce the same sequence
         heapq.heappush(self._heap,
                        (request.priority, next(self._counter), request))
-        self._queued.add(request.key)
+        self._queued[request.key] = request
         return True
 
     def extend(self, requests: Iterable[DataRequest]) -> int:
         return sum(1 for r in requests if self.push(r))
 
     def pop(self) -> Optional[DataRequest]:
-        if not self._heap:
-            return None
-        _, _, request = heapq.heappop(self._heap)
-        self._queued.discard(request.key)
-        return request
+        while self._heap:
+            _, _, request = heapq.heappop(self._heap)
+            if self._queued.get(request.key) is request:
+                self._queued.pop(request.key, None)
+                return request
+        return None
 
     def peek(self) -> Optional[DataRequest]:
-        return self._heap[0][2] if self._heap else None
+        while self._heap:
+            request = self._heap[0][2]
+            if self._queued.get(request.key) is request:
+                return request
+            heapq.heappop(self._heap)
+        return None
 
     def clear(self) -> None:
         self._heap.clear()
@@ -134,15 +146,38 @@ class RequestQueue:
 
     def depth_by_kind(self) -> dict:
         out: dict = {}
-        for _, _, req in self._heap:
+        for req in self._queued.values():
             out[req.kind] = out.get(req.kind, 0) + 1
         return out
+
+    @staticmethod
+    def _supersedes(existing: DataRequest, candidate: DataRequest) -> bool:
+        """True when a same-key request should replace the queued one.
+
+        A newer bar can become due while an older request is still queued under
+        provider pressure. The newer request covers the old missing range plus
+        the new bar; keeping the stale queued request would spend a provider
+        call on a window that cannot complete the current pass.
+        """
+        if existing.kind != CANDLES or candidate.kind != CANDLES:
+            return False
+        old_due = existing.due_bar
+        new_due = candidate.due_bar
+        if old_due is not None and new_due is not None \
+                and pd.Timestamp(new_due) > pd.Timestamp(old_due):
+            return True
+        old_end = existing.end
+        new_end = candidate.end
+        if old_end is not None and new_end is not None \
+                and pd.Timestamp(new_end) > pd.Timestamp(old_end):
+            return True
+        return candidate.priority < existing.priority
 
     def snapshot(self) -> dict:
         """What the dashboard shows about pending work."""
         head = self.peek()
         return {
-            "depth": len(self._heap),
+            "depth": len(self._queued),
             "by_kind": self.depth_by_kind(),
             "dropped": self.dropped,
             "next": head.describe() if head is not None else None,

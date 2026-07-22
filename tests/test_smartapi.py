@@ -259,6 +259,39 @@ def test_rate_limit_gives_up_after_configured_retries():
         provider.fetch_ohlcv("RELIANCE", "1d", "2024-01-01", "2024-01-10")
 
 
+def test_transport_managed_pacing_does_not_sleep_or_retry_inside_provider():
+    """Live Market Data v2 owns pacing in Transport. The SmartAPI provider must
+    surface rate limits immediately so the service can requeue the request and
+    keep the scheduler loop bounded."""
+    class AlwaysLimited(FakeSmartConnect):
+        def __init__(self):
+            super().__init__()
+            self.attempts = 0
+
+        def getCandleData(self, params):
+            self.attempts += 1
+            raise Exception("Access denied because of exceeding access rate")
+
+    client = AlwaysLimited()
+    sleeps = []
+    session = _session(client)
+    instruments = SmartApiInstruments("https://x/m.json",
+                                      downloader=lambda url: SCRIP)
+    instruments.fetch()
+    provider = SmartApiDataProvider(
+        session, instruments, sleep_fn=sleeps.append,
+        min_request_interval_s=0.4, rate_limit_retries=2,
+        transport_managed_pacing=True)
+
+    with pytest.raises(Exception, match="(?i)access rate"):
+        provider.fetch_ohlcv("RELIANCE", "1d", "2024-01-01", "2024-01-10")
+
+    assert client.attempts == 1
+    assert sleeps == []
+    assert provider.min_interval == 0.0
+    assert provider.rate_limit_retries == 0
+
+
 def test_token_error_triggers_one_refresh_retry():
     client = FakeSmartConnect(fail_first_candles=True)
     provider = _provider(client)

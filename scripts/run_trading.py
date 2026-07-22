@@ -51,7 +51,8 @@ def build_engine(config: TradingConfig) -> ProductionEngine:
                       f"running OFFLINE on stored candles")
             else:
                 provider = build_provider(
-                    cache_dir=Path(config.store_dir) / "_instruments")
+                    cache_dir=Path(config.store_dir) / "_instruments",
+                    transport_managed_pacing=True)
                 session = provider.session
                 instruments = provider.instruments
                 source = for_provider(provider)
