@@ -461,13 +461,14 @@ The dashboard shows a red **LIVE TRADING ARMED** banner.
 | `user_data\trading\portfolio.json` | positions, orders, P&L | after every change |
 | `user_data\trading\events-YYYYMMDD.jsonl` | full audit trail | every event |
 | `user_data\trading\summary-YYYY-MM-DD.json` | end-of-day summary | at shutdown |
-| `dashboard\dashboard_data\*.json` | the 10 dashboard files | every cycle |
+| `dashboard\dashboard_data\*.json` | the 12 dashboard files | every cycle |
 | `user_data\data\nse\` | candle store | when data refreshes |
 
 ## 18. How often the dashboard refreshes
 
 - The engine **writes** the JSON files at the end of every cycle.
-- The browser **re-reads** them every **2 seconds**.
+- The browser **re-reads** `live.json` every second and the slow snapshot tier
+  every **5 seconds** while the tab is visible.
 - If the newest snapshot is older than **45 seconds**, the dashboard shows a red
   **STALE DATA** banner — that means the engine has stopped or hung.
 

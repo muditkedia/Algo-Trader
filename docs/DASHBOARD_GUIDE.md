@@ -25,8 +25,8 @@ ProductionEngine.run_cycle()
         ↓  (end of every cycle)
 DashboardExporter.export()        src/algo/trading/dashboard.py
         ↓  atomic writes (temp file + replace)
-dashboard/dashboard_data/*.json   10 files
-        ↓  fetch() every 2 seconds
+         dashboard/dashboard_data/*.json   12 files
+         ↓  live.json every second; the remaining snapshots every 5 seconds
 dashboard/index.html              the browser
 ```
 
@@ -37,7 +37,7 @@ is caught and logged so a dashboard problem can never affect trading.
 Writes are atomic (temp + `os.replace`), so the browser never reads a
 half-written file.
 
-## 3. The ten files
+## 3. The twelve files
 
 | File | Contents |
 |---|---|
@@ -66,7 +66,7 @@ engine.
 **All displayed times are IST**, formatted by the engine, so the dashboard
 never mixes timezones.
 
-## 4. Panels
+## 4. Panels and responsive layout
 
 | Panel | Answers |
 |---|---|
@@ -82,6 +82,14 @@ never mixes timezones.
 | **Completed trades** | today's closed trades with exit reason and P&L |
 | **Orders** | order audit trail |
 | **Engine log** | searchable message table |
+
+The desktop view uses a dense operations grid: overview/data, scanner/health,
+portfolio/performance, active trades, opportunities/rejections,
+timeline/completed trades, orders, and logs. On narrow screens it becomes a
+single-column view with two-column metric cards and horizontally scrollable
+tables. Secondary detail remains available through the active-trade
+explainability disclosure and the bounded table scroll regions; no operational
+field is removed.
 
 ### Explainability (the "why")
 
@@ -217,8 +225,11 @@ Windows may prompt to allow Python through the firewall on first run — allow
 | `--no-qr` | off | suppress the startup QR code |
 | `--dashboard-port` | `8787` | port for the built-in server |
 
-Client-side constants at the top of `app.js`: `POLL_MS` (2000) and
-`STALE_SECONDS` (45).
+Client-side constants at the top of `app.js`: `POLL_FAST_MS` (1000),
+`POLL_SLOW_MS` (5000), and `STALE_SECONDS` (45). Polling pauses while the
+browser tab is hidden and refreshes immediately when it becomes visible again.
+Snapshot JSON is compactly serialized; the schema and field names are
+unchanged.
 
 ## 9. Troubleshooting
 

@@ -54,5 +54,24 @@ class EventLog:
         path = self._path(day)
         if not path.exists():
             return []
-        return [json.loads(line) for line in
-                path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+        records = []
+        for index, raw in enumerate(lines):
+            line = raw.strip()
+            if not line:
+                continue
+            try:
+                records.append(json.loads(line))
+            except json.JSONDecodeError:
+                # A process can be interrupted after writing part of the
+                # final record. That one record is unrecoverable, but all
+                # earlier records remain authoritative. Interior corruption
+                # must still surface instead of being silently hidden.
+                is_final_partial = (index == len(lines) - 1
+                                    and not raw.endswith(("\n", "\r")))
+                if is_final_partial:
+                    logger.warning("event log ends with an incomplete record: %s",
+                                   path)
+                    break
+                raise
+        return records

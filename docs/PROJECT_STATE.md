@@ -1,6 +1,19 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-10 Geometric Channel Continuation)_
+_Last updated: 2026-07-23 (production engineering audit and dashboard pass)_
+
+## Production engineering audit and dashboard pass (2026-07-23)
+
+The trading engine remains behaviorally unchanged. A production engineering
+audit identified no import cycles and confirmed the existing market-data,
+execution, risk, recovery, and observation boundaries. Safe improvements are
+documented in `docs/PRODUCTION_ENGINEERING_AUDIT.md`: compact dashboard JSON,
+direction-correct dashboard presentation, visibility-aware polling, responsive
+dashboard layout, and crash-boundary handling for an incomplete final event-log
+record. Trading-critical orchestration refactors remain intentionally deferred
+until longer paper-trading equivalence evidence is available.
+
+Validation and the final commit are recorded with this pass's handoff.
 
 ## STRAT-10 Geometric Channel Continuation complete (2026-07-23)
 

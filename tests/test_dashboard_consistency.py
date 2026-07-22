@@ -114,6 +114,27 @@ def test_position_pnl_comes_from_the_position_object(engine):
     assert snaps["live"]["positions"][0]["pnl"] == pytest.approx(expected)
 
 
+def test_short_dashboard_presentation_is_direction_correct(engine):
+    engine.portfolio.positions.clear()
+    engine.portfolio.add_position(Position(
+        position_id="short-1", symbol="TCS", strategy="orb_5m",
+        timeframe="5m", direction="short", quantity=100,
+        entry_price=100.0, entry_ts="2026-07-20T04:00:00+00:00",
+        stop=105.0, initial_stop=105.0, target=90.0,
+        open_quantity=100, last_price=95.0))
+    snaps = _snapshots(engine)
+    live = snaps["live"]["positions"][0]
+    full = snaps["positions"]["positions"][0]
+
+    assert live["pnl"] == pytest.approx(500.0)
+    assert live["pnl_pct"] == pytest.approx(5.0)
+    assert live["distance_to_stop_pct"] == pytest.approx(
+        round((1.0 - 95.0 / 105.0) * 100, 2))
+    assert full["pnl_pct"] == pytest.approx(5.0)
+    assert full["headline"].startswith("Short TCS")
+    assert any("down" in t["condition"] for t in full["triggers"])
+
+
 def test_timeframes_are_the_engine_s_resolved_set(engine):
     snaps = _snapshots(engine)
     assert snaps["live"]["timing"]["timeframes"] == engine.timeframes

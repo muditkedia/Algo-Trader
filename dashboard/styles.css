@@ -56,14 +56,31 @@ body{
 .hidden{display:none}
 
 /* -------------------------------- grid --------------------------------- */
-main{display:grid; grid-template-columns:repeat(12,1fr); gap:8px; padding:8px}
+main{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:8px; padding:10px;
+  grid-template-areas:
+    "overview overview overview overview overview overview market market market market market market"
+    "scanner scanner scanner scanner scanner scanner scanner scanner health health health health"
+    "portfolio portfolio portfolio portfolio portfolio portfolio portfolio performance performance performance performance performance"
+    "positions positions positions positions positions positions positions positions positions positions positions positions"
+    "signals signals signals signals signals signals rejected rejected rejected rejected rejected rejected"
+    "timeline timeline timeline timeline timeline timeline closed closed closed closed closed closed"
+    "orders orders orders orders orders orders orders orders orders orders orders orders"
+    "logs logs logs logs logs logs logs logs logs logs logs logs"}
 .span4{grid-column:span 4}.span6{grid-column:span 6}
 .span8{grid-column:span 8}.span12{grid-column:span 12}
+.overview-panel{grid-area:overview}.market-data-panel{grid-area:market}
+.scanner-panel{grid-area:scanner}.health-panel{grid-area:health}
+.portfolio-panel{grid-area:portfolio}.performance-panel{grid-area:performance}
+.positions-panel{grid-area:positions}.signals-panel{grid-area:signals}
+.rejected-panel{grid-area:rejected}.timeline-panel{grid-area:timeline}
+.closed-panel{grid-area:closed}.orders-panel{grid-area:orders}
+.logs-panel{grid-area:logs}
 @media(max-width:1100px){
-  .span4,.span6,.span8{grid-column:span 12}
+  main{grid-template-columns:1fr; grid-template-areas:none}
+  .span4,.span6,.span8,.span12{grid-column:span 1; grid-area:auto}
 }
 .panel{background:var(--panel); border:1px solid var(--line); border-radius:3px;
-  display:flex; flex-direction:column; min-height:0}
+  display:flex; flex-direction:column; min-width:0; min-height:0}
 .panel h2{
   display:flex; align-items:center; gap:10px; font-size:10px; font-weight:700;
   letter-spacing:1.6px; color:var(--amber); padding:6px 10px;
@@ -141,6 +158,10 @@ main{display:grid; grid-template-columns:repeat(12,1fr); gap:8px; padding:8px}
   border-bottom:1px solid var(--line); flex-wrap:wrap}
 .trade .sym{font-size:16px; font-weight:700; color:var(--amber)}
 .trade .strat{font-size:11px; color:var(--violet)}
+.trade .direction{font-size:9px; font-weight:700; letter-spacing:1px;
+  border:1px solid var(--line); border-radius:2px; padding:2px 5px}
+.trade .direction.long{color:var(--green); border-color:#16613f}
+.trade .direction.short{color:var(--red); border-color:#5e1b22}
 .trade .pnl{margin-left:auto; font-size:16px; font-weight:700;
   font-variant-numeric:tabular-nums}
 .trade .levels{display:grid; grid-template-columns:repeat(5,1fr); gap:1px;
@@ -221,3 +242,43 @@ td.msg{white-space:normal; color:var(--dim); font-size:10.5px;
   font-size:9.5px; letter-spacing:.8px; color:var(--label); z-index:50;
 }
 #foot-updated{margin-left:auto}
+
+/* The desktop grid is intentionally dense; on small screens the terminal
+   becomes a readable single-column operations view instead of a scaled-down
+   wall of diagnostics. */
+@media(max-width:760px){
+  body{font-size:11px; padding-bottom:0}
+  #topbar{position:relative; display:grid; grid-template-columns:1fr;
+    gap:8px; padding:10px; align-items:start}
+  .brand{font-size:16px}
+  .statusstrip{display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:6px}
+  .stat label{font-size:7px; letter-spacing:.7px}
+  .pill{font-size:9px; padding:3px 4px; overflow:hidden; text-overflow:ellipsis}
+  .clockbox{position:absolute; top:10px; right:10px; max-width:42%}
+  .clock{font-size:16px}
+  .feedage{font-size:8px}
+  main{gap:6px; padding:6px}
+  .panel h2{font-size:9px; padding:7px 9px; letter-spacing:1.2px}
+  .kv-grid,.kv-grid.four{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kv-grid>div{padding:7px 8px; min-width:0}
+  .kv-grid b{font-size:13px; overflow-wrap:anywhere}
+  .positions{grid-template-columns:1fr; padding:6px; gap:6px}
+  .trade .levels{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .trade .th{gap:6px}
+  .trade .pnl{width:100%; margin-left:0}
+  .trade .why div{grid-template-columns:1fr; gap:2px}
+  .trigger{grid-template-columns:1fr; gap:2px}
+  .components{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .panel h2 input[type=search]{width:130px; max-width:40%;}
+  .tablewrap{max-width:100%; min-width:0}
+  .datadetail{overflow-wrap:anywhere}
+  #footer{position:relative; flex-wrap:wrap; gap:4px 10px; padding:8px 10px;
+    font-size:8px}
+  #foot-updated{margin-left:0; width:100%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;
+    animation-iteration-count:1!important; scroll-behavior:auto!important}
+}

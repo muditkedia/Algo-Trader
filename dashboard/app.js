@@ -40,6 +40,8 @@ const seen = { positions: new Set(), closed: new Set(), notified: new Set() };
 let firstLoad = true;
 let cardsKey = "";             // signature of the rendered position cards
 let localTick = null;          // {at, timing} for smooth countdowns between polls
+let slowRefreshInFlight = false;
+let fastRefreshInFlight = false;
 
 /* ------------------------------------------------------------ utilities */
 const $ = (id) => document.getElementById(id);
@@ -75,16 +77,28 @@ async function pull(name) {
 }
 
 async function refreshSlow() {
+  if (document.hidden || slowRefreshInFlight) return;
+  slowRefreshInFlight = true;
+  try {
   const results = await Promise.all(SLOW_FILES.map(pull));
   const anyData = results.some(r => r !== null) || state.live !== undefined;
   render(anyData);
   firstLoad = false;
+  } finally {
+    slowRefreshInFlight = false;
+  }
 }
 
 async function refreshFast() {
+  if (document.hidden || fastRefreshInFlight) return;
+  fastRefreshInFlight = true;
+  try {
   const body = await pull("live");
   if (body?.data?.timing) localTick = { at: Date.now(), timing: body.data.timing };
   renderLive();
+  } finally {
+    fastRefreshInFlight = false;
+  }
 }
 
 /* ------------------------------------------------------------ rendering */
@@ -348,26 +362,14 @@ function renderDiagnostics(sc) {
     + ((md?.status === "UNABLE TO FETCH" || map?.unresolved > 0) ? " bad" : "");
 }
 
-/* Write to an element only if it exists.
- *
- * render() calls its sections in sequence, so a single write to a removed id
- * throws a TypeError and every renderer AFTER it silently stops. That is what
- * happened when the wall clock was replaced: renderScanner still wrote to the
- * deleted m-nextscan, and MARKET DATA and the position cards - both rendered
- * later - stayed blank with nothing in the console to say why. */
-function put(id, text) {
-  const el = $(id);
-  if (el) el.textContent = text;
-}
-
 function renderScanner() {
   const sc = state.scanner?.data; if (!sc) return;
   renderDiagnostics(sc);
-  put("sc-headline", sc.headline || "—");
-  put("sc-current", sc.current_activity || "—");
-  put("m-watchlist", sc.universe_size ?? sc.watchlist_size ?? "—");
-  put("m-registered", sc.registered_strategies ?? "—");
-  put("m-strategies", sc.scanning_strategies ?? sc.strategies_enabled ?? "—");
+  setText("sc-headline", sc.headline || "—");
+  setText("sc-current", sc.current_activity || "—");
+  setText("m-watchlist", sc.universe_size ?? sc.watchlist_size ?? "—");
+  setText("m-registered", sc.registered_strategies ?? "—");
+  setText("m-strategies", sc.scanning_strategies ?? sc.strategies_enabled ?? "—");
   // NOTE: m-remaining, m-squareoff and m-nextcandle are owned by the FAST
   // tier (renderLive) - the countdowns must tick every second, not every scan.
   const act = sc.activity || [];
@@ -451,6 +453,7 @@ function renderPositions() {
     <div class="trade ${p.pnl > 0 ? "up" : (p.pnl < 0 ? "down" : "")}" data-pos="${esc(p.position_id)}">
       <div class="th">
         <span class="sym">${esc(p.symbol)}</span>
+        <span class="direction ${p.direction === "short" ? "short" : "long"}">${p.direction === "short" ? "SHORT" : "LONG"}</span>
         <span class="strat">${esc(p.strategy)}</span>
         <span class="js-pnl pnl ${cls(p.pnl)}">${signed(p.pnl)} (${pct(p.pnl_pct)})</span>
       </div>
@@ -491,7 +494,7 @@ function renderPositions() {
     if (!seen.positions.has(p.position_id)) {
       seen.positions.add(p.position_id);
       notify(`Trade opened · ${p.symbol}`,
-             `${p.strategy} — bought ${p.quantity} @ ${money(p.entry_price)}`,
+             `${p.strategy} — ${p.direction === "short" ? "sold short" : "bought"} ${p.quantity} @ ${money(p.entry_price)}`,
              "open-" + p.position_id);
     }
   });
@@ -618,6 +621,13 @@ $("notif-toggle").addEventListener("change", async (e) => {
 
 $("logsearch").addEventListener("input", (e) => {
   logFilter = e.target.value.trim(); renderLogs();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    refreshSlow();
+    refreshFast();
+  }
 });
 
 /* Two independent cadences: prices and countdowns every second, everything a

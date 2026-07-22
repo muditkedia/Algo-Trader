@@ -69,6 +69,15 @@ def test_write_is_atomic_and_leaves_no_temp(tmp_path):
     assert list(tmp_path.glob("*.tmp")) == []
 
 
+def test_snapshot_serialization_is_compact_without_changing_the_schema(tmp_path):
+    exporter = _exporter(tmp_path)
+    assert exporter._write("logs.json", {"hello": "world", "items": [1, 2]})
+    raw = (tmp_path / "logs.json").read_text(encoding="utf-8")
+    assert "\n" not in raw
+    assert _read(tmp_path / "logs.json")["data"] == {
+        "hello": "world", "items": [1, 2]}
+
+
 def test_staging_file_is_unique_per_process(tmp_path):
     """A leftover temp from a killed run, or a second exporter, must not be
     mistaken for this one's staging file."""

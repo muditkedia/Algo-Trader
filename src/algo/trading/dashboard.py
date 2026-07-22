@@ -201,7 +201,11 @@ class DashboardExporter:
         # exporter, must never be mistaken for this one's staging file
         tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
         try:
-            tmp.write_text(json.dumps(body, indent=1, default=str),
+            # Snapshots are consumed by the static dashboard, not edited by
+            # humans. Compact JSON preserves the schema while reducing disk
+            # and network traffic for the large logs/timeline payloads.
+            tmp.write_text(json.dumps(body, separators=(",", ":"),
+                                       default=str),
                            encoding="utf-8")
         except OSError as exc:
             logger.warning("dashboard: could not stage %s (%s)", name, exc)
@@ -333,11 +337,12 @@ class DashboardExporter:
                 # the position owns this arithmetic - restating it here is how
                 # a panel starts disagreeing with the engine
                 "pnl": round(pos.unrealized(price), 2),
-                "pnl_pct": round((price / pos.entry_price - 1.0) * 100, 2)
+                "pnl_pct": round(pos.sign * (price / pos.entry_price - 1.0) * 100, 2)
                 if pos.entry_price else 0.0,
                 "stop": round(pos.stop, 2),
                 "distance_to_stop_pct": round(
-                    (price / pos.stop - 1.0) * 100, 2) if pos.stop else None,
+                    pos.sign * (price / pos.stop - 1.0) * 100, 2)
+                if pos.stop else None,
             })
         return {
             "timing": self._market_timing(),
@@ -796,20 +801,23 @@ class DashboardExporter:
 
         # 4) trailing ratchet
         if spec.trail == "chandelier":
-            trailing = ("Chandelier: the stop ratchets up by ATR once in "
-                        "profit, and never widens")
+            direction = "up" if pos.is_long else "down"
+            trailing = (f"Chandelier: the stop ratchets {direction} by ATR "
+                        "once in profit, and never widens")
             triggers.append({
-                "condition": "price closes higher and the ATR trail rises "
-                             "above the current stop",
-                "action": "Raise the stop (ratchet only - it is never widened)",
+                "condition": ("price makes a favorable close and the ATR "
+                              f"trail moves {direction} beyond the current stop"),
+                "action": (f"Move the stop {direction} (ratchet only - it is "
+                           "never widened)"),
                 "kind": "trail", "level": None})
         elif spec.trail == "column":
+            direction = "up" if pos.is_long else "down"
             trailing = (f"Level trail: the stop follows the "
-                        f"{spec.trail_col} line upward only")
+                        f"{spec.trail_col} line {direction} only")
             triggers.append({
-                "condition": f"the {spec.trail_col} level rises above the "
+                "condition": f"the {spec.trail_col} level moves {direction} beyond the "
                              f"current stop",
-                "action": "Raise the stop to that level",
+                "action": f"Move the stop {direction} to that level",
                 "kind": "trail", "level": None})
         else:
             trailing = "None - this strategy does not trail"
@@ -844,7 +852,8 @@ class DashboardExporter:
             nxt = (f"Exit at Rs {pos.target:,.2f} or stop Rs {pos.stop:,.2f}; "
                    f"square off at {squareoff}.")
         elif spec.trail != "none":
-            nxt = (f"Trail the stop upward from Rs {pos.stop:,.2f}; exit on "
+            direction = "upward" if pos.is_long else "downward"
+            nxt = (f"Trail the stop {direction} from Rs {pos.stop:,.2f}; exit on "
                    f"the trailed stop or square off at {squareoff}.")
         else:
             nxt = (f"Hold to the stop at Rs {pos.stop:,.2f}; square off at "
@@ -896,7 +905,7 @@ class DashboardExporter:
             spec = e.specs.get(pos.strategy)
             price = pos.last_price or pos.entry_price
             pnl = pos.unrealized(price)          # the position owns this
-            pnl_pct = ((price / pos.entry_price - 1.0) * 100
+            pnl_pct = (pos.sign * (price / pos.entry_price - 1.0) * 100
                        if pos.entry_price else 0.0)
             plan = self._execution_plan(pos, spec)
             state = plan["state"]
@@ -934,7 +943,7 @@ class DashboardExporter:
                 "state": state,
                 "next_action": plan["next_action"],
                 "explainability": self._explain(pos),
-                "headline": (f"Bought {pos.symbol} at Rs "
+                "headline": (f"{('Long' if pos.is_long else 'Short')} {pos.symbol} at Rs "
                              f"{pos.entry_price:,.2f}"),
             })
         return {"count": len(rows), "positions": rows}

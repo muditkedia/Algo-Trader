@@ -179,8 +179,9 @@ An absence of rows is never again allowed to stand in for an absence of faults.
 `os.replace` is atomic on Windows but raises `PermissionError [WinError 5]`
 while another process holds the **destination** open — Python's `open()` does
 not pass `FILE_SHARE_DELETE`, so an ordinary reader blocks it. The reader was
-the dashboard's own static server: the browser polls all ten snapshots every 2 s
-(`POLL_MS = 2000`), and `logs.json` — the largest payload — is held open longest,
+the dashboard's own static server: the browser polls one live snapshot every
+second and the remaining twelve-file slow tier every 5 s, and `logs.json` — the
+largest payload — is held open longest,
 which is why it failed **by name**. A single `try/except` around the whole
 export meant one locked file aborted the rest; `logs.json` being written last
 was luck, not design.

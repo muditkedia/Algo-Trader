@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ALGO TRADER — Monitoring Terminal</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20260723.1">
 </head>
 <body>
 
 <!-- ============================ TOP STATUS BAR ============================ -->
-<header id="topbar">
+<header id="topbar" aria-label="Trading engine status">
   <div class="brand">ALGO<span>TRADER</span><em>monitoring terminal</em></div>
   <div class="statusstrip">
     <div class="stat"><label>ENGINE</label><span id="s-engine" class="pill">—</span></div>
@@ -28,13 +28,13 @@
   </div>
 </header>
 
-<div id="banner" class="banner hidden"></div>
+<div id="banner" class="banner hidden" role="status" aria-live="polite"></div>
 
 <!-- ============================== MAIN GRID =============================== -->
 <main>
 
   <!-- MARKET OVERVIEW + SCANNER -->
-  <section class="panel span4">
+  <section class="panel span4 overview-panel">
     <h2>MARKET OVERVIEW</h2>
     <div class="kv-grid">
       <div><label>SESSION</label><b id="m-session">—</b></div>
@@ -51,7 +51,7 @@
   </section>
 
   <!-- MARKET DATA QUALITY (§12) -->
-  <section class="panel span12">
+  <section class="panel span12 market-data-panel">
     <h2>MARKET DATA</h2>
     <div class="kv-grid four">
       <div><label>CONFIGURED UNIVERSE</label><b id="md-universe" class="num">—</b></div>
@@ -66,7 +66,7 @@
     <div id="md-detail" class="datadetail">—</div>
   </section>
 
-  <section class="panel span8">
+  <section class="panel span8 scanner-panel">
     <h2>SCANNER</h2>
     <div id="sc-headline" class="headline">—</div>
     <div id="sc-current" class="current">—</div>
@@ -74,7 +74,7 @@
   </section>
 
   <!-- PORTFOLIO / PERFORMANCE -->
-  <section class="panel span6">
+  <section class="panel span6 portfolio-panel">
     <h2>PORTFOLIO</h2>
     <div class="kv-grid four">
       <div><label>TOTAL P&L</label><b id="p-total" class="num">—</b></div>
@@ -95,7 +95,7 @@
     </div>
   </section>
 
-  <section class="panel span6">
+  <section class="panel span6 performance-panel">
     <h2>TODAY'S PERFORMANCE</h2>
     <div class="kv-grid four">
       <div><label>TRADES</label><b id="f-trades" class="num">—</b></div>
@@ -110,13 +110,13 @@
   </section>
 
   <!-- ACTIVE TRADES -->
-  <section class="panel span12">
+  <section class="panel span12 positions-panel">
     <h2>ACTIVE TRADES <span id="pos-count" class="count">0</span></h2>
     <div id="positions" class="positions"><div class="empty">No open positions.</div></div>
   </section>
 
   <!-- SIGNALS -->
-  <section class="panel span6">
+  <section class="panel span6 signals-panel">
     <h2>OPPORTUNITIES <span id="sig-count" class="count">0</span></h2>
     <div class="tablewrap">
       <table id="t-signals">
@@ -127,7 +127,7 @@
     <div id="sig-waiting" class="waiting">—</div>
   </section>
 
-  <section class="panel span6">
+  <section class="panel span6 rejected-panel">
     <h2>REJECTED <span id="rej-count" class="count">0</span></h2>
     <div class="tablewrap">
       <table id="t-rejected">
@@ -138,12 +138,12 @@
   </section>
 
   <!-- TIMELINE + HEALTH -->
-  <section class="panel span6">
+  <section class="panel span6 timeline-panel">
     <h2>SESSION TIMELINE</h2>
     <div id="timeline" class="timeline"><div class="empty">No events yet.</div></div>
   </section>
 
-  <section class="panel span6">
+  <section class="panel span6 health-panel">
     <h2>SYSTEM HEALTH</h2>
     <div class="kv-grid four">
       <div><label>CPU</label><b id="h-cpu" class="num">n/a</b></div>
@@ -156,7 +156,7 @@
   </section>
 
   <!-- CLOSED TRADES -->
-  <section class="panel span12">
+  <section class="panel span12 closed-panel">
     <h2>COMPLETED TRADES <span id="ct-count" class="count">0</span></h2>
     <div class="tablewrap">
       <table id="t-closed">
@@ -167,7 +167,7 @@
   </section>
 
   <!-- ORDERS -->
-  <section class="panel span12">
+  <section class="panel span12 orders-panel">
     <h2>ORDERS <span id="ord-count" class="count">0</span></h2>
     <div class="tablewrap short">
       <table id="t-orders">
@@ -178,7 +178,7 @@
   </section>
 
   <!-- LOGS -->
-  <section class="panel span12">
+  <section class="panel span12 logs-panel">
     <h2>ENGINE LOG
       <input id="logsearch" type="search" placeholder="filter logs…" autocomplete="off">
       <label class="chk"><input type="checkbox" id="notif-toggle"> notifications</label>
@@ -198,6 +198,6 @@
   <span id="foot-updated">awaiting data…</span>
 </footer>
 
-<script src="app.js"></script>
+<script src="app.js?v=20260723"></script>
 </body>
 </html>
