@@ -72,10 +72,10 @@ universe[production] 335/1000 symbols from 745 candidates
         data today - widen the sources or download more history
 ```
 
-## 3. Strategy activation: 16 registered, 16 scanning
+## 3. Strategy activation: 15 registered, 15 scanning
 
-The production library now contains only the 16 enabled intraday strategies
-(7 x 5m, 8 x 15m, 1 x 1h). All 16 declare `HoldingScope.INTRADAY`, are discovered
+The production library now contains only the 15 enabled intraday strategies
+(8 x 5m, 6 x 15m, 1 x 1h). All 15 declare `HoldingScope.INTRADAY`, are discovered
 automatically, and participate in live scanning. No daily, swing, positional,
 or overnight strategy remains registered.
 

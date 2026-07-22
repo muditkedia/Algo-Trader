@@ -25,7 +25,7 @@ def scan_setup(store, synthetic):
     orb = strat01_frames(symbol="CRAFT_ORB")
     store.write("CRAFT_ORB", "5m", orb["CRAFT_ORB"])
     store.write("NIFTY50", "5m", orb["NIFTY50"])
-    store.write("CRAFT_VWAP", "15m", _vwap_frame())
+    store.write("CRAFT_VWAP", "5m", _vwap_frame())
     for sym in ("PLAIN_A", "PLAIN_B"):     # synthetic, may or may not fire
         store.write(sym, "15m", synthetic.fetch_ohlcv(
             sym, "15m", "2023-06-01", "2024-03-05"))
@@ -47,7 +47,7 @@ def test_registry_discovers_the_whole_library():
     # the existing intraday strategies are always present; the library grows by discovery,
     # so assert membership + consistency rather than a hardcoded roster
     assert {"orb_5m",
-            "pullback_15m", "volexp_1h", "vwap_15m"} <= set(found)
+            "pullback_15m", "volexp_1h", "vwap_trend_5m"} <= set(found)
     assert sorted(found) == [cls.meta.name for cls in ALL_STRATEGIES]
     assert reg.enabled_names() == sorted(found)
 
@@ -60,7 +60,7 @@ def test_unified_scan_returns_one_ranked_list(scan_setup):
     assert result.n_symbols_with_data == len(symbols)
     fired = {(o.symbol, o.strategy) for o in result.opportunities}
     assert ("CRAFT_ORB", "orb_5m") in fired
-    assert ("CRAFT_VWAP", "vwap_15m") in fired
+    assert ("CRAFT_VWAP", "vwap_trend_5m") in fired
 
     # ONE list, strictly ranked 1..N, ordered by confidence descending
     ranks = [o.rank for o in result.opportunities]
@@ -68,7 +68,8 @@ def test_unified_scan_returns_one_ranked_list(scan_setup):
     confidences = [o.confidence for o in result.opportunities]
     assert confidences == sorted(confidences, reverse=True)
     assert all(0.0 <= c <= 1.0 for c in confidences)
-    assert {o.strategy for o in result.opportunities} >= {"orb_5m", "vwap_15m"}
+    assert {o.strategy for o in result.opportunities} >= {
+        "orb_5m", "vwap_trend_5m"}
 
 
 def test_every_opportunity_written_to_evidence(scan_setup):

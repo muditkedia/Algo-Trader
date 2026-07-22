@@ -12,6 +12,7 @@ from algo.strategies.library import (
 from algo.strategies.library.pullback_15m import PullbackParams
 from algo.core.enums import Direction
 from strat01_fixtures import strat01_frames
+from tests.strat08_fixtures import strat08_frame
 
 
 # ------------------------------------------------------------ frame builders
@@ -118,46 +119,19 @@ def test_volexp_no_signal_without_squeeze():
                     .any())
 
 
-# --------------------------------------------------------------- VWAP (15m)
+# --------------------------------------------------------------- VWAP (5m)
 
 def _vwap_frame():
-    """Session 1 quiet (volume warmup); session 2 buyer-controlled, one dip
-    through VWAP, reclaimed on the final bar."""
-    d1 = _intraday_dates("2024-03-04", 25)
-    closes = [100.0 + 0.02 * (i % 3) for i in range(25)]
-    # session 2: rising, above VWAP
-    s2 = [100.0 + 1.0 * i for i in range(10)]        # 100..109
-    s2.append(103.0)                                  # dip below running VWAP
-    s2.append(106.0)                                  # reclaim (fire)
-    d2 = _intraday_dates("2024-03-05", len(s2))
-    all_closes = closes + s2
-    return _frame(list(d1) + list(d2), all_closes)
+    return strat08_frame("long")
 
 
-def test_vwap_fires_on_reclaim():
+def test_vwap_fires_on_specification_bounce():
     strat = VwapTrendContinuation()
     prepared = strat.prepare(_vwap_frame())
-    last = prepared.iloc[-1]
-    assert last["above_share"] >= strat.settings.above_share_min
-    assert prepared["close"].iloc[-2] < prepared["vwap"].iloc[-2]  # dip real
-    signal = strat.entry_signal(prepared)
-    assert bool(signal.iloc[-1])
+    assert bool(strat.entry_signals(prepared)[Direction.LONG].iloc[-1])
     conf = strat.confidence(prepared)
     assert 0.0 <= conf.score <= 1.0
-    assert conf.components["session_control"]["score"] > 0.5
-
-
-def test_vwap_no_signal_on_seller_controlled_session():
-    frame = _vwap_frame()
-    # invert session 2: falling prices -> below VWAP most of the session
-    n2 = 12
-    fall = [109.0 - 1.0 * i for i in range(n2 - 2)] + [104.0, 105.5]
-    frame.loc[frame.index[-n2:], "close"] = fall
-    frame.loc[frame.index[-n2:], "high"] = np.asarray(fall) + 0.5
-    frame.loc[frame.index[-n2:], "low"] = np.asarray(fall) - 0.5
-    strat = VwapTrendContinuation()
-    prepared = strat.prepare(frame)
-    assert not bool(strat.entry_signal(prepared).iloc[-1])
+    assert conf.components["vwap_slope"]["score"] > 0.0
 
 
 # ---------------------------------------------------------- pullback (15m)

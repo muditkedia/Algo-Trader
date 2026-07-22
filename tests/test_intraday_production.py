@@ -16,7 +16,7 @@ from algo.core.indicators import (
 from algo.research.simulator import simulate_trade
 from algo.risk.engine import RiskParams
 from algo.strategies.library import (
-    CprBreakout, OpeningRangeRetest, VwapPullback,
+    CprBreakout, OpeningRangeRetest,
 )
 
 
@@ -115,7 +115,7 @@ def test_gap_up_open_does_not_spurious_break():
 def test_market_open_no_trade_in_opening_range():
     """No strategy fires during the opening-range window (market-open handling)."""
     s = _session("2024-03-04", [100] * 30, vols=[9000] * 30)
-    for cls in (CprBreakout, OpeningRangeRetest, VwapPullback):
+    for cls in (CprBreakout, OpeningRangeRetest):
         strat = cls()
         sig = strat.entry_signal(strat.prepare(s))
         assert not bool(sig.iloc[0])               # never on the first bar

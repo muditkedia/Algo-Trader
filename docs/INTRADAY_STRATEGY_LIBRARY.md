@@ -9,11 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **16 intraday strategies** via auto-discovery:
+registers **15 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **16** | 7 × 5m, 8 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **15** | 8 × 5m, 6 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -73,8 +73,7 @@ them; the other two declare their pre-reset profile as their own):
 | Strategy | Initial stop (own) | Target (own) | Trailing (own) |
 |---|---|---|---|
 | `orb_5m` | OR midpoint, capped at 1.5 ATR | 1.5R (50%), then runner | breakeven then post-partial 2 ATR chandelier |
-| `vwap_15m` | the dip's low (4-bar session low) | 2R | none |
-| `vwap_pullback_15m` | just below VWAP (level at entry) | 2R | none |
+| `vwap_trend_5m` | lower/wider of pullback pivot or VWAP ATR buffer | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `cpr_breakout_15m` | below the CPR bottom | floor-pivot R1 (50% partial, stop→breakeven) then R2 | none |
 | `orb_retest_5m` | beyond retest pivot by 0.2 ATR, capped at 1.25 ATR | 1.5R (1.0R Grade C), 50% | breakeven then post-partial 2 ATR chandelier |
 | `opening_drive_5m` | beyond drive candle by 0.1 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
@@ -111,7 +110,7 @@ no capital constraint, fractional share quantities).
 
 ---
 
-## 2. Intraday strategies (16) — the current intraday library
+## 2. Intraday strategies (15) — the current intraday library
 
 ### 2.1 Opening Range Breakout — `orb_5m`
 
@@ -160,7 +159,16 @@ contract and documented market-data substitutions are in
     published-form execution declaration (stop below the OR low, 1×-range
     target), executed by the strategy-agnostic engine.
 
-### 2.2 VWAP Trend Continuation — `vwap_15m`
+### 2.2 VWAP Trend Continuation — `vwap_trend_5m`
+
+The sole canonical STRAT-08 implementation is bidirectional on 5-minute bars.
+It requires strict EMA ribbon, three-bar VWAP slope, shallow VWAP test and
+penetration, prior-candle reversal, asymmetric same-slot RVOL, liquidity,
+completed 15-minute ADX, rejection wick, and time gates. It owns a collared
+fill, pivot/VWAP stop, 1.5R partial, breakeven, chandelier, VWAP/stagnation
+invalidation, and square-off. See `docs/STRAT08_VWAP_TREND_5M.md`.
+
+#### Retired `vwap_15m` record (legacy evidence only)
 
 1. **Strategy name:** VWAP Trend Continuation (VWAP reclaim in a buyer-controlled
    session). This is the library's "VWAP Trend" strategy.
@@ -192,7 +200,7 @@ contract and documented market-data substitutions are in
     §3; same reports as §2.1.
 12. **Complete or incomplete:** **complete** under its owned execution declaration.
 
-### 2.3 VWAP Pullback — `vwap_pullback_15m`
+### 2.3 Retired VWAP Pullback — `vwap_pullback_15m` (legacy evidence only)
 
 1. **Strategy name:** VWAP Pullback (bounce off rising-VWAP support).
 2. **Theory:** on a session trending up along a *rising* VWAP, a pullback whose
@@ -531,8 +539,8 @@ live order path exists in the repository at all (paper simulation only), so
 | # | Target strategy | Implemented? | Backtested? | Paper-tested? | Ready for Live? | Missing components |
 |---|---|---|---|---|---|---|
 | 1 | Opening Range Breakout (ORB) | **Yes** (`orb_5m`) | Yes | Yes | Yes | STRAT-01 complete; sector cap awaits metadata |
-| 2 | VWAP Trend | **Yes** (`vwap_15m`) | Yes | No | No | — |
-| 3 | VWAP Pullback | **Yes** (`vwap_pullback_15m`) | Yes | No | No | — (encoding over-fires vs discretionary use; selectivity filter absent) |
+| 2 | VWAP Trend | **Yes** (`vwap_trend_5m`) | Not yet | Yes | Yes | STRAT-08 complete; sector cap awaits metadata |
+| 3 | VWAP Pullback | **Consolidated** into `vwap_trend_5m` | Legacy only | No | No | Retired duplicate; historical evidence preserved |
 | 4 | CPR Breakout | **Yes** (`cpr_breakout_15m`) | Yes | No | No | — |
 | 5 | CPR Reversal | **Yes** (`cpr_reversal_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 6 | Opening Drive | **Yes** (`opening_drive_5m`) | Not yet | Yes | Yes | STRAT-03 complete; sector cap awaits metadata |

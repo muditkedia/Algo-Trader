@@ -79,7 +79,7 @@ def test_library_is_discovered_not_hand_listed():
     with no edit to the package __init__."""
     assert tuple(REGISTRY.get(n) for n in REGISTRY.names()) == ALL_STRATEGIES
     assert {"orb_5m", "pullback_15m",
-            "volexp_1h", "vwap_15m"} <= {c.meta.name for c in ALL_STRATEGIES}
+            "volexp_1h", "vwap_trend_5m"} <= {c.meta.name for c in ALL_STRATEGIES}
 
 
 def test_discovered_classes_are_importable_by_name():

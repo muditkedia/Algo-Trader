@@ -1,6 +1,24 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-07 Opening Liquidity Sweep)_
+_Last updated: 2026-07-23 (STRAT-08 VWAP Trend Continuation)_
+
+## STRAT-08 VWAP canonical consolidation complete (2026-07-23)
+
+The two legacy long-only 15-minute implementations, `vwap_15m` and
+`vwap_pullback_15m`, have been removed and replaced by the sole canonical
+`vwap_trend_5m`. STRAT-08 is bidirectional and enforces strict EMA ribbon,
+three-bar VWAP slope, shallow current-bar VWAP test, penetration, prior-candle
+reversal, asymmetric same-slot RVOL, liquidity, completed 15-minute ADX, wick,
+and time gates. It owns the pivot/VWAP stop, 1.5R partial, breakeven,
+chandelier, VWAP invalidation, stagnation exit, and square-off.
+
+No shared infrastructure was required. Historical research remains legacy
+evidence only. Full details and deviations are in
+`docs/STRAT08_VWAP_TREND_5M.md`.
+
+Validation: Python compilation succeeded and the complete suite passed with
+829 tests. All 15 registered strategies passed the exit matrix and participated
+in scanning.
 
 ## STRAT-07 Opening Liquidity Sweep complete (2026-07-23)
 
@@ -145,7 +163,7 @@ framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
 STRAT-01 through STRAT-03 are complete. Sequential implementation continues
-with STRAT-08.
+with STRAT-09.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

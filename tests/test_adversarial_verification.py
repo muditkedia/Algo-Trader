@@ -21,14 +21,14 @@ from algo.strategies.library import (
     InsideBarBreakout, Nr7Intraday, OpeningRangeBreakout,
     OpeningRangeRetest,
     PullbackContinuation15m, SupertrendContinuation, VolatilityExpansionBreakout1h,
-    VwapPullback, VwapTrendContinuation,
+    VwapTrendContinuation,
 )
 
 COSTS = FlatCostModel(0.0)
 PARAMS = RiskParams()
 
 INTRADAY_STRATEGIES = [
-    OpeningRangeBreakout, VwapTrendContinuation, VwapPullback, CprBreakout,
+    OpeningRangeBreakout, VwapTrendContinuation, CprBreakout,
     OpeningRangeRetest, PullbackContinuation15m,
     VolatilityExpansionBreakout1h, GapAndGo, InsideBarBreakout,
     SupertrendContinuation, CprReversal, Nr7Intraday,

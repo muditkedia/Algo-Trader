@@ -45,8 +45,7 @@ SCHEMA_VERSION = 2
 #: human names for the strategy ids (display only)
 STRATEGY_NAMES = {
     "orb_5m": "Opening Range Breakout (STRAT-01)",
-    "vwap_15m": "VWAP Trend Continuation",
-    "vwap_pullback_15m": "VWAP Pullback",
+    "vwap_trend_5m": "VWAP Trend Continuation (STRAT-08)",
     "cpr_breakout_15m": "CPR Breakout",
     "orb_retest_5m": "ORB Retest Continuation (STRAT-02)",
     "opening_drive_5m": "Opening Drive Momentum (STRAT-03)",
@@ -67,10 +66,8 @@ STRATEGY_NAMES = {
 ENTRY_RULES = {
     "orb_5m": "Buffered 5-minute opening-range break with same-slot RVOL, "
               "VWAP, EMA, regime and confidence confirmation",
-    "vwap_15m": "Price reclaimed session VWAP on a session where >=60% of "
-                "prior bars closed above VWAP",
-    "vwap_pullback_15m": "Price tagged a rising session VWAP as support and "
-                         "resumed above the prior bar's high",
+    "vwap_trend_5m": "A strict EMA trend pulled shallowly into a steep VWAP "
+                     "and resumed through the prior candle on same-slot RVOL",
     "cpr_breakout_15m": "Close crossed above the prior day's CPR top with "
                         "volume >= 1.5x its 20-bar average",
     "orb_retest_5m": "A sufficiently extended opening break retested and "

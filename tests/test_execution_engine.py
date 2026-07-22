@@ -22,7 +22,7 @@ from algo.research.simulator import simulate_trade
 from algo.risk.engine import RiskParams
 from algo.strategies.library import (
     ALL_STRATEGIES, CprBreakout, OpeningRangeBreakout, OpeningRangeRetest,
-    VwapPullback, VwapTrendContinuation,
+    VwapTrendContinuation,
 )
 
 COSTS = FlatCostModel(0.0)          # zero costs: assert on pure execution math
@@ -296,14 +296,18 @@ def test_structural_strategies_prepare_their_declared_levels():
     day1 = _session("2024-03-04", np.linspace(100, 104, 25).round(2))
     day2 = _session("2024-03-05", np.linspace(104, 110, 25).round(2))
     frame = _concat(day1, day2)
-    for cls in (OpeningRangeBreakout, VwapTrendContinuation, VwapPullback,
+    for cls in (OpeningRangeBreakout, VwapTrendContinuation,
                 CprBreakout, OpeningRangeRetest):
         spec = cls.execution
         prepared = cls().prepare(frame)
         for col in filter(None, (spec.stop_col, spec.stop_long_col,
                                  spec.stop_short_col, spec.target_col,
-                                 spec.target2_col, spec.target_r_long_col,
-                                 spec.target_r_short_col)):
+                                 spec.target2_col, spec.target2_long_col,
+                                 spec.target2_short_col,
+                                 spec.target_r_long_col,
+                                 spec.target_r_short_col,
+                                 spec.timeout_target_long_col,
+                                 spec.timeout_target_short_col)):
             assert col in prepared.columns, (cls.meta.name, col)
 
 

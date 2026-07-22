@@ -3,8 +3,8 @@
 _Written 2026-07-19. Phase 1+2 of the practitioner-faithfulness pass.
 Documentation only — no strategy code was modified._
 
-**Scope:** the seven implemented intraday strategies (`orb_5m`, `vwap_15m`,
-`vwap_pullback_15m`, `cpr_breakout_15m`, `orb_retest_5m`, `pullback_15m`,
+**Scope:** the current intraday strategies, including (`orb_5m`, `vwap_trend_5m`,
+`cpr_breakout_15m`, `orb_retest_5m`, `pullback_15m`,
 `volexp_1h`). For each: the canonical practitioner implementation — including
 the context and quality rules experienced traders apply that articles and
 summaries usually omit — and exactly which of those elements our current
@@ -121,7 +121,17 @@ the full contract and documented input substitutions.
     avoidance; breakeven-after-1R management; (optional variants: 5m OR,
     60m initial balance, retest entry).
 
-## 2. VWAP Trend Continuation — `vwap_15m`
+## 1A. Canonical VWAP Trend Continuation — `vwap_trend_5m`
+
+STRAT-08 consolidates the two retired long-only 15-minute VWAP variants into
+one bidirectional 5-minute continuation strategy. It enforces strict EMA
+ribbon, three-bar VWAP slope, shallow test/penetration, prior-candle reversal,
+asymmetric same-slot RVOL, liquidity, completed 15-minute ADX, rejection wick,
+and time gates. It owns a pivot/VWAP stop, 1.5R partial, breakeven, chandelier,
+VWAP invalidation, stagnation, and square-off. See
+`docs/STRAT08_VWAP_TREND_5M.md`.
+
+## 2. Retired VWAP reclaim — `vwap_15m` (legacy evidence only)
 
 1. **Original strategy name:** VWAP reclaim / trend continuation ("VWAP
    Trend").
@@ -170,7 +180,7 @@ the full contract and documented input substitutions.
     reclaim-count cap; volume signature (dip contracting / reclaim expanding);
     index alignment; entry time cutoff; event avoidance.
 
-## 3. VWAP Pullback — `vwap_pullback_15m`
+## 3. Retired VWAP pullback — `vwap_pullback_15m` (legacy evidence only)
 
 1. **Original strategy name:** VWAP pullback / first test of VWAP as support.
 2. **Canonical description:** on a trending session, the first orderly
@@ -489,6 +499,7 @@ loses consistently-recommended context; L = near-faithful already).
 | `vwap_pullback_15m` | Rising VWAP; 0.2% tag holding; resume trigger; below-VWAP stop; 2R; square-off | FIRST/second VWAP test only, on a real trend day, with volume signature and index confirmation | Test-count cap (fixes documented 5–9× over-fire); volume signature; flat-VWAP rejection; index gate; time cutoff | **High** — over-firing means we mostly trade setups practitioners refuse |
 | `cpr_breakout_15m` | Causal CPR; TC break + volume; BC stop; R1 partial→BE→R2; square-off | Same trade but ONLY on narrow-CPR days with supportive two-day relationship and sane gap; morning entries | Narrow-CPR gate; two-day relationship; gap rejection; virgin-CPR context; RVOL; index gate; morning window | **High** — day-type selection *is* the CPR method |
 | `vwap_15m` | 60% buyer-control; reclaim cross; dip-low stop; 2R; square-off | Reclaim on RISING VWAP, first/second reclaim only, trend-day context, volume signature | Slope requirement; reclaim-count cap; range-day rejection; index gate; time cutoff | **Medium** |
+| `vwap_trend_5m` | Specification STRAT-08; see `STRAT08_VWAP_TREND_5M.md` | Implemented | Optional sector-index input and sector cap await metadata | **Complete except documented sector-metadata dependency** |
 | `orb_retest_5m` | Specification STRAT-02; see `STRAT02_ORB_RETEST_5M.md` | Implemented | Optional spread/membership inputs substituted conservatively; sector cap awaits metadata | **Complete except documented sector-metadata dependency** |
 | `opening_drive_5m` | Specification STRAT-03; see `STRAT03_OPENING_DRIVE_5M.md` | Implemented | Optional sector-relative input unavailable; sector cap awaits metadata | **Complete except documented sector-metadata dependency** |
 | `pullback_15m` | EMA20/50 regime; touch + reclaim; ATR/swing stop + chandelier | Same template but gated on trend STRENGTH, not merely EMA order; overextension rejection; index aligned | Trend-strength gate; overextension rejection; index gate; time window | **Medium** |
