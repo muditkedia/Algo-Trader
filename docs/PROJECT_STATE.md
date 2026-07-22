@@ -2,6 +2,20 @@
 
 _Last updated: 2026-07-22 (WebSocket market data: local candle engine)_
 
+## Intraday-only strategy baseline (2026-07-22)
+
+Phase 1 of the master intraday-strategy integration is complete. The 23
+registered daily/swing strategy modules and their strategy-specific tests were
+removed. The auto-discovered production library now contains 12 enabled,
+same-session strategies only; all 12 are loaded by the intraday scanner and
+forbid overnight holding. Historical research reports and the generic research
+framework remain intact for reproducibility, but no removed daily strategy is
+registered or executable.
+
+The next approved work item is the detailed STRAT-01 comparison against the
+5-minute Opening Range Breakout specification. No STRAT-01 code changes are
+part of the Phase 1 cleanup baseline.
+
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 
 Empirically validated (scripts/websocket_validation.py: 100% symbol and

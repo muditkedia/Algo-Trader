@@ -6,11 +6,9 @@ import pandas as pd
 import pytest
 
 from algo.strategies.library import (
-    ALL_STRATEGIES, Ema200PullbackTrend, Nr7VolatilityContraction,
-    OpeningRangeBreakout, PullbackContinuation15m, VolatilityExpansionBreakout1h,
-    VwapTrendContinuation,
+    ALL_STRATEGIES, OpeningRangeBreakout, PullbackContinuation15m,
+    VolatilityExpansionBreakout1h, VwapTrendContinuation,
 )
-from algo.strategies.library.ema200_daily import Ema200Params
 from algo.strategies.library.pullback_15m import PullbackParams
 
 
@@ -34,10 +32,6 @@ def _frame(dates, closes, highs=None, lows=None, volumes=None, opens=None):
 
 def _intraday_dates(day: str, bars: int, freq: str = "15min"):
     return pd.date_range(f"{day} 09:15", periods=bars, freq=freq, tz="UTC")
-
-
-def _daily_dates(n: int, end: str = "2024-03-05"):
-    return pd.bdate_range(end=end, periods=n, tz="UTC")
 
 
 def _flat_frame(dates):
@@ -95,41 +89,6 @@ def test_orb_requires_volume_confirmation():
     strat = OpeningRangeBreakout()
     signal = strat.entry_signal(strat.prepare(frame))
     assert int(signal.sum()) == 0
-
-
-# --------------------------------------------------------------- NR7 (daily)
-
-def _nr7_frame():
-    """40 daily bars; bar 38 is the NR7 day; bar 39 breaks its high on volume."""
-    dates = _daily_dates(40)
-    closes, highs, lows, vols = [], [], [], []
-    for i in range(38):
-        c = 100.0 + 0.1 * (i % 5)
-        closes.append(c); highs.append(c + 1.0); lows.append(c - 1.0)
-        vols.append(100.0)
-    closes.append(100.2); highs.append(100.4); lows.append(100.0)  # NR7 day
-    vols.append(100.0)
-    closes.append(101.5); highs.append(101.8); lows.append(100.1)  # breakout
-    vols.append(300.0)
-    return _frame(dates, closes, highs, lows, vols)
-
-
-def test_nr7_fires_on_break_of_narrow_day():
-    strat = Nr7VolatilityContraction()
-    prepared = strat.prepare(_nr7_frame())
-    assert bool(prepared["nr_prev"].iloc[-1])        # yesterday was the NR7 day
-    signal = strat.entry_signal(prepared)
-    assert bool(signal.iloc[-1]) and int(signal.sum()) == 1
-    conf = strat.confidence(prepared)
-    assert 0.0 <= conf.score <= 1.0
-    assert conf.components["contraction_depth"]["score"] > 0.5  # tight coil
-
-
-def test_nr7_no_signal_without_contraction():
-    frame = _nr7_frame()
-    frame.loc[frame.index[38], ["high", "low"]] = [103.0, 98.0]  # wide day
-    strat = Nr7VolatilityContraction()
-    assert int(strat.entry_signal(strat.prepare(frame)).sum()) == 0
 
 
 # ------------------------------------------------------------- volexp (1h)
@@ -275,73 +234,14 @@ def test_pullback_requires_uptrend():
     assert not bool((fired & ~uptrend).any())        # never fires against trend
 
 
-# ------------------------------------------------------------ ema200 (daily)
-
-def _ema200_frame(params: Ema200Params):
-    """Constructive daily uptrend, pullback into the trend-EMA zone, resume."""
-    closes = [100.0]
-    for _ in range(54):
-        closes.append(closes[-1] * 1.004)
-    ema_trend = closes[0]
-    ema_fast = closes[0]
-    for c in closes[1:]:
-        ema_trend = _ema_step(ema_trend, c, params.ema_trend)
-        ema_fast = _ema_step(ema_fast, c, params.ema_fast)
-    # two dip bars: lows into the anchor's proximity band, closes below fast EMA
-    for _ in range(2):
-        dip_close = ema_fast * 0.985
-        closes.append(dip_close)
-        ema_trend = _ema_step(ema_trend, dip_close, params.ema_trend)
-        ema_fast = _ema_step(ema_fast, dip_close, params.ema_fast)
-    # resume bar: close back above the fast EMA
-    closes.append(ema_fast * 1.02)
-    lows = [c - 0.3 for c in closes]
-    lows[-3] = ema_trend * 1.004                     # touch near the anchor
-    lows[-2] = ema_trend * 1.002
-    dates = _daily_dates(len(closes))
-    return _frame(dates, closes, highs=[c + 0.3 for c in closes], lows=lows)
-
-
-def test_ema200_fires_on_resumption(reduced=True):
-    params = Ema200Params(ema_trend=30, ema_fast=10, slope_lookback=5,
-                          touch_lookback=5, proximity_band=0.03)
-    strat = Ema200PullbackTrend(settings=params)
-    prepared = strat.prepare(_ema200_frame(params))
-    last = prepared.iloc[-1]
-    assert last["close"] > last["ema_trend"] and last["trend_slope"] > 0
-    signal = strat.entry_signal(prepared)
-    assert bool(signal.iloc[-1])
-    conf = strat.confidence(prepared)
-    assert 0.0 <= conf.score <= 1.0
-    assert set(conf.components) == {"anchor_slope", "pullback_proximity",
-                                    "rsi_recovery", "volume"}
-
-
-def test_ema200_insufficient_history_is_silent():
-    strat = Ema200PullbackTrend()                    # default 200-day params
-    short = _ema200_frame(Ema200Params(ema_trend=30, ema_fast=10,
-                                       slope_lookback=5))
-    signal = strat.entry_signal(strat.prepare(short))   # 58 bars << 230
-    assert int(signal.sum()) == 0
-
-
 # ------------------------------------------------------- cross-strategy suite
-
-#: Calendar strategies fire on the date, not on price, so the "flat market ->
-#: no signal" invariant does not apply to them (they legitimately trade a flat
-#: market at the month boundary).
-_CALENDAR_STRATEGIES = {"tom_daily"}
 
 
 @pytest.mark.parametrize("cls", ALL_STRATEGIES, ids=lambda c: c.meta.name)
 def test_no_signal_on_flat_market(cls):
-    if cls.meta.name in _CALENDAR_STRATEGIES:
-        pytest.skip("calendar strategy: signal is date-driven, not price-driven")
     strat = cls()
     tf = strat.meta.timeframe
-    if tf == "1d":
-        dates = _daily_dates(260)
-    elif tf == "1h":
+    if tf == "1h":
         dates = pd.date_range("2024-01-01", periods=300, freq="1h", tz="UTC")
     else:
         dates = []
@@ -355,7 +255,7 @@ def test_no_signal_on_flat_market(cls):
 @pytest.mark.parametrize("cls", ALL_STRATEGIES, ids=lambda c: c.meta.name)
 def test_unprepared_frame_never_raises(cls):
     strat = cls()
-    raw = _flat_frame(_daily_dates(300))             # no indicator columns
+    raw = _flat_frame(_intraday_dates("2024-03-04", 25))  # no indicators
     signal = strat.entry_signal(raw)
     assert int(signal.sum()) == 0                    # guard, not crash
     assert strat.confidence(raw).score == 0.0
@@ -364,7 +264,7 @@ def test_unprepared_frame_never_raises(cls):
 @pytest.mark.parametrize("cls", ALL_STRATEGIES, ids=lambda c: c.meta.name)
 def test_metadata_contract(cls):
     meta = cls.meta
-    assert meta.enabled and meta.timeframe in ("15m", "1h", "1d")
+    assert meta.enabled and meta.timeframe in ("15m", "1h")
     assert meta.supported_regimes and meta.hypothesis
     assert meta.expected_behaviour and meta.known_failure_modes
     assert meta.required_columns

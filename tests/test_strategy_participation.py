@@ -1,10 +1,7 @@
 """Strategy participation audit (§14): who scans, who does not, and why.
 
-35 strategies are registered; 12 participate in intraday scanning. That is a
-DESIGN OUTCOME, not an oversight, and this file pins the reason so it cannot
-drift silently: the production engine is an INTRADAY engine - it squares off
-every position at 15:15 - and a strategy whose execution spec needs weeks to
-reach its horizon would be force-closed on entry day, every day.
+Only intraday strategies are registered, and every enabled strategy must
+participate in intraday scanning.
 
 ``pytest -s`` prints the participation table.
 """
@@ -26,10 +23,6 @@ def _rows():
             reason = f"intraday, squares off at the session cutoff"
         elif not m.enabled:
             reason = "disabled in its metadata"
-        elif not intraday:
-            reason = (f"swing scope: needs up to {e.max_hold_bars} bars "
-                      f"({m.timeframe}) to reach its horizon - the intraday "
-                      f"engine would close it at 15:15 on entry day")
         else:
             reason = "enabled and intraday but not loaded - INVESTIGATE"
         out.append({
@@ -61,8 +54,7 @@ def test_print_the_participation_table(capsys):
         for r in scanning:
             by_tf[r["timeframe"]] = by_tf.get(r["timeframe"], 0) + 1
         print(f"\n  scanning by timeframe: {by_tf}")
-        print(f"  excluded: {len(rows) - len(scanning)} "
-              f"(all SWING scope - see reason column)")
+        print(f"  excluded: {len(rows) - len(scanning)}")
     assert rows
 
 
@@ -83,17 +75,10 @@ def test_no_strategy_is_excluded_without_an_explanation():
     assert not unexplained, unexplained
 
 
-def test_swing_strategies_are_excluded_because_of_the_squareoff():
-    """The concrete justification: their specs allow overnight holds and cap
-    the trade in BARS, both of which the intraday engine contradicts."""
-    swing = [c for c in ALL_STRATEGIES
-             if c.meta.enabled and c.meta.holding_scope != HoldingScope.INTRADAY]
-    assert swing, "expected swing strategies in the registry"
-    for cls in swing:
-        spec = cls.execution
-        assert spec.intraday is False, cls.meta.name
-        assert spec.allow_overnight is True, cls.meta.name
-        assert spec.max_hold_bars and spec.max_hold_bars > 1, cls.meta.name
+def test_every_registered_strategy_is_intraday():
+    assert ALL_STRATEGIES
+    assert all(c.meta.holding_scope == HoldingScope.INTRADAY
+               for c in ALL_STRATEGIES)
 
 
 def test_participation_is_not_a_hand_maintained_list():

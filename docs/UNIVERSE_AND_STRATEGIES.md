@@ -1,8 +1,8 @@
 # SCAN UNIVERSE & STRATEGY ACTIVATION
 
-_Written 2026-07-20. Answers three operator questions: how many symbols the
-engine scans and why, how the universe is configured, and why 35 registered
-strategies produce 12 scanning ones._
+_Written 2026-07-20; strategy inventory updated 2026-07-22. Answers three
+operator questions: how many symbols the engine scans and why, how the universe
+is configured, and which intraday strategies participate in scanning._
 
 ## 1. Why the engine scanned only 99 symbols
 
@@ -72,60 +72,19 @@ universe[production] 335/1000 symbols from 745 candidates
         data today - widen the sources or download more history
 ```
 
-## 3. Strategy activation: 35 registered, 12 scanning
+## 3. Strategy activation: 12 registered, 12 scanning
 
-**Correct behaviour, not a defect.** The library registers 35 strategies:
-**12 intraday** (11 x 15m, 1 x 1h) and **23 daily swing**. All 35 are
-`enabled`; the live engine additionally requires `holding_scope == INTRADAY`.
+The production library now contains only the 12 enabled intraday strategies
+(11 x 15m, 1 x 1h). All 12 declare `HoldingScope.INTRADAY`, are discovered
+automatically, and participate in live scanning. No daily, swing, positional,
+or overnight strategy remains registered.
 
-The 23 excluded strategies are daily systems holding positions for days to
-months (`max_hold_bars` of 7-126 sessions, delivery product). The production
-engine is an **intraday** engine: it squares off every position before the
-close and never carries overnight. Scanning a swing strategy there would
-force-close it hours into a multi-day thesis - systematically misexecuting it.
-They are excluded by design, not by oversight.
+The engine still enforces its intraday invariant independently of registration:
+new entries stop at the cutoff and every open position is squared off before
+the close. The generic research framework and historical research records are
+retained for reproducibility; they are not registered trading strategies.
 
-Verified programmatically (`tests/test_universe_and_reporting.py`): every
-intraday strategy scans, no swing strategy does, and none is disabled.
-Regenerate this table any time with `scripts/strategy_report.py`.
-
-**35 registered · 12 scanning live**
-
-| Strategy | Timeframe | Scope | Enabled | Scans live | Reason |
-|---|---|---|---|---|---|
-| `cpr_breakout_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `cpr_reversal_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `first_pullback_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `gapgo_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `insidebar_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `nr7_intraday_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `orb_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `pullback_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `supertrend_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `volexp_1h` | 1h | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `vwap_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `vwap_pullback_15m` | 15m | intraday | yes | **yes** | intraday: squares off before the close, so the live intraday engine executes it as designed |
-| `bab_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 126 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `breadth_regime_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 63 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `combo_lowvol_mom_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 126 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `donchian55_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 60 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `dualmom_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 63 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `egap_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 40 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `ema200_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 8 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `hi52_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 60 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `hi52rank_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 126 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `hvol_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 20 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `illiq_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 126 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `lowvol_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 126 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `maxret_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 63 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `nr7_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 8 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `resmom_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 63 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `squeeze_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 30 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `stage2_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 126 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `tom_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 7 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `triple_screen_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 20 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `tsmom_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 60 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `wyckoff_spring_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 40 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `xsmom_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 63 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-| `xsrev_daily` | 1d | swing | yes | no | swing/positional: holds overnight for 21 bars (delivery). The live engine is INTRADAY - it force-closes every position at square-off - so scanning it here would systematically misexecute the strategy |
-
+Verified programmatically by
+`tests/test_strategy_participation.py` and
+`tests/test_universe_and_reporting.py`. Regenerate the live inventory with
+`scripts/strategy_report.py`.

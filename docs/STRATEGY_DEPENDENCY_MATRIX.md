@@ -34,7 +34,7 @@ documented in `IMPLEMENTATION_GUIDE.md`:_
 | F8 VWAP test counter | 2 | 0 | 0 | **2** | Yes |
 | F9 OR width | 1 | 1 | 1 | **2** | Yes |
 | F10 CPR classification | 1 | 0 | 0 | **1** (method-defining) | Yes |
-| F12 BBW percentile | 1 | 0 | 0 | **1** (definitional; +`squeeze_daily` future) | Yes |
+| F12 BBW percentile | 1 | 0 | 0 | **1** (definitional; reusable by future squeeze variants) | Yes |
 | F15 turnover | 0 | 0 | 7 | 0 | Yes |
 
 **Reading the matrix:**

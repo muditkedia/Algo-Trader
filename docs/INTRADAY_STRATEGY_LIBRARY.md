@@ -9,12 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **35 strategies** via auto-discovery:
+registers **12 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **12** | 11 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the intraday library** |
-| Daily swing / positional | 23 | 1d | days–months (CNC) | No (documented for completeness; they hold overnight) |
+| Intraday | **12** | 11 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -60,8 +59,7 @@ Rules common to every declaration currently in the library:
   actual last bar close. **No overnight carry, ever** (no strategy declares
   overnight support).
 - **Holding limit:** intraday positions run to the strategy's own exit or the
-  session square-off — there is **no generic bar cap**. Swing strategies
-  declare their own `max_hold_bars` horizon.
+  session square-off — there is **no generic bar cap**.
 - **Fills:** honest gap handling — a bar that opens beyond the stop (or
   target) fills at the open, not at the level. Same-bar ambiguity keeps the
   conservative convention: stop before target.
@@ -418,7 +416,7 @@ no capital constraint, fractional share quantities).
    the narrowest daily range of seven marks multi-day compression; breaking
    that day's high the NEXT session captures the expansion day itself
    (Crabel — the original narrow-range research; closes the "NR7 Intraday"
-   gap in the target list; distinct from the swing `nr7_daily`).
+   gap in the target list).
 3. **Entry:** yesterday was NR7 AND a bar closes above yesterday's high.
    Price-only, parameter-light, per Crabel. 4–6. **Exits (owned):** stop
    below the NR7 day's low (the compression range is the risk); no target
@@ -429,67 +427,12 @@ no capital constraint, fractional share quantities).
 
 ---
 
-## 3. Daily swing strategies (23) — implemented, but NOT intraday
+## 3. Removed non-intraday strategies
 
-These hold for days to months (`Product.DELIVERY`, ~30.9 bps round-trip cost)
-and therefore **do not meet the same-day entry/exit requirement** of the reset
-objective. They are documented for completeness and remain in the repository
-untouched. Shared facts (all 23): timeframe **1d**; each declares its own
-swing execution (`atr_trail_swing`: ATR/structure stop, chandelier trail,
-overnight allowed, `horizon_end` at its `max_hold_bars`); long-only;
-implemented as complete, tested entry-signal modules; all carry evidence status
-`rejected` under the frozen research gate (none cleared the
-selection-edge-over-cost bar — that is a *research verdict*, not an
-implementation defect); none is paper-traded or live.
-
-### 3.1 Per-symbol daily strategies (batch 1 + phase 4)
-
-| Strategy | File (`…/library/`) | Theory (one line) | Entry conditions (exact) | Max hold |
-|---|---|---|---|---|
-| `ema200_daily` — 200-EMA Pullback Trend | `ema200_daily.py` | Deep pullbacks to a rising 200-day EMA are defended by longer-horizon buyers | Close > EMA200 & EMA200 rising (vs 20 bars ago) & a low within +3% of EMA200 in the last 10 bars & close crosses back above EMA20 | 8 d |
-| `nr7_daily` — NR7 Volatility Contraction | `nr7_daily.py` | Narrowest range of 7 days marks coiling; next-day break of that high starts expansion (Crabel) | Yesterday was NR7 & today's close crosses above yesterday's high & volume ≥ 1.2× 20-day avg | 8 d |
-| `tsmom_daily` — Time-Series Momentum | `tsmom_daily.py` | A stock's own 12-month return (skip most recent month) persists 1–3 months (Moskowitz et al.) | 12-1 momentum (`close[t−21]/close[t−252]−1`) crosses above 0 | 60 d |
-| `hi52_daily` — 52-Week-High Proximity | `hi52_daily.py` | Anchoring on the 52-week high delays good news; entering the near-high band overcomes the anchor (George-Hwang) | `close / prior-252d-high` crosses above 0.95 | 60 d |
-| `egap_daily` — Earnings-Gap Continuation (PEAD proxy) | `egap_daily.py` | Prices under-react to earnings-type events; a big held gap drifts further for weeks | Overnight gap ≥ +3% & volume ≥ 3× 20-day avg & close ≥ open (gap held) | 40 d |
-| `donchian55_daily` — Donchian 55-Day Breakout | `donchian55_daily.py` | A close above the prior 55-day high clears a quarter's sellers; big trends start at new highs (Turtles) | Close crosses above the prior 55-day high | 60 d |
-| `squeeze_daily` — Weekly Volatility Squeeze | `squeeze_daily.py` | Weekly BB inside Keltner = abnormal calm; daily upside range-break resolves the stored move (TTM squeeze) | Weekly BB(20,2σ) inside Keltner(20, 1.5×ATR) (as-of completed weeks) & daily close crosses above prior 10-day high | 30 d |
-| `hvol_daily` — High-Volume Return Premium | `hvol_daily.py` | An abnormal-volume day is an attention shock that lifts price for weeks (Gervais et al.) | 50-day volume ratio crosses above 3.0 | 20 d |
-| `triple_screen_daily` — Elder Triple Screen | `triple_screen_daily.py` | Weekly tide filters daily wave: buy the end of a daily pullback inside a rising weekly trend | Weekly EMA13 rising (as-of) & yesterday's 2-day Force Index < 0 & close crosses above yesterday's high | 20 d |
-| `wyckoff_spring_daily` — Wyckoff Spring | `wyckoff_spring_daily.py` | A failed break below a 30-day range low traps sellers; their covering fuels the markup | Low breaks the prior 30-day range low & close back above it (same bar, or crossing back within 3 bars) | 40 d |
-| `tom_daily` — Turn-of-Month | `tom_daily.py` | Returns concentrate at month boundaries (India: dated SIP inflows) | First bar within 2 business days of month-end (pure calendar window) | 7 d |
-| `stage2_daily` — Weinstein Stage 2 | `stage2_daily.py` | Stage 1→2 transition: base breakout above a rising 30-week MA on volume marks the markup phase | Close crosses above prior 150-day high & 150-day MA rising (vs 20 bars ago) & close > MA & volume ≥ 1.5× 50-day avg | 126 d |
-| `breadth_regime_daily` — Breadth-Regime Momentum | `breadth_regime_daily.py` | Breakouts work when participation is broad; gate on market breadth | >50% of universe above its 200-day MA & close crosses above prior 50-day high | 63 d |
-
-*(Fields 8–9 for this group: intended conditions are per-strategy regimes
-declared in each module's `meta` — mostly bull/range; commonly used on liquid
-equities generally; implemented universe NIFTY-500 daily. Fields 10–12: complete;
-measured on the NIFTY-500 corpus in Phases 9–11/14; all `rejected` under the
-frozen gate.)*
-
-### 3.2 Cross-sectional daily strategies (batch 2)
-
-These rank the whole universe each day (`prepare_cross_section` seam) and enter
-a stock when it joins the favoured decile. Entry trigger for all of them: the
-stock **enters** the favoured decile (edge-triggered on the 0→1 transition of
-the decile flag; deciles need ≥10 ranked names on the date).
-
-| Strategy | File | Ranked metric | Favoured tail | Max hold |
-|---|---|---|---|---|
-| `xsmom_daily` — Cross-Sectional Momentum | `xsmom_daily.py` | 12-1 return (`close[t−21]/close[t−252]−1`) | top decile | 63 d |
-| `resmom_daily` — Residual Momentum | `resmom_daily.py` | cumulative market-residual return over [t−126, t−21] (rolling-beta vs equal-weight universe) | top decile | 63 d |
-| `dualmom_daily` — Dual Momentum | `dualmom_daily.py` | 12-1 return, **AND** own 12-1 > 0 (absolute gate) | top decile | 63 d |
-| `lowvol_daily` — Low Volatility | `lowvol_daily.py` | 126-day daily-return σ | bottom decile | 126 d |
-| `bab_daily` — Betting Against Beta | `bab_daily.py` | 252-day rolling beta vs equal-weight universe | bottom decile | 126 d |
-| `xsrev_daily` — Short-Term Reversal | `xsrev_daily.py` | 5-day return | bottom decile (losers) | 21 d |
-| `maxret_daily` — Anti-Lottery (low MAX) | `maxret_daily.py` | max single-day return over 21 days | bottom decile | 63 d |
-| `hi52rank_daily` — 52-Week-High Rank | `hi52rank_daily.py` | `close / 252-day high` | top decile | 126 d |
-| `illiq_daily` — Amihud Illiquidity | `illiq_daily.py` | mean(|ret| / traded value) over 63 days | top decile (most illiquid) | 126 d |
-| `combo_lowvol_mom_daily` — Low-Vol × Momentum Composite | `combo_lowvol_mom_daily.py` | mean percentile of (12-1 momentum, inverse 126-day vol) | top decile | 126 d |
-
-*(Same shared facts as §3.1: theory per module docstrings — Jegadeesh-Titman,
-Blitz-Huij-Martens, Antonacci, Ang et al., Frazzini-Pedersen, Bali et al.,
-George-Hwang, Amihud; complete; measured Phase 11 on NIFTY-500; all `rejected`
-by the frozen gate at long horizons; not intraday.)*
+The 23 daily/swing strategy modules previously documented here were removed
+from the production library on 2026-07-22. Historical research reports and
+decision records remain unchanged so earlier measurements stay reproducible;
+they do not represent currently available or registered strategies.
 
 ---
 
@@ -534,17 +477,17 @@ live order path exists in the repository at all (paper simulation only), so
 | 7 | Gap and Go | **Yes** (`gapgo_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 8 | First Pullback | **Yes** (`first_pullback_15m`) | Yes | No | No | — |
 | 9 | Initial Balance Breakout | **Partial** | No (as IB) | No | No | `orb_15m` with `range_minutes=60` IS an IB breakout, but no 60-min variant is registered/backtested; needs a registered config |
-| 10 | NR7 Intraday | **Yes** (`nr7_intraday_15m`, added 2026-07-19) | Not yet | No | No | — (`nr7_daily` remains the swing form) |
+| 10 | NR7 Intraday | **Yes** (`nr7_intraday_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 11 | Inside Bar Breakout | **Yes** (`insidebar_15m`, added 2026-07-19) | Not yet | No | No | — |
-| 12 | Volume Breakout | **No** | No | No | No | Strategy module (price break of recent high on volume surge, intraday). `volume_ratio` + breakout helpers exist; `hvol_daily` is a different (swing, attention-shock) mechanism |
+| 12 | Volume Breakout | **No** | No | No | No | Strategy module (price break of recent high on volume surge, intraday). `volume_ratio` + breakout helpers exist |
 | 13 | ORB Retest | **Partial** | Via §2.5 | No | No | `first_pullback_15m` covers hold-above-OR + resume; a literal retest-touch entry at the OR high is not implemented |
 | 14 | Trendline Break | **No** | No | No | No | Swing-point detection + trendline fitting (nothing exists); strategy module |
 | 15 | EMA Pullback | **Yes** (`pullback_15m`) | Yes | No | No | — |
 | 16 | Supertrend Continuation | **Yes** (`supertrend_15m`, added 2026-07-19) | Not yet | No | No | — (`supertrend` indicator now in `core/indicators`) |
-| 17 | Bollinger Squeeze Breakout | **Yes** (`volexp_1h`, 1h) | Yes | No | No | 15m variant unregistered (1h version implemented; `squeeze_daily` is the swing cousin) |
-| 18 | Donchian Breakout | **Partial** | Daily form only | No | No | `donchian55_daily` is positional (55-day, delivery). Intraday version: shorter channel on 15m + MIS square-off |
-| 19 | Momentum Continuation | **No** | No | No | No | Dedicated intraday momentum-continuation module (e.g. N-bar thrust + continuation). Daily `tsmom`/`xsmom` are positional factor strategies, not this |
-| 20 | Relative Strength Breakout | **No** | No | No | No | Intraday RS-vs-index computation (needs index intraday data alongside stocks) + module. Daily cross-sectional RS (`xsmom`, `resmom`) is positional |
+| 17 | Bollinger Squeeze Breakout | **Yes** (`volexp_1h`, 1h) | Yes | No | No | 15m variant unregistered (1h version implemented) |
+| 18 | Donchian Breakout | **No** | No | No | No | Intraday version needs a shorter channel on 15m plus MIS square-off |
+| 19 | Momentum Continuation | **No** | No | No | No | Dedicated intraday momentum-continuation module (e.g. N-bar thrust + continuation) |
+| 20 | Relative Strength Breakout | **No** | No | No | No | Intraday RS-vs-index computation (needs index intraday data alongside stocks) + module |
 
 **Coverage count: 12 Yes · 3 Partial · 5 No** against the 20 targets (updated 2026-07-19 with batch 2).
 Everything marked Yes is backtested in the standardized ₹50,000 report

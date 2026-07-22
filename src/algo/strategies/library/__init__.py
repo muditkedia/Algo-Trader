@@ -36,7 +36,7 @@ REGISTRY.discover(sys.modules[__name__])
 ALL_STRATEGIES = tuple(REGISTRY.get(name) for name in REGISTRY.names())
 
 # Re-export each class under its own name so ``from algo.strategies.library
-# import Ema200PullbackTrend`` keeps working. Binding these from discovery
+# import OpeningRangeBreakout`` keeps working. Binding these from discovery
 # rather than from a list of import statements is the point: a new strategy
 # module needs no edit here at all.
 globals().update({cls.__name__: cls for cls in ALL_STRATEGIES})

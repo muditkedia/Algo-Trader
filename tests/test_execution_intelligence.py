@@ -214,7 +214,7 @@ def test_sizing_returns_zero_below_minimum_or_invalid():
 
 def _snapshot():
     return {"as_of": "2024-03-04 10:00:00+00:00",
-            "strategies": ["orb_15m", "nr7_daily"],
+            "strategies": ["orb_15m", "vwap_15m"],
             "positions": [{"symbol": "TCS", "strategy": "orb_15m",
                            "entry": 100.0, "last": 101.0, "stop": 98.0,
                            "stake": 50_000.0, "unrealized": 500.0,

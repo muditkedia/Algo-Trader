@@ -19,8 +19,6 @@ from algo.trading.trademanager import TradeManager
 
 INTRADAY = [c for c in ALL_STRATEGIES
             if c.meta.enabled and c.meta.holding_scope == HoldingScope.INTRADAY]
-SWING = [c for c in ALL_STRATEGIES
-         if c.meta.enabled and c.meta.holding_scope != HoldingScope.INTRADAY]
 
 ENTRY, STOP, TARGET, TARGET2 = 100.0, 95.0, 110.0, 120.0
 
@@ -160,9 +158,7 @@ def test_print_the_verification_matrix(capsys):
             line = f"  {r['name']:22} {r['timeframe']:4} " + " ".join(
                 f"{mark.get(r[c], r[c]):>10}" for c in cols)
             print(line)
-        print(f"\n  time exit: every intraday spec squares off at the session "
-              f"cutoff; swing specs use max_hold_bars")
-        print(f"  swing strategies NOT in the intraday engine: {len(SWING)}")
+        print("\n  time exit: every registered strategy squares off at the session cutoff")
     assert all(v is not False for r in rows for v in r.values())
 
 
@@ -173,8 +169,6 @@ def test_squareoff_is_unconditional(cls):
     """15:15 must close an intraday position regardless of profit, loss,
     target, trailing state or partial state."""
     spec = cls.execution
-    if not spec.intraday:
-        pytest.skip("swing spec")
     tm = _tm(cls)
     variants = {
         "in profit": _position(cls.meta.name, spec),
@@ -325,11 +319,7 @@ def test_no_new_entries_are_taken_after_the_cutoff(tmp_path):
     assert result["opened"] == 0
 
 
-def test_no_swing_strategy_reaches_the_intraday_engine():
-    """The intraday engine squares off at 15:15; a spec that needs 126 days to
-    reach its horizon would be closed on entry day, every day."""
+def test_every_registered_strategy_reaches_the_intraday_engine():
     from algo.trading.engine import load_intraday_strategies
     loaded = {s.name for s in load_intraday_strategies()}
-    swing = {c.meta.name for c in SWING}
-    assert not (loaded & swing)
     assert loaded == {c.meta.name for c in INTRADAY}

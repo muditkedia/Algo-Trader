@@ -1,4 +1,4 @@
-"""Unified scan: all six strategies, multiple timeframes, one ranked list,
+"""Unified scan: registered intraday strategies, one ranked list,
 evidence logging with components, and duplicate-signal protection."""
 
 import json
@@ -12,7 +12,7 @@ from algo.scanner.engine import ScanEngine
 from algo.strategies.registry import StrategyRegistry
 from algo.strategies.library import ALL_STRATEGIES
 
-from tests.test_strategy_library import _nr7_frame, _orb_frame, _vwap_frame
+from tests.test_strategy_library import _orb_frame, _vwap_frame
 
 
 AS_OF = pd.Timestamp("2024-03-05 16:00", tz="UTC")
@@ -20,14 +20,13 @@ AS_OF = pd.Timestamp("2024-03-05 16:00", tz="UTC")
 
 @pytest.fixture
 def scan_setup(store, synthetic):
-    """Store: crafted firing frames for three symbols + synthetic context data."""
+    """Store: crafted firing frames plus synthetic context data."""
     store.write("CRAFT_ORB", "15m", _orb_frame())
     store.write("CRAFT_VWAP", "15m", _vwap_frame())
-    store.write("CRAFT_NR7", "1d", _nr7_frame())
     for sym in ("PLAIN_A", "PLAIN_B"):     # synthetic, may or may not fire
-        store.write(sym, "1d", synthetic.fetch_ohlcv(
-            sym, "1d", "2023-06-01", "2024-03-05"))
-    symbols = ["CRAFT_ORB", "CRAFT_VWAP", "CRAFT_NR7", "PLAIN_A", "PLAIN_B"]
+        store.write(sym, "15m", synthetic.fetch_ohlcv(
+            sym, "15m", "2023-06-01", "2024-03-05"))
+    symbols = ["CRAFT_ORB", "CRAFT_VWAP", "PLAIN_A", "PLAIN_B"]
 
     db = EvidenceDB(MEMORY)
     log = EvidenceLogger(db)
@@ -42,9 +41,9 @@ def scan_setup(store, synthetic):
 def test_registry_discovers_the_whole_library():
     reg = StrategyRegistry()
     found = reg.discover("algo.strategies.library")
-    # the original six are always present; the library grows by discovery,
+    # the existing intraday strategies are always present; the library grows by discovery,
     # so assert membership + consistency rather than a hardcoded roster
-    assert {"ema200_daily", "nr7_daily", "orb_15m",
+    assert {"orb_15m",
             "pullback_15m", "volexp_1h", "vwap_15m"} <= set(found)
     assert sorted(found) == [cls.meta.name for cls in ALL_STRATEGIES]
     assert reg.enabled_names() == sorted(found)
@@ -59,7 +58,6 @@ def test_unified_scan_returns_one_ranked_list(scan_setup):
     fired = {(o.symbol, o.strategy) for o in result.opportunities}
     assert ("CRAFT_ORB", "orb_15m") in fired
     assert ("CRAFT_VWAP", "vwap_15m") in fired
-    assert ("CRAFT_NR7", "nr7_daily") in fired
 
     # ONE list, strictly ranked 1..N, ordered by confidence descending
     ranks = [o.rank for o in result.opportunities]
@@ -67,9 +65,7 @@ def test_unified_scan_returns_one_ranked_list(scan_setup):
     confidences = [o.confidence for o in result.opportunities]
     assert confidences == sorted(confidences, reverse=True)
     assert all(0.0 <= c <= 1.0 for c in confidences)
-    # multiple timeframes merged into the same list
-    assert {o.strategy for o in result.opportunities} >= {"orb_15m",
-                                                          "nr7_daily"}
+    assert {o.strategy for o in result.opportunities} >= {"orb_15m", "vwap_15m"}
 
 
 def test_every_opportunity_written_to_evidence(scan_setup):
@@ -111,7 +107,7 @@ def test_rescan_creates_no_duplicate_signals(scan_setup):
 
 
 def test_scan_without_evidence_logger_still_ranks(store, synthetic):
-    store.write("CRAFT_NR7", "1d", _nr7_frame())
+    store.write("CRAFT_ORB", "15m", _orb_frame())
     engine = ScanEngine(store, [cls() for cls in ALL_STRATEGIES])
-    result = engine.scan(AS_OF, ["CRAFT_NR7"])
-    assert any(o.strategy == "nr7_daily" for o in result.opportunities)
+    result = engine.scan(AS_OF, ["CRAFT_ORB"])
+    assert any(o.strategy == "orb_15m" for o in result.opportunities)

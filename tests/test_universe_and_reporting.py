@@ -164,16 +164,14 @@ def test_explicit_symbols_file_still_works(tmp_path):
 
 # ==================================================== strategy activation
 
-def test_registered_equals_intraday_plus_swing():
+def test_registered_strategies_are_intraday_and_scan():
     intraday = [c for c in ALL_STRATEGIES
                 if c.meta.holding_scope == HoldingScope.INTRADAY]
-    swing = [c for c in ALL_STRATEGIES
-             if c.meta.holding_scope == HoldingScope.SWING]
-    assert len(intraday) + len(swing) == len(ALL_STRATEGIES)
+    assert len(intraday) == len(ALL_STRATEGIES)
     assert len(load_intraday_strategies()) == len(intraday)
 
 
-def test_every_intraday_strategy_scans_and_no_swing_one_does():
+def test_every_registered_strategy_scans():
     scanning = {s.name for s in load_intraday_strategies()}
     for cls in ALL_STRATEGIES:
         is_intraday = cls.meta.holding_scope == HoldingScope.INTRADAY

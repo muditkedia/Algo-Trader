@@ -6,8 +6,7 @@ day-trading is standard curriculum across breakout literature): a day whose
 range is the narrowest of the last seven marks multi-day volatility
 exhaustion; the NEXT session's break of that narrow day's high tends to
 begin a directional expansion, tradeable the same day. Distinct from
-`nr7_daily` (the SWING form: enters at the daily close, holds days,
-delivery costs) and from `orb_15m` (the trigger is the PRIOR DAY's high
+`orb_15m` (the trigger is the PRIOR DAY's high
 after a daily compression, not an opening-range level on any day) - this is
 the intraday execution of the Crabel pattern the target list called missing.
 

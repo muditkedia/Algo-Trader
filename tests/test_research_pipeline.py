@@ -78,14 +78,14 @@ def test_library_is_discovered_not_hand_listed():
     """ALL_STRATEGIES is derived from discovery, so a new module is picked up
     with no edit to the package __init__."""
     assert tuple(REGISTRY.get(n) for n in REGISTRY.names()) == ALL_STRATEGIES
-    assert {"ema200_daily", "nr7_daily", "orb_15m", "pullback_15m",
+    assert {"orb_15m", "pullback_15m",
             "volexp_1h", "vwap_15m"} <= {c.meta.name for c in ALL_STRATEGIES}
 
 
 def test_discovered_classes_are_importable_by_name():
     """Discovery must not cost the ergonomics of a normal import."""
-    from algo.strategies.library import Ema200PullbackTrend
-    assert Ema200PullbackTrend in ALL_STRATEGIES
+    from algo.strategies.library import OpeningRangeBreakout
+    assert OpeningRangeBreakout in ALL_STRATEGIES
 
 
 def test_library_order_is_deterministic():
@@ -146,10 +146,10 @@ def test_horizon_defaults_reproduce_the_phase7_measurement():
                         holding_scope=HoldingScope.SWING)
     assert meta.horizon_bars == edge_lab.DEFAULT_HORIZON_BARS == (1, 2, 4, 8)
     assert meta.max_hold_bars == 8
-    phase7_six = {"ema200_daily", "nr7_daily", "orb_15m", "pullback_15m",
+    phase7_intraday = {"orb_15m", "pullback_15m",
                   "volexp_1h", "vwap_15m"}
     for cls in ALL_STRATEGIES:
-        if cls.meta.name in phase7_six:
+        if cls.meta.name in phase7_intraday:
             assert cls.meta.horizon_bars == (1, 2, 4, 8)
             assert cls.meta.max_hold_bars == 8
 
@@ -358,6 +358,6 @@ def test_select_strategies_filters_and_rejects_unknown():
         sys.path.pop(0)
 
     assert len(select_strategies(None)) == len(ALL_STRATEGIES)
-    assert [s.name for s in select_strategies("ema200_daily")] == ["ema200_daily"]
+    assert [s.name for s in select_strategies("orb_15m")] == ["orb_15m"]
     with pytest.raises(SystemExit, match="unknown strategy"):
         select_strategies("does_not_exist")
