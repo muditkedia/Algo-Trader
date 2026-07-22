@@ -53,6 +53,19 @@ def build_watchlist(config, store: Optional[MarketDataStore] = None,
     timeframe = timeframes[0]
 
     if getattr(config, "universe", None):
+        universe = dict(config.universe)
+        if universe.get("tier") == "dynamic":
+            # daily data-driven universe: top-500 by market cap, ranked by
+            # the previous session's liquidity (algo.universe.dynamic)
+            from algo.universe.dynamic import (
+                DynamicUniverseSpec, load_or_build,
+            )
+            universe.pop("tier", None)
+            spec = DynamicUniverseSpec.from_dict(
+                {"timeframe": timeframe, **universe})
+            report = load_or_build(store, spec)
+            return Watchlist(symbols=list(report.selected), report=report,
+                             source="dynamic")
         from algo.trading.universe import UniverseSpec, build_universe
         spec = UniverseSpec.from_dict({"timeframe": timeframe,
                                        **config.universe})

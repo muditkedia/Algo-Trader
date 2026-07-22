@@ -40,6 +40,7 @@ def build_engine(config: TradingConfig) -> ProductionEngine:
     fetch, does not schedule, and holds no reference to a store.
     """
     session = instruments = source = None
+    websocket = getattr(config, "market_data_mode", "websocket") == "websocket"
     if config.is_live or config.mode == "paper":
         # a live provider is optional in paper mode; wire it only if creds exist
         try:
@@ -49,6 +50,31 @@ def build_engine(config: TradingConfig) -> ProductionEngine:
             if missing:
                 print(f"  ! no SmartAPI credentials ({', '.join(missing)}) - "
                       f"running OFFLINE on stored candles")
+            elif websocket:
+                # PRIMARY: locally built candles from the QUOTE stream. The
+                # historical provider stays wired BEHIND the streaming source
+                # for startup seeding, gap repair and validation only - it
+                # keeps its own request pacing for exactly those calls.
+                from algo.data.providers.smartapi.quotefeed import (
+                    SmartApiQuoteFeed,
+                )
+                from algo.marketdata import (
+                    LocalCandleEngine, StreamingCandleSource, for_provider,
+                )
+                provider = build_provider(
+                    cache_dir=Path(config.store_dir) / "_instruments")
+                session = provider.session
+                instruments = provider.instruments
+                feed = SmartApiQuoteFeed(session, instruments)
+                candles = LocalCandleEngine()      # 1m/3m/5m/15m
+                source = StreamingCandleSource(
+                    feed, candles, for_provider(provider),
+                    validate=bool(getattr(config, "ws_validate", False)),
+                    stale_after_s=float(getattr(config, "ws_stale_seconds",
+                                                30.0)))
+                print("  market data: WEBSOCKET mode - candles built locally "
+                      "from the QUOTE stream; historical API reserved for "
+                      "seeding/gap repair/validation")
             else:
                 provider = build_provider(
                     cache_dir=Path(config.store_dir) / "_instruments",
@@ -56,18 +82,47 @@ def build_engine(config: TradingConfig) -> ProductionEngine:
                 session = provider.session
                 instruments = provider.instruments
                 source = for_provider(provider)
-                print(f"  live market-data provider wired "
+                print("  market data: HISTORICAL mode (deprecated for "
+                      "production trading) - periodic REST candle polling "
                       f"({source.name}; candles "
-                      f"{source.capabilities.candle_symbols_per_request}/req, "
-                      f"quotes "
-                      f"{source.capabilities.quote_symbols_per_request}/req)")
+                      f"{source.capabilities.candle_symbols_per_request}/req)")
         except Exception as exc:   # paper must run without a provider
             logger.warning("market-data provider could not be wired (%s) - "
                            "running OFFLINE on stored candles", exc)
             print(f"  ! market-data provider unavailable ({exc}) - "
                   f"running OFFLINE on stored candles")
-    return ProductionEngine(config, session=session, instruments=instruments,
-                            source=source)
+    engine = ProductionEngine(config, session=session,
+                              instruments=instruments, source=source)
+    if source is not None and hasattr(source, "start"):
+        source.clock = engine.clock          # session-aware staleness checks
+        subscribed = source.start(list(engine.state.symbols))
+        print(f"  quote stream subscribed: {subscribed} symbol(s)")
+    return engine
+
+
+def _stop_stream(engine) -> None:
+    """Stop a streaming source's feed thread, if one is wired."""
+    source = getattr(engine.marketdata, "source", None)
+    if source is not None and hasattr(source, "stop"):
+        try:
+            source.stop()
+        except Exception as exc:      # shutdown must never raise
+            logger.debug("stream stop: %s", exc)
+
+
+def _universe_refresher(config, engine):
+    """A DailyUniverseRefresher when the dynamic universe is configured."""
+    universe = dict(getattr(config, "universe", None) or {})
+    if universe.get("tier") != "dynamic":
+        return None
+    from algo.universe.dynamic import DailyUniverseRefresher, \
+        DynamicUniverseSpec
+    universe.pop("tier", None)
+    spec = DynamicUniverseSpec.from_dict(universe)
+    instruments = getattr(engine.marketdata.source, "mapping_report",
+                          lambda: None)()
+    return DailyUniverseRefresher(engine.state.store, spec,
+                                  instruments=instruments)
 
 
 def serve_dashboard(port: int, directory: str = "dashboard",
@@ -194,20 +249,24 @@ def main() -> int:
                       f"({exc}) - you will be asked for the capital")
         choices = run_wizard(config, adapter=engine.adapter)
         if choices is None:
+            _stop_stream(engine)
             return 0
         # session values are held in memory only - the config file on disk is
         # never rewritten, so today's numbers cannot become tomorrow's default
         config = choices.apply(config)
+        _stop_stream(engine)               # the rebuilt engine gets its own
         engine = build_engine(config)
     elif not args.no_wizard:
         print("  (no terminal detected - using the configured capital values)")
 
     if not engine.startup():
         print("PREFLIGHT FAILED - trading will not start. See event log.")
+        _stop_stream(engine)
         return 3
 
     if args.dashboard:
         print(engine.dashboard())
+        _stop_stream(engine)
         return 0
     if args.once or not args.loop:
         # One shot has no loop to return to, so drive the pipeline to
@@ -218,6 +277,7 @@ def main() -> int:
         print(f"tick: due={result['due']} opened={result['opened']} "
               f"stats={result['stats']}")
         print(engine.dashboard())
+        _stop_stream(engine)
         return 0
 
     # Continuous loop. ONE beat drives everything: engine.tick() polls the
@@ -233,9 +293,25 @@ def main() -> int:
     # session has closed and no position remains.
     clock = engine.clock
     last_print = 0.0
+    refresher = _universe_refresher(config, engine)
+    # Startup seeding: in websocket mode this is the ONE historical pass that
+    # warms indicators (incremental from the store's last bar, through the
+    # normal pipeline); after it, candles come from the stream. Mid-session
+    # starts seed the session so far; pre-open it is a no-op.
+    if getattr(engine.marketdata.source, "capabilities", None) is not None \
+            and engine.marketdata.source.capabilities.supports_streaming:
+        engine.marketdata.drain(
+            held=[p.symbol for p in engine.portfolio.open_positions()],
+            deadline_s=300.0)
     try:
         while True:
             now = clock.now()
+            if refresher is not None:
+                try:
+                    refresher.refresh_if_due(engine,
+                                             source=engine.marketdata.source)
+                except Exception as exc:    # universe refresh must not stop
+                    logger.warning("universe refresh failed: %s", exc)
             trading = clock.is_open(now) or engine.portfolio.open_count()
             if trading:
                 result = engine.tick()
@@ -275,6 +351,7 @@ def main() -> int:
     except KeyboardInterrupt:
         logger.info("interrupted - persisting state and exiting")
     finally:
+        _stop_stream(engine)
         engine.end_of_day()
         engine.adapter.disconnect()
     return 0

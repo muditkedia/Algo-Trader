@@ -1,6 +1,37 @@
 # Project State
 
-_Last updated: 2026-07-20 (Market Data Architecture v2)_
+_Last updated: 2026-07-22 (WebSocket market data: local candle engine)_
+
+## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
+
+Empirically validated (scripts/websocket_validation.py: 100% symbol and
+minute coverage at 50 and 300 symbols; scripts/candle_parity_validation.py:
+OHLC/volume parity with the Historical Candle API), the production system now
+builds candles locally from the SmartAPI QUOTE stream for BOTH paper and live
+trading. `market_data_mode: "websocket"` is the default; `"historical"` keeps
+the pre-migration REST polling path operational for debugging/validation but
+is deprecated for production trading.
+
+- `algo.marketdata.localcandles.LocalCandleEngine` - THE one candle builder:
+  exchange-timestamp buckets (1m/3m/5m/15m), cumulative-volume deltas,
+  immutable completions, taint-on-gap, bounded memory, thread-safe.
+- `algo.data.providers.smartapi.quotefeed.SmartApiQuoteFeed` - packet
+  normalizer + tick dispatcher + reconnect/outage bookkeeping.
+- `algo.marketdata.streaming.StreamingCandleSource` - locally built candles
+  behind the UNCHANGED v2 source seam. Scheduler, MarketState, freshness,
+  completion-driven scanning, engine, scanner and dashboard all run as-is.
+  The historical API is delegated to ONLY for startup seeding, websocket gap
+  repair, validation mode (`ws_validate`), backtesting and research - no
+  periodic polling. Position marks come from the tick stream (no REST
+  quotes). 1h bars (one strategy) still delegate: hourly session-anchored
+  buckets cannot be floored locally.
+- `algo.universe.dynamic` - the daily trading universe: official NIFTY500
+  constituents (free-float market-cap top-500 cut, EQ series only, active in
+  the instrument master), ranked by the previous session's traded value,
+  top 300 selected; versioned under `user_data/universe/dynamic-*.json` with
+  a `dynamic_current.txt` pointer; regenerated once per session day and
+  hot-reloaded (feed resubscribe) without a restart. Enable with
+  `"universe": {"tier": "dynamic"}` in the trading config.
 
 ## Current Phase
 

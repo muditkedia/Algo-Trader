@@ -147,12 +147,19 @@ class ProductionEngine:
             store = MarketDataStore(config.store_dir)
             watch = build_watchlist(config, store, self.timeframes)
             symbols, report = watch.symbols, watch.report
+        # A streaming source finalizes candles seconds after the bucket
+        # closes, so the bar grace shrinks accordingly; the REST path keeps
+        # its fetch-latency grace unchanged.
+        streaming = bool(getattr(getattr(source, "capabilities", None),
+                                 "supports_streaming", False))
+        grace = (getattr(config, "ws_bar_grace_seconds", 5) if streaming
+                 else config.bar_grace_seconds)
         service = MarketDataService.build(
             store, source, self.clock, symbols, self.timeframes,
             history_bars=config.history_bars,
             stale_tolerance_bars=config.stale_tolerance_bars,
             live_lookback_days=config.live_lookback_days,
-            grace_seconds=config.bar_grace_seconds,
+            grace_seconds=grace,
             quote_interval_s=config.live_quote_seconds,
             quotes_enabled=config.live_quotes_enabled,
             scan_deadline_seconds=config.scan_deadline_seconds,

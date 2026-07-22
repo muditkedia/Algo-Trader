@@ -137,6 +137,26 @@ class TradingConfig:
     #: seconds after a bar boundary before fetching/evaluating (feed latency)
     bar_grace_seconds: int = 20
 
+    # ----------------------------------------------------- market-data mode
+    #: "websocket" (default) - candles are built locally from the SmartAPI
+    #: QUOTE stream by the LocalCandleEngine; the historical API serves ONLY
+    #: startup seeding, gap repair after disconnects, validation mode,
+    #: backtesting and research. "historical" - the pre-migration periodic
+    #: REST polling path, kept fully operational for debugging/validation but
+    #: DEPRECATED for production trading.
+    market_data_mode: str = "websocket"
+    #: side-by-side comparison of locally built candles against the
+    #: historical API (one bounded request per served window). Evidence
+    #: gathering only; leave off in normal production.
+    ws_validate: bool = False
+    #: seconds without any websocket packet (during market hours) before the
+    #: streaming source reports DEGRADED
+    ws_stale_seconds: float = 30.0
+    #: bar grace when candles come from the stream: local candles finalize
+    #: seconds after the bucket closes, so scanning waits far less than the
+    #: REST path's ``bar_grace_seconds``
+    ws_bar_grace_seconds: int = 5
+
     # --------------------------------------------------- market-data pacing
     #: Ceiling on requests issued in ONE ``MarketDataService.poll``, and on the
     #: wall-clock time that poll may take. Together they bound how long the

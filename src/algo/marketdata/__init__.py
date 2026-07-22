@@ -33,6 +33,7 @@ subsystem exists to remove.
 from algo.marketdata.capabilities import (
     ProviderCapabilities, RateLimit, SMARTAPI_CAPABILITIES,
 )
+from algo.marketdata.localcandles import LocalCandleEngine
 from algo.marketdata.queue import DataRequest, RequestQueue
 from algo.marketdata.ratelimit import AdaptiveRateLimiter
 from algo.marketdata.scheduler import TimeframeScheduler
@@ -41,12 +42,16 @@ from algo.marketdata.source import (
     MarketDataSource, NullSource, ProviderSource, Quote, for_provider,
 )
 from algo.marketdata.state import MarketState, SymbolHealth, TimeframeHealth
+from algo.marketdata.streaming import (
+    STREAMING_CAPABILITIES, StreamingCandleSource,
+)
 from algo.marketdata.transport import FetchResult, Transport
 
 __all__ = [
-    "AdaptiveRateLimiter", "DataRequest", "FetchResult", "MarketDataService",
-    "MarketDataSource", "MarketState", "NullSource", "PollReport",
-    "ProviderCapabilities", "ProviderSource", "Quote", "RateLimit",
-    "RequestQueue", "SMARTAPI_CAPABILITIES", "SymbolHealth", "TimeframeHealth",
-    "TimeframeScheduler", "Transport", "for_provider",
+    "AdaptiveRateLimiter", "DataRequest", "FetchResult", "LocalCandleEngine",
+    "MarketDataService", "MarketDataSource", "MarketState", "NullSource",
+    "PollReport", "ProviderCapabilities", "ProviderSource", "Quote",
+    "RateLimit", "RequestQueue", "SMARTAPI_CAPABILITIES",
+    "STREAMING_CAPABILITIES", "StreamingCandleSource", "SymbolHealth",
+    "TimeframeHealth", "TimeframeScheduler", "Transport", "for_provider",
 ]
