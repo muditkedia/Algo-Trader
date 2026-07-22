@@ -44,6 +44,7 @@ class TradingSignal:
     confidence_components: Optional[dict] = None
     reason: str = ""
     exclusive_group: str = ""
+    active_conflict_group: str = ""
     atr_at_entry: float = 0.0
     structural_stop: float = 0.0
 
@@ -90,7 +91,7 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
         scored = None
         conf = 0.0
     regime = float(strategy.regime_score(prepared.iloc[: index + 1], direction))
-    priority = 0.60 * conf + 0.40 * regime
+    priority = float(strategy.priority_score(conf, regime))
     grade = 1.0 if conf >= 0.85 else (0.75 if conf >= 0.70 else 0.50)
     trigger = float(strategy.entry_trigger(prepared, index, direction))
     limit = None
@@ -108,5 +109,10 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
         confidence_components=(scored.components if scored else {}),
         reason=(scored.reason if scored else ""),
         exclusive_group=strategy.meta.exclusive_group,
+        active_conflict_group=strategy.meta.active_conflict_group,
         atr_at_entry=float(atr_value),
-        structural_stop=(float(row[spec.stop_col]) if spec.stop_col else 0.0))
+        structural_stop=float(row[(spec.stop_long_col
+                                   if direction == Direction.LONG
+                                   else spec.stop_short_col) or spec.stop_col])
+        if ((spec.stop_long_col if direction == Direction.LONG
+             else spec.stop_short_col) or spec.stop_col) else 0.0)

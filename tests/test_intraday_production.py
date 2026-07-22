@@ -16,7 +16,7 @@ from algo.core.indicators import (
 from algo.research.simulator import simulate_trade
 from algo.risk.engine import RiskParams
 from algo.strategies.library import (
-    CprBreakout, FirstPullbackAfterBreakout, VwapPullback,
+    CprBreakout, OpeningRangeRetest, VwapPullback,
 )
 
 
@@ -115,7 +115,7 @@ def test_gap_up_open_does_not_spurious_break():
 def test_market_open_no_trade_in_opening_range():
     """No strategy fires during the opening-range window (market-open handling)."""
     s = _session("2024-03-04", [100] * 30, vols=[9000] * 30)
-    for cls in (CprBreakout, FirstPullbackAfterBreakout, VwapPullback):
+    for cls in (CprBreakout, OpeningRangeRetest, VwapPullback):
         strat = cls()
         sig = strat.entry_signal(strat.prepare(s))
         assert not bool(sig.iloc[0])               # never on the first bar
@@ -168,30 +168,3 @@ def test_cpr_breakout_fires_on_the_break_bar():
     fired = np.flatnonzero(sig.to_numpy())
     assert len(fired) == 1
     assert fired[0] == len(frame) - 1              # the break bar (last)
-
-
-def test_first_pullback_fires_after_the_first_holding_pullback():
-    # OR high 101.5; break -> hold pullback -> resume, all after warmup
-    s = _padded_session(
-        "2024-03-04",
-        tail_closes=[104, 103, 106],       # break, pullback(down, holds), resume
-        tail_highs=[104.5, 104.0, 106.5],  # pullback high 104.0
-        tail_lows=[103, 102.0, 105],       # pullback low 102 >= OR high 101.5
-        tail_vols=[3000, 1000, 3000])
-    strat = FirstPullbackAfterBreakout()
-    sig = strat.entry_signal(strat.prepare(s))
-    fired = np.flatnonzero(sig.to_numpy())
-    assert list(fired) == [len(s) - 1]             # the resume bar (close 106 > 104)
-
-
-def test_first_pullback_rejects_failed_breakout():
-    # the pullback breaks BACK BELOW the OR high (101.5) -> failed breakout
-    s = _padded_session(
-        "2024-03-04",
-        tail_closes=[104, 100, 106],       # bar2 close 100 < OR high 101.5
-        tail_highs=[104.5, 104.0, 106.5],
-        tail_lows=[103, 99.0, 105],        # low 99 < OR high (breaks it)
-        tail_vols=[3000, 1000, 3000])
-    strat = FirstPullbackAfterBreakout()
-    sig = strat.entry_signal(strat.prepare(s))
-    assert int(sig.sum()) == 0

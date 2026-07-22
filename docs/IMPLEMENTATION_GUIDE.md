@@ -4,7 +4,7 @@ _Written 2026-07-19. Phase 1+2 of the practitioner-faithfulness pass.
 Documentation only — no strategy code was modified._
 
 **Scope:** the seven implemented intraday strategies (`orb_5m`, `vwap_15m`,
-`vwap_pullback_15m`, `cpr_breakout_15m`, `first_pullback_15m`, `pullback_15m`,
+`vwap_pullback_15m`, `cpr_breakout_15m`, `orb_retest_5m`, `pullback_15m`,
 `volexp_1h`). For each: the canonical practitioner implementation — including
 the context and quality rules experienced traders apply that articles and
 summaries usually omit — and exactly which of those elements our current
@@ -263,7 +263,17 @@ the full contract and documented input substitutions.
     relationship; gap-context rejection; virgin-CPR context; RVOL vs time of
     day; index alignment; morning-only entry window; event avoidance.
 
-## 5. First Pullback After Breakout — `first_pullback_15m`
+## 5. ORB Retest Continuation — `orb_retest_5m` (current canonical implementation)
+
+STRAT-02 replaces the former 15-minute single-pullback approximation with a
+bidirectional 5-minute state machine. It enforces buffered break state, 0.5 ATR
+minimum extension, a 0.15% retest zone, 0.5 ATR depth and eight-bar duration
+limits, directional continuation, VWAP/RVOL/scoring gates, a collared confirmed
+fill, pivot/ATR stop, grade-dependent partial, breakeven, chandelier,
+boundary/VWAP failure, and stagnation exit. See
+`docs/STRAT02_ORB_RETEST_5M.md` for the complete contract.
+
+### Retired `first_pullback_15m` practitioner comparison (legacy evidence only)
 
 1. **Original strategy name:** first pullback after breakout (first flag;
    "ORB retest" family; Raschke's first-pullback principle: the first
@@ -428,7 +438,7 @@ loses consistently-recommended context; L = near-faithful already).
 | `vwap_pullback_15m` | Rising VWAP; 0.2% tag holding; resume trigger; below-VWAP stop; 2R; square-off | FIRST/second VWAP test only, on a real trend day, with volume signature and index confirmation | Test-count cap (fixes documented 5–9× over-fire); volume signature; flat-VWAP rejection; index gate; time cutoff | **High** — over-firing means we mostly trade setups practitioners refuse |
 | `cpr_breakout_15m` | Causal CPR; TC break + volume; BC stop; R1 partial→BE→R2; square-off | Same trade but ONLY on narrow-CPR days with supportive two-day relationship and sane gap; morning entries | Narrow-CPR gate; two-day relationship; gap rejection; virgin-CPR context; RVOL; index gate; morning window | **High** — day-type selection *is* the CPR method |
 | `vwap_15m` | 60% buyer-control; reclaim cross; dip-low stop; 2R; square-off | Reclaim on RISING VWAP, first/second reclaim only, trend-day context, volume signature | Slope requirement; reclaim-count cap; range-day rejection; index gate; time cutoff | **Medium** |
-| `first_pullback_15m` | OR breakout → first single-down-bar hold → resume; pullback-low stop; 2R; one/session | 1–3-bar orderly flag on contracting volume; resume above pattern high; BE after 1R; morning bias | Multi-bar flag pattern; depth/duration caps; volume signature; RVOL on impulse; index gate; time cutoff | **Medium** |
+| `orb_retest_5m` | Specification STRAT-02; see `STRAT02_ORB_RETEST_5M.md` | Implemented | Optional spread/membership inputs substituted conservatively; sector cap awaits metadata | **Complete except documented sector-metadata dependency** |
 | `pullback_15m` | EMA20/50 regime; touch + reclaim; ATR/swing stop + chandelier | Same template but gated on trend STRENGTH, not merely EMA order; overextension rejection; index aligned | Trend-strength gate; overextension rejection; index gate; time window | **Medium** |
 | `volexp_1h` | Absolute bandwidth ≤0.03 for 3 prior bars; close above band; ATR/trail | Bandwidth at a RELATIVE low of its own history; direction filter; volume gate; event skip | Relative-bandwidth definition; direction filter; volume gate; event skip | **Medium** (the definition item is faithfulness, not tuning) |
 

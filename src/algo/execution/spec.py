@@ -42,6 +42,8 @@ class ExecutionSpec:
     #: ``hard_stop_pct`` (the pre-reset behaviour, now owned per strategy).
     stop_kind: str = "atr_structure"
     stop_col: Optional[str] = None
+    stop_long_col: Optional[str] = None
+    stop_short_col: Optional[str] = None
     stop_atr_mult: float = 2.0
     hard_stop_pct: Optional[float] = 0.06
     #: ``column_atr_cap`` combines a structural column with a maximum distance
@@ -53,6 +55,8 @@ class ExecutionSpec:
     target_kind: str = "none"
     target_col: Optional[str] = None
     target_r: float = 0.0
+    target_r_long_col: Optional[str] = None
+    target_r_short_col: Optional[str] = None
     #: Optional partial at the first target: fraction booked there, stop moves
     #: to breakeven, remainder runs to ``target2_col`` (if any) else to
     #: stop / square-off.
@@ -104,8 +108,12 @@ class ExecutionSpec:
         if self.stop_kind not in ("column", "column_atr_cap",
                                   "atr_structure"):
             raise ValueError(f"unknown stop_kind {self.stop_kind!r}")
-        if self.stop_kind in ("column", "column_atr_cap") and not self.stop_col:
-            raise ValueError(f"stop_kind={self.stop_kind!r} needs stop_col")
+        if self.stop_kind in ("column", "column_atr_cap") \
+                and not self.stop_col \
+                and not (self.stop_long_col and self.stop_short_col):
+            raise ValueError(
+                f"stop_kind={self.stop_kind!r} needs stop_col or both "
+                "directional stop columns")
         if self.target_kind not in ("none", "column", "r"):
             raise ValueError(f"unknown target_kind {self.target_kind!r}")
         if self.target_kind == "column" and not self.target_col:

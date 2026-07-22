@@ -11,9 +11,9 @@ Runs BOTH engines from the SAME prepared signals so trades match 1:1, then:
            deltas attribute entry / stop / target+trail-swap fidelity.
 
 No optimisation, no tuning: the specs are the D-036 published forms, fixed.
-The retired ``orb_15m`` is excluded because running ``orb_5m`` against its
-frozen 15-minute fidelity spec would falsely attribute legacy evidence to the
-new implementation.
+Retired ``orb_15m`` and ``first_pullback_15m`` are excluded because running
+their canonical replacements against frozen 15-minute fidelity specs would
+falsely attribute legacy evidence to the new implementations.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ from algo.research.engine import ResearchEngine
 from algo.research.fidelity import FIDELITY_SPECS, run_fidelity
 from algo.research.validation import metrics
 from algo.strategies.library import (
-    CprBreakout, FirstPullbackAfterBreakout,
+    CprBreakout,
     VwapPullback, VwapTrendContinuation,
 )
 
@@ -46,8 +46,7 @@ COST = NseEquityCostModel()
 
 STRATEGIES = [("vwap_pullback_15m", VwapPullback),
               ("vwap_15m", VwapTrendContinuation),
-              ("cpr_breakout_15m", CprBreakout),
-              ("first_pullback_15m", FirstPullbackAfterBreakout)]
+              ("cpr_breakout_15m", CprBreakout)]
 
 
 def _stats(trades: pd.DataFrame) -> dict:

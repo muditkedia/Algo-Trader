@@ -116,7 +116,12 @@ class OrderManager:
             trail_mode=signal.spec.trail,
             atr_at_entry=getattr(signal, "atr_at_entry", 0.0),
             structural_stop=getattr(signal, "structural_stop", signal.stop),
-            exclusive_group=signal.exclusive_group)
+            exclusive_group=signal.exclusive_group,
+            active_conflict_group=signal.active_conflict_group,
+            entry_target_r=(abs(float(signal.target) - signal.entry_ref)
+                            / signal.risk_per_unit
+                            if signal.target is not None
+                            and signal.risk_per_unit > 0 else 0.0))
         return self._submit(order)
 
     def market_exit(self, position, quantity: float, reason: str,

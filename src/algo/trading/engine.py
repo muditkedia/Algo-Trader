@@ -781,8 +781,9 @@ class ProductionEngine:
         else:
             stop = float(order.entry_stop)
         risk = abs(fill - stop)
-        target = (fill + spec.target_r * risk if is_long
-                  else fill - spec.target_r * risk) \
+        target_r = float(order.entry_target_r or spec.target_r)
+        target = (fill + target_r * risk if is_long
+                  else fill - target_r * risk) \
             if spec.target_kind == "r" else order.entry_target
         if existing is not None:
             if filled <= existing.quantity:
@@ -810,6 +811,7 @@ class ProductionEngine:
             session=order.session, last_price=fill,
             atr_at_entry=atr_value, direction=order.direction,
             exclusive_group=order.exclusive_group,
+            active_conflict_group=order.active_conflict_group,
             last_managed_bar=order.signal_bar_time)
         self.portfolio.add_position(pos)
         self.events.emit("position", action="open", symbol=order.symbol,

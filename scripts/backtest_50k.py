@@ -11,9 +11,9 @@ Engines:
     trail / session rules, with the three confirmed bugs fixed (no last-bar
     overnight carry, no generic 8-bar cap, honest gap fills).
   * ``legacy``: the pre-reset research simulator path, kept verbatim so the
-    recorded non-ORB baselines stay reproducible. The retired ``orb_15m``
-    implementation is intentionally not aliased to the canonical ``orb_5m``;
-    its frozen reports remain the legacy evidence.
+    recorded retained baselines stay reproducible. Retired ``orb_15m`` and
+    ``first_pullback_15m`` implementations are intentionally not aliased to
+    canonical STRAT-01/02; their frozen reports remain legacy evidence.
 
 --compare runs BOTH on identical signals and writes the correctness report:
 per-strategy metrics, per-fix trade-change attribution, and validation
@@ -43,7 +43,7 @@ from algo.research.engine import ResearchEngine
 from algo.research.simulator import simulate_trade
 from algo.research.validation import metrics
 from algo.strategies.library import (
-    CprBreakout, FirstPullbackAfterBreakout,
+    CprBreakout,
     PullbackContinuation15m, VolatilityExpansionBreakout1h, VwapPullback,
     VwapTrendContinuation,
 )
@@ -58,7 +58,6 @@ STRATEGIES = [
     ("vwap_15m", VwapTrendContinuation),
     ("vwap_pullback_15m", VwapPullback),
     ("cpr_breakout_15m", CprBreakout),
-    ("first_pullback_15m", FirstPullbackAfterBreakout),
     ("pullback_15m", PullbackContinuation15m),
     ("volexp_1h", VolatilityExpansionBreakout1h),
 ]

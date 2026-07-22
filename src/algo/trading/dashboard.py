@@ -48,7 +48,7 @@ STRATEGY_NAMES = {
     "vwap_15m": "VWAP Trend Continuation",
     "vwap_pullback_15m": "VWAP Pullback",
     "cpr_breakout_15m": "CPR Breakout",
-    "first_pullback_15m": "First Pullback After Breakout",
+    "orb_retest_5m": "ORB Retest Continuation (STRAT-02)",
     "pullback_15m": "EMA Pullback Continuation",
     "volexp_1h": "Bollinger Squeeze Breakout (1h)",
     "gapgo_15m": "Gap and Go",
@@ -69,8 +69,8 @@ ENTRY_RULES = {
                          "resumed above the prior bar's high",
     "cpr_breakout_15m": "Close crossed above the prior day's CPR top with "
                         "volume >= 1.5x its 20-bar average",
-    "first_pullback_15m": "First pullback after the opening-range breakout "
-                          "held the level, then price resumed above its high",
+    "orb_retest_5m": "A sufficiently extended opening break retested and "
+                     "held the boundary, then resumed on renewed RVOL",
     "pullback_15m": "In an EMA20>EMA50 uptrend, price dipped to the fast EMA "
                     "and closed back above it",
     "volexp_1h": "Bollinger bandwidth was compressed for 3 bars and price "

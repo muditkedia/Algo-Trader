@@ -1,9 +1,9 @@
 """Backtest the four retained Phase-15 strategies on the 15m store.
 
-The retired ``orb_15m`` is deliberately absent. Its frozen reports remain
-historical evidence, while the canonical ``orb_5m`` requires cross-sectional
-and NIFTY context supplied by the production orchestrator and must not be
-mislabelled as the old baseline.
+The retired ``orb_15m`` and ``first_pullback_15m`` are deliberately absent.
+Their frozen reports remain historical evidence, while canonical STRAT-01/02
+require cross-sectional and NIFTY context supplied by the production
+orchestrator and must not be mislabelled as the old baselines.
 
 Identical capital / brokerage / slippage / risk limits for all five, through the
 uniform risk engine (ATR stop, chandelier trail, session square-off). Produces
@@ -31,7 +31,7 @@ from algo.evidence.database import EvidenceDB, MEMORY
 from algo.research.engine import ResearchEngine
 from algo.research.validation import metrics
 from algo.strategies.library import (
-    CprBreakout, FirstPullbackAfterBreakout, VwapPullback,
+    CprBreakout, VwapPullback,
     VwapTrendContinuation,
 )
 
@@ -44,7 +44,6 @@ STRATEGIES = [
     ("vwap_pullback_15m", VwapPullback),
     ("vwap_15m", VwapTrendContinuation),
     ("cpr_breakout_15m", CprBreakout),
-    ("first_pullback_15m", FirstPullbackAfterBreakout),
 ]
 
 

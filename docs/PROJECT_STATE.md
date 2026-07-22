@@ -1,6 +1,25 @@
 # Project State
 
-_Last updated: 2026-07-22 (WebSocket market data: local candle engine)_
+_Last updated: 2026-07-23 (STRAT-02 canonical replacement)_
+
+## STRAT-02 canonical replacement complete (2026-07-23)
+
+The retired `first_pullback_15m` approximation has been replaced by
+`orb_retest_5m`, the bidirectional 5-minute STRAT-02 state machine. It tracks
+the buffered initial break, minimum wave extension, boundary retest, depth and
+duration invalidation, continuation trigger, regime/confidence scoring,
+grade-dependent target, and active-only STRAT-01 conflict rule. Strategy state
+is reconstructed causally from completed bars for deterministic restart
+behavior.
+
+Shared opening-session context now lives in `algo.strategies.opening_context`.
+Execution declarations support directional structural stop and R-multiple
+columns, strategy-specific priority weights, and active-only conflict groups.
+Full detail and deviations are in `docs/STRAT02_ORB_RETEST_5M.md`.
+
+Validation: Python compilation succeeded and the complete suite passed with
+791 tests. Both `orb_5m` and `orb_retest_5m` passed the full exit matrix and all
+12 registered strategies participated in scanning.
 
 ## STRAT-01 canonical replacement complete (2026-07-22)
 
@@ -32,7 +51,8 @@ forbid overnight holding. Historical research reports and the generic research
 framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
-STRAT-01 is complete. STRAT-02 must not begin until separately approved.
+STRAT-01 and STRAT-02 are complete. Sequential implementation continues with
+STRAT-03.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

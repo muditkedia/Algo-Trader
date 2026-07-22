@@ -17,8 +17,9 @@ from algo.execution import ExecutionSpec, execute_signal
 from algo.research.validation import metrics
 from algo.risk.engine import RiskParams
 from algo.strategies.library import (
-    CprBreakout, CprReversal, FirstPullbackAfterBreakout, GapAndGo,
+    CprBreakout, CprReversal, GapAndGo,
     InsideBarBreakout, Nr7Intraday, OpeningRangeBreakout,
+    OpeningRangeRetest,
     PullbackContinuation15m, SupertrendContinuation, VolatilityExpansionBreakout1h,
     VwapPullback, VwapTrendContinuation,
 )
@@ -28,7 +29,7 @@ PARAMS = RiskParams()
 
 INTRADAY_STRATEGIES = [
     OpeningRangeBreakout, VwapTrendContinuation, VwapPullback, CprBreakout,
-    FirstPullbackAfterBreakout, PullbackContinuation15m,
+    OpeningRangeRetest, PullbackContinuation15m,
     VolatilityExpansionBreakout1h, GapAndGo, InsideBarBreakout,
     SupertrendContinuation, CprReversal, Nr7Intraday,
 ]

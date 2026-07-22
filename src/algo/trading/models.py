@@ -83,6 +83,8 @@ class Order:
     atr_at_entry: float = 0.0
     structural_stop: float = 0.0
     exclusive_group: str = ""
+    active_conflict_group: str = ""
+    entry_target_r: float = 0.0
     last_managed_bar: str = ""
 
     def to_dict(self) -> dict:
@@ -139,6 +141,7 @@ class Position:
     highest_since_entry: float = 0.0
     lowest_since_entry: float = 0.0
     exclusive_group: str = ""
+    active_conflict_group: str = ""
     last_managed_bar: str = ""
 
     def __post_init__(self) -> None:

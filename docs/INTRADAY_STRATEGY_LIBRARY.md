@@ -13,7 +13,7 @@ registers **12 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **12** | 1 × 5m, 10 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **12** | 2 × 5m, 9 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -76,7 +76,7 @@ them; the other two declare their pre-reset profile as their own):
 | `vwap_15m` | the dip's low (4-bar session low) | 2R | none |
 | `vwap_pullback_15m` | just below VWAP (level at entry) | 2R | none |
 | `cpr_breakout_15m` | below the CPR bottom | floor-pivot R1 (50% partial, stop→breakeven) then R2 | none |
-| `first_pullback_15m` | below the first pullback's low | 2R | none |
+| `orb_retest_5m` | beyond retest pivot by 0.2 ATR, capped at 1.25 ATR | 1.5R (1.0R Grade C), 50% | breakeven then post-partial 2 ATR chandelier |
 | `pullback_15m` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
 | `volexp_1h` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
 | `gapgo_15m` | below the first bar's low | 2R | none |
@@ -257,7 +257,18 @@ contract and documented market-data substitutions are in
     §4; reports as §2.1.
 12. **Complete or incomplete:** **complete** under its owned execution declaration.
 
-### 2.5 First Pullback After Breakout — `first_pullback_15m`
+### 2.5 ORB Retest Continuation — `orb_retest_5m`
+
+The canonical STRAT-02 implementation is bidirectional and operates on
+5-minute bars. It reconstructs a deterministic breakout/retest state machine,
+requires a 0.5 ATR initial wave, bounds retest depth and duration, and enters
+only after a directional continuation trigger passes VWAP, same-slot RVOL,
+regime, confidence, liquidity, NATR, and time gates. Execution uses a collared
+confirmed fill, directional retest-pivot stop, grade-dependent partial,
+breakeven, chandelier, structural invalidation, stagnation, and square-off.
+See `docs/STRAT02_ORB_RETEST_5M.md`.
+
+#### Retired `first_pullback_15m` record (legacy evidence only)
 
 1. **Strategy name:** First Pullback After Breakout (a.k.a. first pullback /
    breakout-retest continuation).
@@ -289,7 +300,7 @@ contract and documented market-data substitutions are in
     baseline #5); backtested (Phases 15/17) — best-ranked of the five on nearly
     every axis in the Phase-15 comparison. Evidence status `rejected`; not
     paper-traded.
-11. **Files:** `src/algo/strategies/library/first_pullback_15m.py`; spec
+11. **Legacy files:** retired `first_pullback_15m.py` in git history; spec
     `research/INTRADAY_PRODUCTION_BATCH1.md` §5; reports as §2.1.
 12. **Complete or incomplete:** **complete** under its owned execution declaration.
 
@@ -484,12 +495,12 @@ live order path exists in the repository at all (paper simulation only), so
 | 5 | CPR Reversal | **Yes** (`cpr_reversal_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 6 | Opening Drive | **No** | No | No | No | Strategy module (strong directional move from the open, e.g. first-bar marubozu/momentum) |
 | 7 | Gap and Go | **Yes** (`gapgo_15m`, added 2026-07-19) | Not yet | No | No | — |
-| 8 | First Pullback | **Yes** (`first_pullback_15m`) | Yes | No | No | — |
+| 8 | First Pullback | **No** | No | No | No | Retired approximation; superseded by canonical STRAT-02 OR-boundary retest |
 | 9 | Initial Balance Breakout | **No** | No | No | No | Separate STRAT-06 implementation required; `orb_5m` is not parameterized as an IB substitute |
 | 10 | NR7 Intraday | **Yes** (`nr7_intraday_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 11 | Inside Bar Breakout | **Yes** (`insidebar_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 12 | Volume Breakout | **No** | No | No | No | Strategy module (price break of recent high on volume surge, intraday). `volume_ratio` + breakout helpers exist |
-| 13 | ORB Retest | **Partial** | Via §2.5 | No | No | `first_pullback_15m` covers hold-above-OR + resume; a literal retest-touch entry at the OR high is not implemented |
+| 13 | ORB Retest | **Yes** (`orb_retest_5m`) | Yes | Yes | Yes | STRAT-02 complete; sector cap awaits metadata |
 | 14 | Trendline Break | **No** | No | No | No | Swing-point detection + trendline fitting (nothing exists); strategy module |
 | 15 | EMA Pullback | **Yes** (`pullback_15m`) | Yes | No | No | — |
 | 16 | Supertrend Continuation | **Yes** (`supertrend_15m`, added 2026-07-19) | Not yet | No | No | — (`supertrend` indicator now in `core/indicators`) |

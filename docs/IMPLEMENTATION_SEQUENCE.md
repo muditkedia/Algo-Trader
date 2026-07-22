@@ -88,10 +88,10 @@ order can be changed at review):
 | Batch | Strategy | Core practitioner items (guide ref) |
 |---|---|---|
 | 3.1 | `orb_5m` **complete** | STRAT-01: bidirectional 5m OR, same-slot RVOL, regime/confidence gates, collared fill, partial/BE/chandelier |
-| 3.2 | `vwap_pullback_15m` | first/second-test cap (F8), VWAP slope, volume signature, index alignment, window |
+| 3.2 | `orb_retest_5m` **complete** | STRAT-02: wave-extension/retest state, depth/time invalidation, directional pivot stop, grade target |
 | 3.3 | `cpr_breakout_15m` | narrow-CPR gate + two-day relation + gap context (F10/F3), RVOL, index alignment, morning window |
 | 3.4 | `vwap_15m` | slope requirement, reclaim cap, range-day rejection, index alignment, window |
-| 3.5 | `first_pullback_15m` | 1–3-bar flag completion, depth/duration caps, volume signature, RVOL, alignment, window |
+| 3.5 | retired `first_pullback_15m` | Superseded by completed STRAT-02 `orb_retest_5m`; no duplicate implementation retained |
 | 3.6 | `pullback_15m` | trend-strength gate (F13), overextension rejection, alignment, window |
 | 3.7 | `volexp_1h` | relative bandwidth (F12), direction filter, volume gate, VIX regime |
 

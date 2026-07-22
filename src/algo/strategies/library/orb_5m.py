@@ -27,9 +27,9 @@ from algo.core.indicators import (
 from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
-from algo.strategies.cross_section import align_metric, scatter_series
-
-IST = "Asia/Kolkata"
+from algo.strategies.opening_context import (
+    add_opening_market_context, local_dates, prior_session_metrics,
+)
 
 
 @dataclass(frozen=True)
@@ -61,61 +61,12 @@ class OrbParams:
         return from_dict(cls, data)
 
 
-def _local_dates(frame: pd.DataFrame) -> pd.Series:
-    dates = pd.to_datetime(frame["date"])
-    return dates.dt.tz_convert(IST) if dates.dt.tz is not None else dates
-
-
-def _prior_session_metrics(frame: pd.DataFrame) -> tuple[pd.Series, pd.Series,
-                                                          pd.Series, pd.Series]:
-    """Prior close, ADT20, opening-gap ratio, and daily NATR.
-
-    Every value mapped onto an intraday row is based on completed sessions.
-    The specification names its eligibility measure ``NATR20`` while defining
-    it as daily ATR(14) divided by close, so the calculation follows that
-    formula and retains the specification's column name.
-    """
-    local = _local_dates(frame)
-    day = local.dt.normalize()
-    work = frame.assign(_day=day.to_numpy())
-    daily = work.groupby("_day").agg(
-        open=("open", "first"), high=("high", "max"),
-        low=("low", "min"), close=("close", "last"),
-        traded_value=("volume", "sum"))
-    # Daily turnover uses the completed session close as the price proxy.
-    daily["traded_value"] *= daily["close"]
-    prior_close = daily["close"].shift(1)
-    adt20 = daily["traded_value"].shift(1).rolling(20, min_periods=20).mean()
-    gap = daily["open"] / prior_close - 1.0
-    gap_std = gap.shift(1).rolling(20, min_periods=20).std(ddof=0)
-    gap_ratio = gap.abs() / gap_std.replace(0.0, np.nan)
-    natr20 = (atr(daily, 14) / daily["close"] * 100.0).shift(1)
-    return (day.map(prior_close), day.map(adt20), day.map(gap_ratio),
-            day.map(natr20))
-
-
-def _completed_15m_trend(index_frame: pd.DataFrame) -> pd.DataFrame:
-    """Causal NIFTY 15-minute EMA trend stamped at each completed third bar."""
-    if index_frame.empty:
-        return pd.DataFrame(columns=["date", "nifty_trend"])
-    raw = index_frame.copy().reset_index(drop=True)
-    local = _local_dates(raw)
-    raw["_day"] = local.dt.normalize().to_numpy()
-    raw["_bucket"] = raw.groupby("_day").cumcount() // 3
-    grouped = raw.groupby(["_day", "_bucket"], sort=True)
-    bars = grouped.agg(date=("date", "last"), close=("close", "last"),
-                       count=("close", "size")).reset_index(drop=True)
-    bars = bars[bars["count"] == 3].copy()
-    bars["nifty_trend"] = np.where(ema(bars["close"], 9) > ema(
-        bars["close"], 20), 1.0, -1.0)
-    return bars[["date", "nifty_trend"]].sort_values("date")
-
-
 class OpeningRangeBreakout(StrategyProfile):
 
     meta = StrategyMeta(
         name="orb_5m", version="2.0.0", spec_id="STRAT-01",
         exclusive_group="opening_breakout", direction=Direction.BOTH,
+        active_conflict_group="opening_or_retest",
         holding_scope=HoldingScope.INTRADAY, timeframe="5m", min_bars=1502,
         required_columns=(
             "close", "or_high", "or_low", "or_mid", "after_range", "atr",
@@ -173,10 +124,10 @@ class OpeningRangeBreakout(StrategyProfile):
             ema(df["close"], 9), ema(df["close"], 20), ema(df["close"], 50))
         df["vwap"] = session_vwap(df)
         df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
-        prior_close, adt20, gap_ratio, natr20 = _prior_session_metrics(df)
+        prior_close, adt20, gap_ratio, natr20 = prior_session_metrics(df)
         df["prior_close"], df["adt20"], df["gap_ratio"], df["natr20"] = (
             prior_close, adt20, gap_ratio, natr20)
-        local = _local_dates(df)
+        local = local_dates(df)
         day = local.dt.normalize()
         first_rvol = df["rvol"].where(~after).groupby(day).transform("first")
         df["opening_rvol"] = first_rvol
@@ -188,49 +139,9 @@ class OpeningRangeBreakout(StrategyProfile):
     def prepare_context(self, frames: dict, context: dict) -> dict:
         if not frames:
             return frames
-        nifty = context.get("NIFTY50", pd.DataFrame())
-        nifty_exact = pd.DataFrame()
-        if not nifty.empty:
-            nifty_exact = nifty[["date"]].copy()
-            nifty_exact["nifty_vwap"] = session_vwap(nifty)
-            nifty_exact["nifty_close"] = nifty["close"].to_numpy()
-            nifty_exact = nifty_exact.sort_values("date")
-        trend = _completed_15m_trend(nifty)
-
-        close_wide = align_metric(frames, "close")
-        prior_wide = align_metric(frames, "prior_close")
-        above_wide = align_metric(frames, "vwap")
-        if not close_wide.empty:
-            advances = (close_wide > prior_wide).sum(axis=1)
-            declines = (close_wide < prior_wide).sum(axis=1)
-            ad_ratio = advances / declines.replace(0, np.nan)
-            ad_ratio = ad_ratio.where(
-                declines > 0, np.where(advances > 0, np.inf, np.nan))
-            above_vwap = (close_wide > above_wide).mean(axis=1)
-        else:
-            ad_ratio = above_vwap = pd.Series(dtype=float)
-
+        add_opening_market_context(frames, context)
         for df in frames.values():
-            merged = df.sort_values("date").copy()
-            if not nifty_exact.empty:
-                merged = merged.merge(nifty_exact, on="date", how="left")
-            else:
-                merged["nifty_vwap"] = np.nan
-                merged["nifty_close"] = np.nan
-            if not trend.empty:
-                merged = pd.merge_asof(merged.sort_values("date"), trend,
-                                       on="date", direction="backward")
-            else:
-                merged["nifty_trend"] = np.nan
-            merged["ad_ratio"] = ad_ratio.reindex(
-                merged["date"]).to_numpy() if not ad_ratio.empty else np.nan
-            merged["breadth_above_vwap"] = above_vwap.reindex(
-                merged["date"]).to_numpy() if not above_vwap.empty else np.nan
-            self._add_scores(merged)
-            # Preserve the original caller's object identity contract.
-            df.drop(columns=list(df.columns), inplace=True)
-            for col in merged.columns:
-                df[col] = merged[col].to_numpy()
+            self._add_scores(df)
         return frames
 
     def _add_scores(self, df: pd.DataFrame) -> None:

@@ -54,6 +54,10 @@ class PortfolioEngine:
                    and t.get("session") == session
                    for t in self.closed_trades)
 
+    def has_active_conflict(self, symbol: str, group: str) -> bool:
+        return any(p.symbol == symbol and p.active_conflict_group == group
+                   for p in self.open_positions())
+
     def deployed_capital(self) -> float:
         return sum(p.entry_price * p.open_quantity for p in self.open_positions())
 
@@ -105,6 +109,7 @@ class PortfolioEngine:
             "exit_ts": now_iso(), "session": position.session,
             "direction": position.direction,
             "exclusive_group": position.exclusive_group,
+            "active_conflict_group": position.active_conflict_group,
         }
         self.closed_trades.append(record)
         self.persist()

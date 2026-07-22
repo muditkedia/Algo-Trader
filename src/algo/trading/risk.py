@@ -205,6 +205,12 @@ class AccountRiskEngine:
             return RiskDecision(
                 False, f"session suppression: {signal.symbol}/"
                        f"{signal.exclusive_group} already executed")
+        if (signal.active_conflict_group
+                and portfolio.has_active_conflict(
+                    signal.symbol, signal.active_conflict_group)):
+            return RiskDecision(
+                False, f"active conflict: {signal.symbol}/"
+                       f"{signal.active_conflict_group} already held")
 
         # position-sizing validation: the sizer applies every constraint, so
         # an entry is tradeable exactly when it yields a non-zero quantity

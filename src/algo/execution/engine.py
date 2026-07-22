@@ -80,7 +80,9 @@ def _initial_stop(bars: pd.DataFrame, i: int, entry: float,
     """The strategy's declared initial stop PRICE, or None (not tradeable)."""
     is_long = direction == Direction.LONG
     if spec.stop_kind in ("column", "column_atr_cap"):
-        level = float(bars[spec.stop_col].iloc[i])
+        stop_col = (spec.stop_long_col if is_long else spec.stop_short_col) \
+            or spec.stop_col
+        level = float(bars[stop_col].iloc[i])
         if not np.isfinite(level):
             return None
         if spec.stop_kind == "column_atr_cap":
@@ -108,8 +110,13 @@ def _target(bars: pd.DataFrame, i: int, entry: float, stop: float,
         risk = abs(entry - stop)
         if risk <= 0:
             return None
-        return (entry + spec.target_r * risk if direction == Direction.LONG
-                else entry - spec.target_r * risk)
+        r_col = (spec.target_r_long_col if direction == Direction.LONG
+                 else spec.target_r_short_col)
+        r_multiple = (float(bars[r_col].iloc[i]) if r_col else spec.target_r)
+        if not np.isfinite(r_multiple) or r_multiple <= 0:
+            return None
+        return (entry + r_multiple * risk if direction == Direction.LONG
+                else entry - r_multiple * risk)
     level = float(bars[spec.target_col].iloc[i])
     valid = level > entry if direction == Direction.LONG else level < entry
     return level if np.isfinite(level) and valid else None

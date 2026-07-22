@@ -44,6 +44,9 @@ class StrategyMeta:
     #: Strategies in the same group may suppress later signals on a symbol for
     #: the rest of the session after one executes.
     exclusive_group: str = ""
+    #: Signals sharing this group cannot coexist on the same symbol, but a
+    #: later setup may trade after the earlier position has closed.
+    active_conflict_group: str = ""
     #: Indicator columns the entry_signal needs; the missing-column guard uses
     #: this, and the research engine records it as the strategy's contract.
     required_columns: tuple = ()
@@ -193,6 +196,10 @@ class StrategyProfile(ABC):
                      direction: Direction) -> float:
         """Directional regime score normalized to [0, 1]."""
         return 0.0
+
+    def priority_score(self, confidence: float, regime: float) -> float:
+        """Portfolio ranking metric; strategies may override spec weights."""
+        return 0.60 * confidence + 0.40 * regime
 
     def entry_trigger(self, dataframe: pd.DataFrame, index: int,
                       direction: Direction) -> float:
