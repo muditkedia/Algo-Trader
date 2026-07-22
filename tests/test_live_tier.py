@@ -18,9 +18,13 @@ import pytest
 from algo.data.store import MarketDataStore
 from algo.trading.clock import IST
 from algo.trading.config import TradingConfig
-from algo.trading.engine import ProductionEngine
+from algo.trading.engine import (
+    FRESH, PARTIAL, STALE, UPDATE_IN_PROGRESS, ProductionEngine,
+)
+from algo.trading.freshness import FreshnessReport, SymbolFreshness
 from algo.marketdata import MarketState
 from algo.marketdata import NullSource, Quote
+from algo.marketdata.service import PollReport
 from algo.trading.models import Position
 
 OPEN_AT = datetime(2026, 7, 20, 11, 7, tzinfo=IST)      # Monday, mid-session
@@ -66,6 +70,15 @@ def _add(engine, **kw):
 
 def _read(engine, name):
     return json.loads((engine.exporter.dir / f"{name}.json").read_text())["data"]
+
+
+def _controlled_polls(monkeypatch, engine, reports, progress):
+    """Drive the engine with explicit scheduler outcomes for lifecycle tests."""
+    polls = iter(reports)
+    monkeypatch.setattr(engine.marketdata, "poll",
+                        lambda **kwargs: next(polls))
+    monkeypatch.setattr(engine.scheduler, "pass_progress",
+                        lambda timeframe: dict(progress))
 
 
 # ============================================================== §6 the tiers
@@ -166,6 +179,194 @@ def test_a_broken_exporter_cannot_stop_a_cycle(engine):
     engine.clock.past_squareoff = lambda at=None: True
     engine.run_cycle("15m", scan=False)          # must not raise
     assert engine.portfolio.open_count() == 0, "square-off was skipped"
+
+
+# ================================================ freshness lifecycle
+
+def test_an_active_scheduler_pass_does_not_publish_stale(engine, monkeypatch):
+    previous = engine.state.freshness("15m", clock=engine.clock)
+    engine.freshness["15m"] = previous
+    progress = {"expected_bar": "bar-1", "total": 99, "served": 1,
+                "failed": 0, "pending": 98}
+    _controlled_polls(
+        monkeypatch, engine,
+        [PollReport(sent=1, due_timeframes=["15m"])], progress)
+    freshness_calls = []
+    monkeypatch.setattr(
+        engine.state, "freshness",
+        lambda *args, **kwargs: freshness_calls.append(1) or previous)
+
+    engine.tick()
+
+    assert freshness_calls == []
+    assert engine.freshness["15m"] is previous
+    assert engine.update_status["15m"] == UPDATE_IN_PROGRESS
+    assert engine.update_snapshot("15m")["pending"] == 98
+    assert not any(e.get("kind") == "stale"
+                   for e in engine.events.read_day())
+
+
+def test_management_cycle_preserves_report_while_scheduler_is_pending(
+        engine, monkeypatch):
+    previous = engine.state.freshness("15m", clock=engine.clock)
+    engine.freshness["15m"] = previous
+    progress = {"expected_bar": "bar-1", "total": 99, "served": 1,
+                "failed": 0, "pending": 98}
+    monkeypatch.setattr(engine.scheduler, "pending_count", lambda tf: 98)
+    monkeypatch.setattr(engine.scheduler, "pass_progress",
+                        lambda timeframe: dict(progress))
+    freshness_calls = []
+    monkeypatch.setattr(
+        engine.state, "freshness",
+        lambda *args, **kwargs: freshness_calls.append(1) or previous)
+
+    engine.run_cycle("15m", scan=False, export=False)
+
+    assert freshness_calls == []
+    assert engine.freshness["15m"] is previous
+    assert engine.update_status["15m"] == UPDATE_IN_PROGRESS
+
+
+def test_freshness_is_evaluated_once_when_the_pass_completes(
+        engine, monkeypatch):
+    previous = engine.state.freshness("15m", clock=engine.clock)
+    engine.freshness["15m"] = previous
+    progress = {"expected_bar": "bar-1", "total": 99, "served": 1,
+                "failed": 0, "pending": 98}
+    _controlled_polls(
+        monkeypatch, engine,
+        [PollReport(sent=1, due_timeframes=["15m"]),
+         PollReport(sent=1, due_timeframes=["15m"], completed=["15m"])],
+        progress)
+    original = engine.state.freshness
+    calls = []
+    monkeypatch.setattr(
+        engine.state, "freshness",
+        lambda *args, **kwargs: calls.append(1) or original(*args, **kwargs))
+
+    engine.tick()
+    assert calls == []
+    progress.update(served=99, pending=0)
+    engine.tick()
+
+    assert len(calls) == 1
+    assert engine.update_status["15m"] == FRESH
+
+
+def test_partial_deadline_release_publishes_partial_once(engine, monkeypatch):
+    progress = {"expected_bar": "bar-1", "total": 99, "served": 97,
+                "failed": 0, "pending": 2}
+    monkeypatch.setattr(engine.scheduler, "pending_count", lambda tf: 2)
+    _controlled_polls(
+        monkeypatch, engine,
+        [PollReport(sent=1, due_timeframes=["15m"], completed=["15m"]),
+         PollReport(due_timeframes=["15m"])],
+        progress)
+    original = engine.state.freshness
+    calls = []
+    monkeypatch.setattr(
+        engine.state, "freshness",
+        lambda *args, **kwargs: calls.append(1) or original(*args, **kwargs))
+
+    engine.tick()
+
+    assert len(calls) == 1
+    assert engine.update_status["15m"] == PARTIAL
+    snapshot = engine.update_snapshot("15m")
+    assert snapshot["pending"] == 2
+    assert "PARTIAL" in snapshot["headline"]
+    events = engine.events.read_day()
+    assert any(e.get("kind") == "partial" and
+               e.get("pending") == 2 for e in events)
+    assert not any(e.get("kind") == "stale" for e in events)
+
+    engine.tick()
+    assert len(calls) == 1
+    assert engine.update_status["15m"] == UPDATE_IN_PROGRESS
+
+
+def test_genuine_stale_data_still_publishes_stale(engine, monkeypatch):
+    stale = FreshnessReport(
+        timeframe="15m", market_open=True,
+        expected_bar=pd.Timestamp("2026-07-20 10:45", tz="UTC"),
+        symbols=[SymbolFreshness(symbol="RELIANCE", status=STALE,
+                                  bars_behind=3)])
+    monkeypatch.setattr(engine.state, "freshness", lambda *a, **k: stale)
+    progress = {"expected_bar": "bar-1", "total": 1, "served": 1,
+                "failed": 0, "pending": 0}
+    _controlled_polls(
+        monkeypatch, engine,
+        [PollReport(sent=1, due_timeframes=["15m"], completed=["15m"])],
+        progress)
+
+    engine.tick()
+
+    assert engine.freshness["15m"] is stale
+    assert engine.update_status["15m"] == STALE
+    assert any(e.get("kind") == "stale" and e.get("state") == STALE
+               for e in engine.events.read_day())
+
+
+def test_scanner_remains_gated_until_a_completed_pass(engine, monkeypatch):
+    scans = []
+    monkeypatch.setattr(engine.orchestrator, "evaluate",
+                        lambda timeframe: scans.append(timeframe) or [])
+    progress = {"expected_bar": "bar-1", "total": 99, "served": 1,
+                "failed": 0, "pending": 98}
+    _controlled_polls(
+        monkeypatch, engine,
+        [PollReport(sent=1, due_timeframes=["15m"]),
+         PollReport(sent=1, due_timeframes=["15m"], completed=["15m"])],
+        progress)
+
+    engine.tick()
+    assert scans == []
+    progress.update(served=99, pending=0)
+    engine.tick()
+
+    assert scans == ["15m"]
+
+
+def test_risk_management_continues_during_update(engine, monkeypatch):
+    managed = []
+    monkeypatch.setattr(engine, "_manage_open",
+                        lambda timeframe: managed.append(timeframe))
+    progress = {"expected_bar": "bar-1", "total": 99, "served": 1,
+                "failed": 0, "pending": 98}
+    _controlled_polls(
+        monkeypatch, engine,
+        [PollReport(sent=1, due_timeframes=["15m"])], progress)
+
+    engine.tick()
+
+    assert managed == ["15m"]
+
+
+def test_dashboard_retains_previous_freshness_during_update(
+        engine, monkeypatch):
+    previous = engine.state.freshness("15m", clock=engine.clock)
+    engine.freshness["15m"] = previous
+    progress = {"expected_bar": "bar-1", "total": 99, "served": 1,
+                "failed": 0, "pending": 98}
+    _controlled_polls(
+        monkeypatch, engine,
+        [PollReport(sent=1, due_timeframes=["15m"])], progress)
+    monkeypatch.setattr(
+        engine.state, "freshness",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("dashboard recomputed freshness")))
+
+    engine.tick()
+    engine.exporter.export()
+
+    live = _read(engine, "live")
+    market = _read(engine, "marketdata")
+    assert live["update_status"] == UPDATE_IN_PROGRESS
+    assert live["freshness_status"] == previous.status
+    assert market["update_status"] == UPDATE_IN_PROGRESS
+    assert market["feed_status"] == UPDATE_IN_PROGRESS
+    assert market["pending_symbols"] == 98
+    assert market["freshness_status"] == previous.status
 
 
 def _quoting(engine, prices, fail=False):

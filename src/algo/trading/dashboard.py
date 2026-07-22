@@ -289,6 +289,9 @@ class DashboardExporter:
         e = self.engine
         risk = e.risk.risk_state(e.portfolio)          # THE source of truth
         fresh = self._freshness()
+        update = self._update_snapshot()
+        lifecycle = update.get("state")
+        active = lifecycle in {"UPDATE_IN_PROGRESS", "PARTIAL"}
         quote_ts = getattr(e, "quote_ts", None)
         quoted = getattr(e, "quote_prices", {}) or {}
         rows = []
@@ -330,8 +333,15 @@ class DashboardExporter:
             "quotes_live": bool(quoted),
             "quote_age_seconds": (None if quote_ts is None else round(
                 (pd.Timestamp.now(tz="UTC") - quote_ts).total_seconds(), 1)),
-            "data_status": (fresh.status if fresh is not None else "UNKNOWN"),
-            "data_headline": (fresh.headline() if fresh is not None else ""),
+            "data_status": (lifecycle if active else
+                            (fresh.status if fresh is not None else
+                             lifecycle or "UNKNOWN")),
+            "data_headline": (update.get("headline", "") if active else
+                              (fresh.headline() if fresh is not None else
+                               update.get("headline", ""))),
+            "freshness_status": (fresh.status if fresh is not None else None),
+            "update_status": lifecycle,
+            "update_progress": update,
             "data_age_seconds": self._data_age_seconds(fresh),
         }
 
@@ -399,6 +409,7 @@ class DashboardExporter:
         now = clock.now()
         market_open = clock.is_open(now)
         halted = e.risk.tripped or e.risk.emergency_stop_requested()
+        update = self._update_snapshot()
         return {
             "engine_running": True,
             "mode": e.config.mode,
@@ -416,6 +427,8 @@ class DashboardExporter:
             # reflect whether candles are actually arriving (D-038)
             "data_feed_connected": bool(e.state.symbols) and self._feed_ok(),
             "data_feed_status": self._market_data()["status"],
+            "update_status": update.get("state"),
+            "update_progress": update,
             "scanner_status": ("HALTED" if halted else
                                ("SCANNING" if market_open else "IDLE")),
             "scheduler_status": "ACTIVE" if market_open else "IDLE",
@@ -465,6 +478,13 @@ class DashboardExporter:
     def _primary_timeframe(self) -> str:
         return self._timeframes()[0]
 
+    def _update_snapshot(self) -> dict:
+        """Read engine-owned scheduler lifecycle data, if available."""
+        try:
+            return self.engine.update_snapshot(self._primary_timeframe()) or {}
+        except Exception:              # observation must never raise
+            return {}
+
     def _feed_ok(self) -> bool:
         """True when the last pass actually served the watchlist."""
         try:
@@ -485,6 +505,11 @@ class DashboardExporter:
         if report is not None:
             self._fallback_fresh = None      # the engine is producing them now
             return report
+        if self._update_snapshot().get("state") in {
+                "UPDATE_IN_PROGRESS", "PARTIAL"}:
+            # No completed report exists yet. Measuring here would recreate
+            # the exact transient stale diagnosis the engine suppresses.
+            return None
         assess = self.engine.state.freshness
         # The fallback reads every watchlist symbol's newest bar, so it is
         # O(universe) - fine once at startup, ruinous at the fast tier's
@@ -514,6 +539,9 @@ class DashboardExporter:
         e = self.engine
         tf = self._primary_timeframe()
         fresh = self._freshness()
+        update = self._update_snapshot()
+        lifecycle = update.get("state")
+        active = lifecycle in {"UPDATE_IN_PROGRESS", "PARTIAL"}
         mapping = self._token_mapping()
         refresh = e.state.diagnosis(tf)
         success = e.state.last_update.get(tf)
@@ -531,6 +559,10 @@ class DashboardExporter:
                                        else success.isoformat()),
             "last_successful_update_ist": _ist(success),
             "feed_status": "PENDING",
+            "freshness_status": None,
+            "update_status": lifecycle,
+            "update_progress": update,
+            "pending_symbols": int(update.get("pending", 0)),
             "headline": refresh.get("headline", ""),
             "stale_examples": [], "missing_examples": [],
             "worst_bars_behind": 0, "newest_bar": None, "expected_bar": None,
@@ -543,6 +575,7 @@ class DashboardExporter:
                 "missing_symbols": data["missing"],
                 "stale_symbols": data["stale"],
                 "feed_status": data["status"],
+                "freshness_status": data["status"],
                 "headline": data["headline"],
                 "stale_examples": data["stale_symbols"][:10],
                 "missing_examples": data["missing_symbols"][:10],
@@ -551,7 +584,11 @@ class DashboardExporter:
                 "expected_bar": data["expected_bar"],
                 "market_open": data["market_open"],
             })
-        if out["failed_fetches"]:
+        if active:
+            out["feed_status"] = lifecycle
+            out["headline"] = update.get("headline", "")
+            out["pending_symbols"] = int(update.get("pending", 0))
+        elif out["failed_fetches"]:
             out["feed_status"] = "UNABLE TO FETCH"
         return out
 
@@ -568,6 +605,16 @@ class DashboardExporter:
         blocked = [s for s in states.values() if not s.get("ok", True)]
         primary = states.get(self._primary_timeframe()) or \
             (next(iter(states.values())) if states else None)
+        update = self._update_snapshot()
+        lifecycle = update.get("state")
+        if lifecycle in {"UPDATE_IN_PROGRESS", "PARTIAL"}:
+            return {
+                "status": lifecycle,
+                "headline": update.get("headline", ""),
+                "reasons": {}, "examples": [], "timeframes": states,
+                "update_progress": update,
+                "pipeline": self._pipeline(),
+            }
         if primary is None:
             return {"status": "PENDING", "headline": "No pass yet.",
                     "timeframes": {}}
@@ -581,6 +628,7 @@ class DashboardExporter:
         return {"status": ("OFFLINE" if primary.get("offline") else "OK"),
                 "headline": primary.get("headline", ""),
                 "reasons": {}, "examples": [], "timeframes": states,
+                "update_progress": update,
                 # the pipeline's own numbers: queue depth, rate headroom and
                 # per-timeframe due state, so the operator can see WHY data is
                 # or is not arriving rather than only that it did not

@@ -26,6 +26,7 @@ data actually arrived.
 
 from __future__ import annotations
 
+import time
 from typing import List, Optional
 
 import pandas as pd
@@ -51,6 +52,12 @@ from algo.trading.risk import AccountRiskEngine
 from algo.trading.trademanager import TradeManager
 
 logger = get_logger("trading.engine")
+
+
+UPDATE_IN_PROGRESS = "UPDATE_IN_PROGRESS"
+FRESH = "FRESH"
+PARTIAL = "PARTIAL"
+STALE = "STALE"
 
 
 def load_intraday_strategies() -> list:
@@ -108,6 +115,11 @@ class ProductionEngine:
         #: latest FreshnessReport per timeframe - THE data-age source read by
         #: the health beat and the dashboard alike
         self.freshness: dict = {}
+        #: scheduler lifecycle is separate from the last completed freshness
+        #: report. An active pass must not replace that report with a transient
+        #: partial view of the market.
+        self.update_status: dict = {}
+        self.update_progress: dict = {}
         self._fresh_state: dict = {}
         self._last_keepalive = pd.Timestamp.now(tz="UTC")
         # read-only observability: writes JSON snapshots for the dashboard.
@@ -229,13 +241,20 @@ class ProductionEngine:
         self._keepalive_if_due()
         held = [p.symbol for p in self.portfolio.open_positions()]
         report = self.marketdata.poll(held=held)
+        self._update_progress_from_poll(report)
         results = []
         for tf in report.completed:
-            results.append(self.run_cycle(tf))
+            progress = self.scheduler.pass_progress(tf)
+            lifecycle = (PARTIAL if progress.get("pending", 0) > 0
+                         else FRESH)
+            results.append(self.run_cycle(tf, update_state=lifecycle))
         if not results:
             # no bar completed: still manage and protect existing risk
             results.append(self.run_cycle(self.timeframes[0], scan=False,
-                                          export=False))
+                                          export=False,
+                                          refresh_freshness=False,
+                                          update_state=self.update_status.get(
+                                              self.timeframes[0])))
         # Mark to the live quote LAST. A cycle marks from completed bars (which
         # is what every decision reads); the quote is newer and display-only,
         # so it must land after, or the panel shows a bar-old price while a
@@ -245,6 +264,8 @@ class ProductionEngine:
         opened = sum(r["opened"] for r in results)
         return {"due": list(report.completed), "opened": opened,
                 "poll": report.to_dict(),
+                "updates": {tf: self.update_snapshot(tf)
+                            for tf in self.timeframes},
                 "stats": self.portfolio.daily_stats()}
 
     def _check_feed(self) -> bool:
@@ -310,10 +331,111 @@ class ProductionEngine:
             self.adapter.keepalive()
             self._last_keepalive = now
 
+    def _update_progress_from_poll(self, report) -> None:
+        """Capture pass-local progress without touching freshness.
+
+        ``TimeframeHealth.served`` is cumulative, so it cannot describe the
+        current scheduler pass. The scheduler's pass counters are the source
+        for this operator-facing view; the engine only adds queue and limiter
+        observations around them.
+        """
+        timeframes = set(report.due_timeframes) | set(report.completed)
+        for timeframe in timeframes:
+            self._capture_update_progress(timeframe, report)
+
+    def _capture_update_progress(self, timeframe: str, report=None) -> dict:
+        measured = self.scheduler.pass_progress(timeframe)
+        previous = self.update_progress.get(timeframe)
+        previous_headline = (None if previous is None
+                             else previous.get("headline"))
+        expected = measured.get("expected_bar")
+        new_pass = (previous is None
+                    or previous.get("expected_bar") != expected)
+        retrying_after_release = (
+            report is not None
+            and timeframe in report.due_timeframes
+            and timeframe not in report.completed)
+        if new_pass or retrying_after_release:
+            self.update_status[timeframe] = UPDATE_IN_PROGRESS
+        progress = dict(previous or {})
+        progress.update(measured)
+        progress["timeframe"] = timeframe
+        if report is not None:
+            progress["last_poll_requeued"] = int(report.requeued)
+            progress["last_poll_deferred"] = int(report.deferred)
+            progress["last_poll_sent"] = int(report.sent)
+        self.update_progress[timeframe] = progress
+        progress = self._set_progress_runtime(timeframe)
+        if (report is not None
+                and progress.get("headline") != previous_headline):
+            logger.info("%s", progress["headline"])
+        return progress
+
+    def _set_progress_runtime(self, timeframe: str) -> dict:
+        progress = self.update_progress.setdefault(
+            timeframe, {"timeframe": timeframe})
+        queue = self.marketdata.queue.snapshot()
+        limiter = self.marketdata.transport.candle_limiter.snapshot(
+            time.monotonic())
+        progress["state"] = self.update_status.get(timeframe)
+        progress["queue_depth"] = int(queue.get("depth", 0))
+        progress["retry_queue_size"] = int(
+            queue.get("by_kind", {}).get("candles", 0))
+        progress["rate_limited_requests"] = int(
+            limiter.get("rejections", 0))
+        progress["headline"] = self._progress_headline(progress)
+        return progress
+
+    @staticmethod
+    def _progress_headline(progress: dict) -> str:
+        timeframe = progress.get("timeframe", "market data")
+        state = progress.get("state")
+        total = int(progress.get("total", 0))
+        served = int(progress.get("served", 0))
+        failed = int(progress.get("failed", 0))
+        pending = int(progress.get("pending", 0))
+        queue = int(progress.get("queue_depth", 0))
+        rate_limited = int(progress.get("rate_limited_requests", 0))
+        if state == UPDATE_IN_PROGRESS:
+            return (f"{timeframe}: update in progress - {served}/{total} "
+                    f"served, {pending} pending, queue {queue}, "
+                    f"rate-limited {rate_limited}")
+        if state == PARTIAL:
+            return (f"{timeframe}: PARTIAL update - {served}/{total} served, "
+                    f"{pending} pending, queue {queue}, "
+                    f"rate-limited {rate_limited}")
+        if state in (FRESH, STALE):
+            suffix = f", {failed} failed" if failed else ""
+            return (f"{timeframe}: {state} update - {served}/{total} "
+                    f"served{suffix}")
+        return f"{timeframe}: no update pass in progress"
+
+    def update_snapshot(self, timeframe: Optional[str] = None) -> dict:
+        """Return lifecycle and pass progress for dashboard/log consumers."""
+        timeframe = timeframe or self.timeframes[0]
+        progress = self.update_progress.get(timeframe)
+        measured = self.scheduler.pass_progress(timeframe)
+        if progress is None:
+            progress = {"timeframe": timeframe}
+        if (progress.get("expected_bar")
+                != measured.get("expected_bar")
+                and (measured.get("total", 0) > 0
+                     or measured.get("pending", 0) > 0)):
+            self.update_status[timeframe] = UPDATE_IN_PROGRESS
+            progress.update(measured)
+        elif (progress.get("expected_bar")
+              == measured.get("expected_bar")):
+            progress.update(measured)
+        self.update_progress[timeframe] = progress
+        self._set_progress_runtime(timeframe)
+        return dict(self.update_progress[timeframe])
+
     # ------------------------------------------------------------- one cycle
 
     def run_cycle(self, timeframe: Optional[str] = None,
-                  scan: bool = True, export: bool = True) -> dict:
+                  scan: bool = True, export: bool = True,
+                  refresh_freshness: bool = True,
+                  update_state: Optional[str] = None) -> dict:
         """One management+scan pass over data that has ALREADY arrived.
 
         Safe to call repeatedly; each stage persists its own state. It does not
@@ -322,13 +444,28 @@ class ProductionEngine:
         blocks on a provider.
         """
         timeframe = timeframe or self.timeframes[0]
+        # Direct callers retain the old API, but cannot accidentally publish a
+        # transient diagnosis while the scheduler still owes symbols.
+        if (refresh_freshness
+                and update_state != PARTIAL
+                and self.scheduler.pending_count(timeframe) > 0):
+            refresh_freshness = False
+            update_state = (self.update_status.get(timeframe)
+                            or UPDATE_IN_PROGRESS)
+            self.update_status[timeframe] = update_state
+            self._capture_update_progress(timeframe)
         # 1) report what the market-data subsystem did, and how old the data
         #    we are about to act on is - measured against the bar the exchange
         #    should have produced by now, per symbol, BEFORE any decision reads
         #    a price (D-039).
         feed_ok = self._check_feed()
-        self._report_data_state(timeframe)
-        fresh = self._assess_freshness(timeframe)
+        if refresh_freshness:
+            self._report_data_state(timeframe, update_state)
+            fresh = self._assess_freshness(timeframe, update_state)
+        else:
+            # Management continues against the last completed report. It is
+            # intentionally not replaced by a report over a partial dataset.
+            fresh = self.freshness.get(timeframe)
 
         # 2) mark open positions to latest completed-bar prices
         prices = self.state.latest_prices(timeframe)
@@ -358,10 +495,11 @@ class ProductionEngine:
         # store holds candles - a store that stopped updating still returns
         # prices, and reporting that as fresh is how a whole session traded on
         # stale bars while every health beat said "ok" (D-038).
-        health = self.health.beat(
-            adapter_ok=feed_ok,
-            data_fresh=bool(prices) and self.state.data_ok(timeframe)
-            and (fresh.ok if fresh is not None else True))
+        data_fresh = bool(prices) and self.state.data_ok(timeframe) \
+            and (fresh.ok if fresh is not None else True)
+        if update_state == PARTIAL:
+            data_fresh = False
+        health = self.health.beat(adapter_ok=feed_ok, data_fresh=data_fresh)
         self.events.emit("health", **health, opened=opened,
                          open_positions=self.portfolio.open_count())
         if export:
@@ -371,7 +509,8 @@ class ProductionEngine:
 
     # -------------------------------------------------------- diagnostics
 
-    def _assess_freshness(self, timeframe: str):
+    def _assess_freshness(self, timeframe: str,
+                          lifecycle: Optional[str] = None):
         """Per-symbol data age for this timeframe, kept for the health beat
         and the dashboard. Announced once when the verdict CHANGES.
 
@@ -386,13 +525,39 @@ class ProductionEngine:
             logger.warning("freshness check failed for %s: %s", timeframe, exc)
             return None
         self.freshness[timeframe] = report
-        signature = (report.status, len(report.stale), len(report.missing))
+        if lifecycle == PARTIAL:
+            status = PARTIAL
+        elif report.status == STALE:
+            status = STALE
+        elif report.status == FRESH:
+            status = FRESH
+        else:
+            status = report.status
+        self.update_status[timeframe] = status
+        self._set_progress_runtime(timeframe)
+        signature = (status, report.status, len(report.stale),
+                     len(report.missing),
+                     self.update_progress.get(timeframe, {}).get(
+                         "expected_bar"))
         if self._fresh_state.get(timeframe) != signature:
             self._fresh_state[timeframe] = signature
-            if report.status == "STALE":
+            if lifecycle == PARTIAL:
+                progress = self.update_snapshot(timeframe)
+                detail = f"{progress['headline']}; {report.headline()}"
+                logger.warning("%s", detail)
+                self.events.emit(
+                    "data", timeframe=timeframe, ok=False, kind="partial",
+                    state=PARTIAL, freshness_status=report.status,
+                    stale=len(report.stale), missing=len(report.missing),
+                    pending=progress.get("pending", 0),
+                    served=progress.get("served", 0),
+                    total=progress.get("total", report.total),
+                    detail=detail)
+            elif report.status == STALE:
                 logger.error("%s", report.headline())
                 self.events.emit("data", timeframe=timeframe, ok=False,
-                                 kind="stale", stale=len(report.stale),
+                                 kind="stale", state=STALE,
+                                 stale=len(report.stale),
                                  total=report.total,
                                  bars_behind=report.worst_bars_behind,
                                  examples=[s.symbol for s in report.stale[:5]],
@@ -401,7 +566,8 @@ class ProductionEngine:
                 logger.info("%s", report.headline())
         return report
 
-    def _report_data_state(self, timeframe: str) -> None:
+    def _report_data_state(self, timeframe: str,
+                           lifecycle: Optional[str] = None) -> None:
         """State the market-data outcome ONCE per cycle.
 
         The operator sees one line - "no new candles" or "unable to fetch N/M,
@@ -410,11 +576,20 @@ class ProductionEngine:
         suppressed: the message is only re-emitted when the situation CHANGES,
         so a persistent fault does not scroll the console for a whole session.
         """
+        if lifecycle == PARTIAL:
+            return
         state = self.state.diagnosis(timeframe)
         headline = state.get("headline", "")
         blocked = int(state.get("blocked", 0))
-        signature = (timeframe, state.get("ok", True), blocked,
-                     tuple(sorted(state.get("reasons", {}))))
+        progress = self.update_snapshot(timeframe)
+        if (state.get("ok", True) and not state.get("offline")
+                and progress.get("total", 0) > 0):
+            headline = (f"{timeframe}: update complete - "
+                        f"{progress.get('served', 0)}/"
+                        f"{progress.get('total', 0)} symbols served")
+        signature = (timeframe, lifecycle, state.get("ok", True), blocked,
+                     tuple(sorted(state.get("reasons", {}))),
+                     progress.get("expected_bar"), headline)
         changed = self._data_state.get(timeframe) != signature
         self._data_state[timeframe] = signature
         if state.get("ok", True):

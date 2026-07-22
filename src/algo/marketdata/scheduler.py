@@ -82,6 +82,12 @@ class TimeframeScheduler:
         self._pending: Dict[str, Set[str]] = {}
         #: (timeframe, symbol) -> attempts made for the bar being served
         self._attempts: Dict[tuple, int] = {}
+        #: Per-pass counters used by the engine's lifecycle reporting. These
+        #: do not participate in planning; they describe the current obligation
+        #: independently of cumulative timeframe health counters.
+        self._pass_total: Dict[str, int] = {}
+        self._pass_served: Dict[str, int] = {}
+        self._pass_failed: Dict[str, int] = {}
 
     # ------------------------------------------------------------- bar time
 
@@ -218,6 +224,9 @@ class TimeframeScheduler:
             self._serving_bar[timeframe] = expected
             self._served_bar[timeframe] = expected
             self._pending[timeframe] = set()
+            self._pass_total[timeframe] = 0
+            self._pass_served[timeframe] = 0
+            self._pass_failed[timeframe] = 0
             state.tf_health(timeframe).pending = 0
             return
         # a new bar supersedes an unfinished pass: its window covers whatever
@@ -225,6 +234,9 @@ class TimeframeScheduler:
         self._serving_bar[timeframe] = expected
         due = self.symbols_due(timeframe, state, at)
         self._pending[timeframe] = set(due)
+        self._pass_total[timeframe] = len(due)
+        self._pass_served[timeframe] = 0
+        self._pass_failed[timeframe] = 0
         for key in [k for k in self._attempts if k[0] == timeframe]:
             self._attempts.pop(key, None)
         health = state.tf_health(timeframe)
@@ -255,7 +267,7 @@ class TimeframeScheduler:
             reason = source.unavailable_reason(symbol, timeframe)
         if reason:
             state.record_failure(symbol, timeframe, reason, unavailable=True)
-            self._resolve(timeframe, symbol, state)
+            self._resolve(timeframe, symbol, state, outcome="failed")
             return None
 
         step = pd.Timedelta(minutes=_tf_minutes(timeframe))
@@ -272,7 +284,7 @@ class TimeframeScheduler:
             why = f"incremental from {start}"
         if start > end:
             # already current: nothing to ask for
-            self._resolve(timeframe, symbol, state)
+            self._resolve(timeframe, symbol, state, outcome="served")
             return None
         # NB: attempts are counted in mark_served (once per real execution), not
         # here. plan() runs every poll and the queue de-duplicates, so counting
@@ -306,11 +318,20 @@ class TimeframeScheduler:
 
     # ---------------------------------------------------------- completion
 
-    def _resolve(self, timeframe: str, symbol: str, state) -> None:
+    def _resolve(self, timeframe: str, symbol: str, state,
+                 outcome: str = "") -> None:
         """This symbol's obligation for the current bar is discharged."""
         pending = self._pending.get(timeframe)
         if pending is not None:
+            was_pending = symbol in pending
             pending.discard(symbol)
+            if was_pending:
+                if outcome == "served":
+                    self._pass_served[timeframe] = \
+                        self._pass_served.get(timeframe, 0) + 1
+                elif outcome == "failed":
+                    self._pass_failed[timeframe] = \
+                        self._pass_failed.get(timeframe, 0) + 1
             state.tf_health(timeframe).pending = len(pending)
             if not pending:
                 serving = self._serving_bar.get(timeframe)
@@ -353,13 +374,29 @@ class TimeframeScheduler:
             if last is None or pd.Timestamp(last) < request.due_bar:
                 success = False           # the expected bar has not arrived yet
         if success:
-            self._resolve(timeframe, symbol, state)
+            self._resolve(timeframe, symbol, state, outcome="served")
             return
         if self._attempts.get(key, 0) >= self.max_attempts:
-            self._resolve(timeframe, symbol, state)
+            self._resolve(timeframe, symbol, state, outcome="failed")
 
     def pending_count(self, timeframe: str) -> int:
         return len(self._pending.get(timeframe, ()))
+
+    def pass_progress(self, timeframe: str) -> dict:
+        """Return exact progress for the currently serving bar.
+
+        The timeframe health counters are cumulative across the session. The
+        engine needs pass-local numbers so ``1/99 served`` cannot be confused
+        with a completed timeframe or with the previous pass.
+        """
+        serving = self._serving_bar.get(timeframe)
+        return {
+            "expected_bar": None if serving is None else str(serving),
+            "total": self._pass_total.get(timeframe, 0),
+            "served": self._pass_served.get(timeframe, 0),
+            "failed": self._pass_failed.get(timeframe, 0),
+            "pending": self.pending_count(timeframe),
+        }
 
     def _source_offline(self) -> bool:
         """Is there no provider AT ALL? Distinct from one that is failing.
@@ -399,9 +436,12 @@ class TimeframeScheduler:
                 "timeframe": tf,
                 "expected_bar": None if expected is None else str(expected),
                 "served_bar": (None if self._served_bar.get(tf) is None
-                               else str(self._served_bar[tf])),
+                                else str(self._served_bar[tf])),
                 "due": self.is_due(tf, at),
                 "pending": self.pending_count(tf),
+                "pass_total": self._pass_total.get(tf, 0),
+                "pass_served": self._pass_served.get(tf, 0),
+                "pass_failed": self._pass_failed.get(tf, 0),
                 "next_due": None if nxt is None else nxt.strftime("%H:%M:%S"),
                 "next_due_seconds": (None if nxt is None
                                      else max(0, int((nxt - at).total_seconds()))),
