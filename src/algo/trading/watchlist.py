@@ -52,26 +52,47 @@ def build_watchlist(config, store: Optional[MarketDataStore] = None,
     timeframes = list(timeframes or config.timeframes) or ["15m"]
     timeframe = timeframes[0]
 
-    if getattr(config, "universe", None):
-        universe = dict(config.universe)
-        if universe.get("tier") == "dynamic":
-            # daily data-driven universe: top-500 by market cap, ranked by
-            # the previous session's liquidity (algo.universe.dynamic)
-            from algo.universe.dynamic import (
-                DynamicUniverseSpec, load_or_build,
-            )
-            universe.pop("tier", None)
-            spec = DynamicUniverseSpec.from_dict(
-                {"timeframe": timeframe, **universe})
-            report = load_or_build(store, spec)
-            return Watchlist(symbols=list(report.selected), report=report,
-                             source="dynamic")
+    universe = dict(getattr(config, "universe", None) or {})
+    dynamic = universe.get("tier") == "dynamic"
+    if universe and not dynamic:
         from algo.trading.universe import UniverseSpec, build_universe
         spec = UniverseSpec.from_dict({"timeframe": timeframe,
                                        **config.universe})
         report = build_universe(store, spec)
         return Watchlist(symbols=list(report.selected), report=report,
                          source="universe")
+    if dynamic:
+            # daily data-driven universe: top-500 by market cap, ranked by
+            # the previous session's liquidity (algo.universe.dynamic).
+            # NEVER a silent fallback: failure or an empty selection is
+            # stated loudly, with the static file named as the substitute.
+            from algo.universe.dynamic import (
+                DynamicUniverseSpec, load_or_build,
+            )
+            universe.pop("tier", None)
+            try:
+                spec = DynamicUniverseSpec.from_dict(
+                    {"timeframe": timeframe, **universe})
+                report = load_or_build(store, spec)
+            except Exception as exc:
+                logger.error(
+                    "UNIVERSE: dynamic build FAILED (%s) - falling back to "
+                    "static watchlist %s", exc, config.symbols_file)
+                report = None
+            if report is not None and report.selected:
+                logger.info(
+                    "UNIVERSE: Dynamic - %d symbols (top %d of the NIFTY500 "
+                    "market-cap pool by previous session's %s)",
+                    len(report.selected), spec.size, spec.liquidity_metric)
+                return Watchlist(symbols=list(report.selected), report=report,
+                                 source="dynamic")
+            if report is not None:
+                logger.error(
+                    "UNIVERSE: dynamic build selected 0 symbols (%s) - "
+                    "falling back to static watchlist %s",
+                    "; ".join(report.notes) or "no ranked candidates",
+                    config.symbols_file)
+        # explicit fallback: the static file, stated above, never silent
 
     symbols = [s.strip().upper()
                for s in Path(config.symbols_file).read_text().splitlines()
@@ -81,4 +102,6 @@ def build_watchlist(config, store: Optional[MarketDataStore] = None,
     if symbols and not kept:
         logger.warning("none of the %d configured symbols have %s data yet - "
                        "using the list as written", len(symbols), timeframe)
+    logger.info("UNIVERSE: Static watchlist - %d symbols from %s",
+                len(kept or symbols), config.symbols_file)
     return Watchlist(symbols=kept or symbols, source="file")

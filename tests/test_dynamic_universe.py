@@ -138,6 +138,34 @@ def test_load_or_build_is_idempotent_per_day(tmp_path):
     assert any("loaded from" in n for n in second.notes)
 
 
+def test_watchlist_falls_back_loudly_when_dynamic_is_empty(tmp_path, caplog):
+    """The dynamic branch NEVER falls back silently: an empty selection is
+    logged as an error and the static file takes over explicitly."""
+    import logging
+
+    from algo.trading.watchlist import build_watchlist
+
+    symbols_file = tmp_path / "static.txt"
+    symbols_file.write_text("AAA\nBBB\n")
+    _csv(tmp_path, [("CCC", "EQ")])          # pool exists, but no store data
+
+    class Config:
+        universe = {"tier": "dynamic",
+                    "mcap_source": str(tmp_path / "ind_nifty500_*.csv"),
+                    "out_dir": str(tmp_path / "universe")}
+        symbols_file = str(tmp_path / "static.txt")
+        store_dir = str(tmp_path / "store")
+        timeframes = ()
+
+    store = MarketDataStore(tmp_path / "store")
+    with caplog.at_level(logging.ERROR, logger="algo"):
+        watch = build_watchlist(Config(), store, ["15m"])
+    assert watch.symbols == ["AAA", "BBB"]
+    assert watch.source == "file"
+    assert any("falling back to static watchlist" in r.message
+               for r in caplog.records)
+
+
 def test_daily_refresher_swaps_universe_and_resubscribes(tmp_path):
     _csv(tmp_path, [("AAA", "EQ"), ("BBB", "EQ")])
     store = _store_with_daily(tmp_path, {"AAA": (10, 100), "BBB": (10, 50)})

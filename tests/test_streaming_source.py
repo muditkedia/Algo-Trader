@@ -124,13 +124,32 @@ def test_gap_repair_delegates_only_the_outage():
 
 
 def test_unsupported_timeframe_fully_delegates():
-    source, engine, fallback, _ = _source()
+    # an engine built WITHOUT 1h (the timeframe exists but was not enabled)
+    source, engine, fallback, _ = _source(timeframes=("1m",))
     _tape(engine, minutes=4)
     source.fetch_candles("SBIN", "1h",
                          pd.Timestamp(T0, unit="s", tz="UTC"),
                          pd.Timestamp(T0 + 7200, unit="s", tz="UTC"))
     assert len(fallback.calls) == 1
     assert fallback.calls[0][1] == "1h"
+
+
+def test_1h_serves_locally_with_session_anchored_buckets():
+    """Production 1h candles come from the stream - no historical calls."""
+    source, engine, fallback, _ = _source(timeframes=("1m", "1h"))
+    vol = 1000
+    for h in range(3):                        # 09:20, 10:20, 11:20 ticks
+        for k in range(2):
+            vol += 10
+            engine.on_tick("SBIN", T0 + h * 3600 + 300 + k * 60,
+                           100.0 + h, vol)
+    frame = source.fetch_candles(
+        "SBIN", "1h",
+        pd.Timestamp(T0 + 3600, unit="s", tz="UTC"),      # 10:15 bar only
+        pd.Timestamp(T0 + 2 * 3600 - 60, unit="s", tz="UTC"))
+    assert fallback.calls == []               # zero historical requests
+    assert len(frame) == 1
+    assert int(frame.iloc[0]["date"].timestamp()) == int(T0 + 3600)  # 10:15
 
 
 def test_validation_mode_counts_mismatches():

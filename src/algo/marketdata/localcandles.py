@@ -43,8 +43,15 @@ logger = get_logger("marketdata.localcandles")
 
 #: Timeframes the engine may build. 09:15 IST (03:45 UTC) is minute 585 of the
 #: day: 585 % 1 == 585 % 3 == 585 % 5 == 585 % 15 == 0, so epoch flooring
-#: lands exactly on exchange bucket labels for these and ONLY these.
-SUPPORTED_TIMEFRAMES = ("1m", "3m", "5m", "15m")
+#: lands exactly on exchange bucket labels for those four. "1h" is DIFFERENT:
+#: NSE hourly bars are session-anchored (09:15, 10:15, ..., 15:15), so its
+#: buckets are computed from the session-open anchor, and the final partial
+#: bucket (15:15) closes at the 15:30 session close, not at 16:15.
+SUPPORTED_TIMEFRAMES = ("1m", "3m", "5m", "15m", "1h")
+
+#: NSE session anchor/close as seconds into the UTC day (09:15 and 15:30 IST).
+_NSE_OPEN_S = 13_500      # 03:45:00 UTC
+_NSE_CLOSE_S = 36_000     # 10:00:00 UTC
 
 # candle list slots (a list, not a dataclass: the hot path updates in place)
 _O, _H, _L, _C, _VBASE, _VCUM, _TICKS = range(7)
@@ -111,10 +118,28 @@ class LocalCandleEngine:
                 self._apply(symbol, tf, ts_epoch_s, price, cum_volume,
                             prev_cum, resync)
 
+    def _bucket(self, tf: str, ts: float) -> int:
+        """Deterministic bucket open for a tick: epoch flooring for intraday
+        minutes, session-anchored steps for 1h (09:15 + n hours)."""
+        step = self._tf_seconds[tf]
+        if step < 3600:
+            return int(ts // step) * step
+        day = int(ts // 86400) * 86400
+        delta = max(0.0, ts - day - _NSE_OPEN_S)
+        return day + _NSE_OPEN_S + int(delta // step) * step
+
+    def _bucket_end(self, tf: str, bucket: int) -> int:
+        """Bucket close: open + step, except the anchored 1h bucket that
+        spans the session close (15:15 closes at 15:30, not 16:15)."""
+        step = self._tf_seconds[tf]
+        if step < 3600:
+            return bucket + step
+        day = int(bucket // 86400) * 86400
+        return min(bucket + step, day + _NSE_CLOSE_S)
+
     def _apply(self, symbol: str, tf: str, ts: float, price: float,
                cum_volume, prev_cum, resync: bool) -> None:
-        step = self._tf_seconds[tf]
-        bucket = int(ts // step) * step
+        bucket = self._bucket(tf, ts)
         key = (symbol, tf)
         candles = self._candles.setdefault(key, {})
         final = self._final.setdefault(key, set())
@@ -183,12 +208,11 @@ class LocalCandleEngine:
         (end of session, or a symbol that went quiet)."""
         with self._lock:
             for (symbol, tf), candles in self._candles.items():
-                step = self._tf_seconds[tf]
                 final = self._final[(symbol, tf)]
                 for bucket in candles:
                     if (bucket not in final
-                            and bucket + step + self.finalize_grace_s
-                            <= now_epoch_s):
+                            and self._bucket_end(tf, bucket)
+                            + self.finalize_grace_s <= now_epoch_s):
                         final.add(bucket)
                         self.completions += 1
 
@@ -242,20 +266,21 @@ class LocalCandleEngine:
         # everything before the first clean tick's bucket is historical's job
         if coverage is None:
             return (start_epoch_s, end_epoch_s)
-        coverage_bucket = int(coverage // step) * step
+        coverage_bucket = self._bucket(timeframe, coverage)
         first_clean = coverage_bucket + step   # coverage bucket is tainted
         if start_epoch_s < first_clean:
             bad_until = min(end_epoch_s, first_clean - 1)
         for t0, t1 in outages:
             if t1 >= start_epoch_s and t0 <= end_epoch_s:
                 # taint every bucket the outage touches
-                span_end = min(end_epoch_s,
-                               (int(t1 // step) + 1) * step - 1)
+                span_end = min(end_epoch_s, self._bucket_end(
+                    timeframe, self._bucket(timeframe, t1)) - 1)
                 bad_until = span_end if bad_until is None \
                     else max(bad_until, span_end)
         for bucket in tainted:
             if start_epoch_s <= bucket <= end_epoch_s:
-                span_end = min(end_epoch_s, bucket + step - 1)
+                span_end = min(end_epoch_s,
+                               self._bucket_end(timeframe, bucket) - 1)
                 bad_until = span_end if bad_until is None \
                     else max(bad_until, span_end)
         if bad_until is None:

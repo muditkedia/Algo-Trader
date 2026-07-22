@@ -23,8 +23,12 @@ is deprecated for production trading.
   The historical API is delegated to ONLY for startup seeding, websocket gap
   repair, validation mode (`ws_validate`), backtesting and research - no
   periodic polling. Position marks come from the tick stream (no REST
-  quotes). 1h bars (one strategy) still delegate: hourly session-anchored
-  buckets cannot be floored locally.
+  quotes). 1h bars are built locally too, with NSE session-anchored buckets
+  (09:15, 10:15, ..., 15:15; the final partial bucket closes at 15:30).
+- The dynamic universe is the RUNTIME DEFAULT (run_trading injects
+  {"tier": "dynamic"} when no universe block is configured); the watchlist
+  states its source loudly (Dynamic / Static) and any fallback is an
+  explicit ERROR log, never silent.
 - `algo.universe.dynamic` - the daily trading universe: official NIFTY500
   constituents (free-float market-cap top-500 cut, EQ series only, active in
   the instrument master), ranked by the previous session's traded value,

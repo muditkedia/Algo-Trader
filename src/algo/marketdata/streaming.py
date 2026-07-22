@@ -111,8 +111,8 @@ class StreamingCandleSource(MarketDataSource):
         end_s = min(_epoch(end), now_s)
 
         if timeframe not in self.engine.timeframes:
-            # e.g. 1h: session-anchored buckets cannot be built by flooring;
-            # honest delegation beats a wrong local bar (SUPPORTED_TIMEFRAMES)
+            # a timeframe the engine was not built for (e.g. 1d): honest
+            # delegation beats a wrong local bar (SUPPORTED_TIMEFRAMES)
             self.delegated += 1
             return self.fallback.fetch_candles(symbol, timeframe, start, end)
 

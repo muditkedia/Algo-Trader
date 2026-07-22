@@ -144,7 +144,39 @@ def test_memory_is_bounded():
 
 def test_unsupported_timeframe_is_refused():
     with pytest.raises(ValueError):
-        LocalCandleEngine(timeframes=("1h",))
+        LocalCandleEngine(timeframes=("2h",))
+
+
+def test_1h_buckets_are_session_anchored():
+    """NSE hourly bars open 09:15, 10:15, ... - never wall-clock hours."""
+    engine = LocalCandleEngine(timeframes=("1h",))
+    vol = 1000
+    # ticks across three hourly buckets: 09:20, 10:20, 11:20 IST
+    for h in range(3):
+        for k in range(2):
+            vol += 10
+            engine.on_tick("SBIN", T0 + h * 3600 + 300 + k * 60,
+                           100.0 + h, vol)
+    engine.finalize_before(T0 + 4 * 3600)
+    frame = engine.frame("SBIN", "1h", T0 - 3600, T0 + 3 * 3600)
+    # first bucket (09:15) tainted; 10:15 served with exact anchor label
+    assert len(frame) == 2
+    assert int(frame.iloc[0]["date"].timestamp()) == int(T0 + 3600)   # 10:15
+    assert frame.iloc[0]["volume"] == pytest.approx(20.0)
+
+
+def test_1h_final_bucket_closes_at_session_close():
+    """The 15:15 bucket ends at the 15:30 close, so it finalizes minutes
+    after close instead of at 16:15."""
+    engine = LocalCandleEngine(timeframes=("1h",), finalize_grace_s=3.0)
+    t_1515 = T0 + 6 * 3600                    # 15:15 IST
+    engine.on_tick("SBIN", t_1515 - 3600 + 60, 99.0, 500)   # 14:16 baseline
+    engine.on_tick("SBIN", t_1515 + 300, 100.0, 1000)       # 15:20 tick
+    close = t_1515 + 15 * 60                  # 15:30 IST
+    engine.finalize_before(close + 5)
+    frame = engine.frame("SBIN", "1h", t_1515, t_1515 + 3600)
+    assert len(frame) == 1
+    assert int(frame.iloc[0]["date"].timestamp()) == int(t_1515)
 
 
 def test_snapshot_reports_activity():

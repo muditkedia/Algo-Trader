@@ -230,6 +230,10 @@ def main() -> int:
         data = json.loads(Path(args.config).read_text())
     if args.mode:
         data["mode"] = args.mode
+    # PRODUCTION DEFAULT: the dynamic universe (top ~300 of the NIFTY500
+    # market-cap pool by the previous session's traded value). An explicit
+    # "universe" block - or "universe": {} with a symbols_file - overrides.
+    data.setdefault("universe", {"tier": "dynamic"})
     config = TradingConfig.from_dict(data)
 
     print(f"mode={config.mode}  live_armed={config.live_armed()}")
