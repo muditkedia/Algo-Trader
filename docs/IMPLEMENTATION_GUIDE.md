@@ -335,6 +335,16 @@ post-partial chandelier, VWAP invalidation, stagnation exit, and square-off.
 An accepted drive blocks STRAT-01/02 on that symbol for the rest of the
 session. See `docs/STRAT03_OPENING_DRIVE_5M.md`.
 
+## 5B. Gap & Go Acceleration — `gapgo_5m`
+
+STRAT-04 canonically replaces the retired long-only 15-minute approximation.
+The 5-minute implementation is bidirectional and gates on bounded opening-gap
+size, 80% gap retention, opening-candle breakout, asymmetric opening-slot RVOL,
+VWAP, liquidity, time, EMA, and NIFTY-gap alignment. It owns its collared fill,
+directional structural/ATR stop, 1.5R partial, breakeven, post-partial
+chandelier, VWAP invalidation, stagnation, and square-off. See
+`docs/STRAT04_GAP_GO_5M.md`.
+
 ## 6. EMA Pullback Continuation — `pullback_15m`
 
 1. **Original strategy name:** intraday EMA pullback (trend-pullback

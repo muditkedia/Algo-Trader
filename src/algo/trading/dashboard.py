@@ -52,7 +52,7 @@ STRATEGY_NAMES = {
     "opening_drive_5m": "Opening Drive Momentum (STRAT-03)",
     "pullback_15m": "EMA Pullback Continuation",
     "volexp_1h": "Bollinger Squeeze Breakout (1h)",
-    "gapgo_15m": "Gap and Go",
+    "gapgo_5m": "Gap & Go Acceleration (STRAT-04)",
     "insidebar_15m": "Inside Bar Breakout",
     "supertrend_15m": "Supertrend Continuation",
     "cpr_reversal_15m": "CPR Reversal",
@@ -79,8 +79,9 @@ ENTRY_RULES = {
                     "and closed back above it",
     "volexp_1h": "Bollinger bandwidth was compressed for 3 bars and price "
                  "closed above the upper band",
-    "gapgo_15m": "Gap up >=2% held by the first bar, then price broke the "
-                 "first bar's high in the opening phase",
+    "gapgo_5m": "A 1.0%-3.5% retained opening gap broke its first 5-minute "
+                "candle on exceptional opening RVOL with VWAP, EMA and "
+                "NIFTY-gap alignment",
     "insidebar_15m": "An inside bar formed inside its mother bar and price "
                      "closed above the mother bar's high",
     "supertrend_15m": "Supertrend(10,3) state flipped bullish",

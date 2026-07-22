@@ -13,7 +13,7 @@ registers **13 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **13** | 3 × 5m, 9 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **13** | 4 × 5m, 8 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -80,7 +80,7 @@ them; the other two declare their pre-reset profile as their own):
 | `opening_drive_5m` | beyond drive candle by 0.1 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `pullback_15m` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
 | `volexp_1h` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
-| `gapgo_15m` | below the first bar's low | 2R | none |
+| `gapgo_5m` | wider of opening extreme / 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `insidebar_15m` | below the inside bar's low | 2R | none |
 | `supertrend_15m` | at the Supertrend line | none (ride the state) | the Supertrend line itself (`column` trail) |
 | `cpr_reversal_15m` | below the rejection bar's low | the central floor pivot | none |
@@ -371,21 +371,17 @@ See `docs/STRAT02_ORB_RETEST_5M.md`.
 11. **Files:** `src/algo/strategies/library/volexp_1h.py`.
 12. **Complete or incomplete:** **complete** under its owned execution declaration.
 
-### 2.8 Gap-and-Go — `gapgo_15m` *(added 2026-07-19)*
+### 2.8 Gap & Go Acceleration — `gapgo_5m`
 
-1. **Name:** Gap-and-Go (overnight-gap momentum continuation).
-2. **Theory:** a ≥2% overnight up-gap marks a demand imbalance; when the
-   session's first bar holds the gap and its high then breaks in the opening
-   phase, the imbalance continues (momentum day-trading canon —
-   Warrior/SMB-style curricula; Indian opening-session practice).
-3. **Entry:** gap ≥ +2% vs prior close AND first bar held (low > prior close,
-   close ≥ open) AND a bar within the first 6 post-open bars closes above the
-   first bar's high.
-4–6. **Exits (owned):** stop below the first bar's low; 2R target; square-off.
-7. **Timeframe:** 15m. 8. **Conditions:** gap mornings only; fails on
-   exhaustion gaps and gap-and-fade days. 9. **Instruments:** liquid gappers /
-   NSE F&O names. 10–12. **Status:** implemented + unit-tested (batch 2);
-   **not yet backtested**; `library/gapgo_15m.py`; complete.
+The sole canonical STRAT-04 implementation is bidirectional on completed
+5-minute bars. It requires a 1.0%–3.5% opening gap, at least 80% retention,
+directional opening-candle breakout, asymmetric opening-slot RVOL, VWAP,
+liquidity, time, EMA, and NIFTY-gap alignment. It owns a collared fill,
+directional opening/ATR stop, 1.5R half exit, breakeven, chandelier, VWAP and
+stagnation invalidation, and square-off. See `docs/STRAT04_GAP_GO_5M.md`.
+
+The retired `gapgo_15m` long-only implementation and its research reports are
+legacy evidence only and are not registered or attributed to STRAT-04.
 
 ### 2.9 Inside-Bar Breakout — `insidebar_15m` *(added 2026-07-19)*
 
@@ -506,8 +502,8 @@ live order path exists in the repository at all (paper simulation only), so
 | 3 | VWAP Pullback | **Yes** (`vwap_pullback_15m`) | Yes | No | No | — (encoding over-fires vs discretionary use; selectivity filter absent) |
 | 4 | CPR Breakout | **Yes** (`cpr_breakout_15m`) | Yes | No | No | — |
 | 5 | CPR Reversal | **Yes** (`cpr_reversal_15m`, added 2026-07-19) | Not yet | No | No | — |
-| 6 | Opening Drive | **No** | No | No | No | Strategy module (strong directional move from the open, e.g. first-bar marubozu/momentum) |
-| 7 | Gap and Go | **Yes** (`gapgo_15m`, added 2026-07-19) | Not yet | No | No | — |
+| 6 | Opening Drive | **Yes** (`opening_drive_5m`) | Not yet | Yes | Yes | STRAT-03 complete; sector cap awaits metadata |
+| 7 | Gap and Go | **Yes** (`gapgo_5m`) | Not yet | Yes | Yes | STRAT-04 complete; catalyst feed and sector cap unavailable |
 | 8 | First Pullback | **No** | No | No | No | Retired approximation; superseded by canonical STRAT-02 OR-boundary retest |
 | 9 | Initial Balance Breakout | **No** | No | No | No | Separate STRAT-06 implementation required; `orb_5m` is not parameterized as an IB substitute |
 | 10 | NR7 Intraday | **Yes** (`nr7_intraday_15m`, added 2026-07-19) | Not yet | No | No | — |

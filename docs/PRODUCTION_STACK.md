@@ -53,7 +53,7 @@ what guarantees live/paper fills track the backtest.
 
 ## 2. Test summary
 
-**801 passed** overall after the STRAT-03 integration. Production-stack
+**802 passed** overall after the STRAT-04 integration. Production-stack
 coverage:
 
 - `tests/test_trading_stack.py` (24): live-arming 3-key matrix; adapter

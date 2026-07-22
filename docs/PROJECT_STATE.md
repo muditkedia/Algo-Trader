@@ -1,6 +1,25 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-03 Opening Drive Momentum)_
+_Last updated: 2026-07-23 (STRAT-04 Gap & Go Acceleration)_
+
+## STRAT-04 Gap & Go canonical replacement complete (2026-07-23)
+
+The retired long-only `gapgo_15m` approximation has been replaced by
+`gapgo_5m`, the sole canonical STRAT-04 implementation. It is bidirectional and
+enforces the 1.0%–3.5% gap window, 80% opening-candle retention, directional
+opening break, asymmetric same-slot RVOL, VWAP, time, liquidity, EMA, and
+NIFTY-gap rules. It owns the specification's collared fill, directional
+opening/ATR stop, 1.5R partial, breakeven, chandelier, VWAP invalidation,
+stagnation exit, and square-off.
+
+The reusable opening context now exposes causal NIFTY opening-gap percentage.
+STRAT-04 reuses the persisted session blocker to suppress STRAT-01/02 after a
+Gap & Go entry. Full details and deviations are in
+`docs/STRAT04_GAP_GO_5M.md`.
+
+Validation: Python compilation succeeded and the clean complete suite passed
+with 802 tests. All 13 registered strategies passed the exit matrix and
+participated in scanning.
 
 ## STRAT-03 Opening Drive Momentum complete (2026-07-23)
 
@@ -71,7 +90,7 @@ framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
 STRAT-01 through STRAT-03 are complete. Sequential implementation continues
-with STRAT-04.
+with STRAT-05.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

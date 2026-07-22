@@ -332,18 +332,6 @@ def test_nr7_gate_after_a_special_short_session_fires_KNOWN_LIMITATION():
     assert sig.any()                              # current (limited) behaviour
 
 
-def test_gapgo_after_special_session_measures_gap_vs_its_close():
-    days = pd.bdate_range("2024-01-01", periods=25)
-    hist = _concat(*[_session(d.date(), [100.0] * 25) for d in days])
-    muhurat = _session("2024-02-09", [100.0, 100.2], start="18:15")
-    gap = _session("2024-02-12", [103.5, 104.6, 105.0],
-                   highs=[104.0, 104.8, 105.2], lows=[103.0, 103.4, 104.6],
-                   opens=[103.0, 103.4, 104.7])
-    strat = GapAndGo()
-    sig = strat.entry_signal(strat.prepare(_concat(hist, muhurat, gap)))
-    assert sig.sum() == 1                         # vs the last REAL close
-
-
 def test_prior_day_levels_skip_market_holidays_not_sessions():
     """A holiday between sessions must not blank prior-day levels: the PRIOR
     TRADED session is the reference."""

@@ -70,7 +70,7 @@ class OpeningRangeRetest(StrategyProfile):
     meta = StrategyMeta(
         name="orb_retest_5m", version="2.0.0", spec_id="STRAT-02",
         active_conflict_group="opening_or_retest", direction=Direction.BOTH,
-        blocked_by_session_groups=("opening_drive",),
+        blocked_by_session_groups=("opening_drive", "gap_go"),
         holding_scope=HoldingScope.INTRADAY, timeframe="5m", min_bars=1505,
         required_columns=(
             "close", "or_high", "or_low", "atr", "vwap", "rvol", "adt20",

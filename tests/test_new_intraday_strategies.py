@@ -126,38 +126,6 @@ def test_column_trail_ratchets_and_exits_at_the_line():
 
 # ------------------------------------------------------------- strategies
 
-def test_gapgo_fires_on_held_gap_break_and_respects_the_gate():
-    hist = _history()
-    # gap day: opens 103 (>2% above prior close 100), first bar holds, bar 2
-    # breaks the first bar's high
-    gap = _session("2024-02-12", [103.5, 104.6, 105.0],
-                   highs=[104.0, 104.8, 105.2], lows=[103.0, 103.4, 104.6],
-                   opens=[103.0, 103.4, 104.7])
-    strat = GapAndGo()
-    sig = strat.entry_signal(strat.prepare(_concat(hist, gap)))
-    assert sig.iloc[-2]                               # the breakout bar
-    assert sig.sum() == 1
-    # same shape WITHOUT the gap: no signal
-    nogap = _session("2024-02-12", [100.5, 101.6, 102.0],
-                     highs=[101.0, 101.8, 102.2], lows=[100.0, 100.4, 101.6],
-                     opens=[100.2, 100.4, 101.7])
-    sig = strat.entry_signal(strat.prepare(_concat(hist, nogap)))
-    assert not sig.iloc[-3:].any()
-
-
-def test_gapgo_ignores_breaks_after_the_opening_window():
-    hist = _history()
-    n = 12
-    closes = [103.5] * (n - 1) + [104.6]
-    highs = [104.0] * (n - 1) + [104.8]
-    lows = [103.2] * n
-    opens = [103.0] + [103.4] * (n - 1)
-    late = _session("2024-02-12", closes, highs, lows, opens)
-    strat = GapAndGo()
-    sig = strat.entry_signal(strat.prepare(_concat(hist, late)))
-    assert not sig.any()                              # bar 11 > entry window
-
-
 def test_insidebar_pattern_and_break():
     hist = _history()
     # mother (wide), inside bar, then break of the mother high
@@ -303,25 +271,11 @@ def test_nr7_intraday_takes_only_the_first_break_of_the_session():
     assert sig.iloc[-4]                           # ... and it IS the first
 
 
-def test_gapgo_takes_only_the_first_break_of_the_morning():
-    hist = _history()
-    # gap day: break, fade back below the first-bar high, re-break - all
-    # inside the entry window
-    gap = _session("2024-02-12",
-                   [103.5, 104.6, 103.8, 104.7],
-                   highs=[104.0, 104.8, 104.1, 104.9],
-                   lows=[103.0, 103.4, 103.5, 103.7],
-                   opens=[103.0, 103.4, 104.5, 103.8])
-    strat = GapAndGo()
-    sig = strat.entry_signal(strat.prepare(_concat(hist, gap)))
-    assert sig.sum() == 1
-    assert sig.iloc[-3]                           # the FIRST break bar
-
-
 def test_all_five_are_registered_with_owned_intraday_specs():
     for cls in (GapAndGo, InsideBarBreakout, SupertrendContinuation,
                 CprReversal, Nr7Intraday):
         spec = cls.execution
         assert spec.intraday and not spec.allow_overnight
         assert spec.max_hold_bars is None
-        assert spec.entry == "signal_close"
+        assert spec.entry == ("limit_collar" if cls is GapAndGo
+                              else "signal_close")
