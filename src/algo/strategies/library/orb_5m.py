@@ -68,6 +68,7 @@ class OpeningRangeBreakout(StrategyProfile):
         exclusive_group="opening_breakout", direction=Direction.BOTH,
         active_conflict_group="opening_or_retest",
         blocked_by_session_groups=("opening_drive", "gap_go"),
+        blocked_by_timed_groups=("liquidity_sweep",),
         holding_scope=HoldingScope.INTRADAY, timeframe="5m", min_bars=1502,
         required_columns=(
             "close", "or_high", "or_low", "or_mid", "after_range", "atr",

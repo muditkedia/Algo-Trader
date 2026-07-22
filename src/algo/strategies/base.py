@@ -51,6 +51,11 @@ class StrategyMeta:
     #: that list it in ``blocked_by_session_groups`` for the session.
     session_block_group: str = ""
     blocked_by_session_groups: tuple = ()
+    #: Time-bounded suppression emitted by one strategy and consumed by
+    #: selected later strategies on the same symbol.
+    timed_block_group: str = ""
+    timed_block_minutes: int = 0
+    blocked_by_timed_groups: tuple = ()
     #: Indicator columns the entry_signal needs; the missing-column guard uses
     #: this, and the research engine records it as the strategy's contract.
     required_columns: tuple = ()

@@ -158,10 +158,19 @@ def execute_signal(bars: pd.DataFrame, signal_index: int, *,
     initial_risk = abs(entry - stop)
     target = _target(bars, i, entry, stop, spec, direction)
     target2 = None
-    if spec.partial_fraction > 0 and spec.target2_col:
-        t2 = float(bars[spec.target2_col].iloc[i])
+    target2_col = ((spec.target2_long_col if is_long
+                    else spec.target2_short_col) or spec.target2_col)
+    if spec.partial_fraction > 0 and target2_col:
+        t2 = float(bars[target2_col].iloc[i])
         valid = t2 > entry if is_long else t2 < entry
         target2 = t2 if np.isfinite(t2) and valid else None
+    timeout_target = None
+    timeout_col = (spec.timeout_target_long_col if is_long
+                   else spec.timeout_target_short_col)
+    if spec.timeout_bars is not None and timeout_col:
+        candidate = float(bars[timeout_col].iloc[i])
+        if np.isfinite(candidate):
+            timeout_target = candidate
 
     qty = stake / entry
     open_frac = 1.0
@@ -237,6 +246,13 @@ def execute_signal(bars: pd.DataFrame, signal_index: int, *,
         if invalidation_col and bool(row.get(invalidation_col, False)):
             exit_price, exit_reason = c, "structural_invalidation"
             break
+        if (spec.timeout_bars is not None and timeout_target is not None
+                and j - i >= spec.timeout_bars):
+            reached = (highest >= timeout_target if is_long
+                       else lowest <= timeout_target)
+            if not reached:
+                exit_price, exit_reason = c, "target_timeout"
+                break
         if spec.no_progress_bars is not None and j - i >= spec.no_progress_bars:
             progress_r = sign * (c - entry) / initial_risk
             if progress_r < spec.no_progress_r:

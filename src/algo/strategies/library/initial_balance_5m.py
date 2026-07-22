@@ -49,6 +49,7 @@ class InitialBalanceBreakout(StrategyProfile):
 
     meta = StrategyMeta(
         name="initial_balance_5m", version="2.0.0", spec_id="STRAT-06",
+        blocked_by_timed_groups=("liquidity_sweep",),
         direction=Direction.BOTH, holding_scope=HoldingScope.INTRADAY,
         timeframe="5m", min_bars=1507,
         required_columns=(

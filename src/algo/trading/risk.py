@@ -218,6 +218,13 @@ class AccountRiskEngine:
             return RiskDecision(
                 False, f"session blocker active: {signal.symbol}/"
                        f"{','.join(signal.blocked_by_session_groups)}")
+        if (signal.blocked_by_timed_groups
+                and portfolio.timed_blocked(
+                    signal.symbol, signal.blocked_by_timed_groups,
+                    signal.bar_time)):
+            return RiskDecision(
+                False, f"timed blocker active: {signal.symbol}/"
+                       f"{','.join(signal.blocked_by_timed_groups)}")
 
         # position-sizing validation: the sizer applies every constraint, so
         # an entry is tradeable exactly when it yields a non-zero quantity

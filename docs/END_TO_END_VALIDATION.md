@@ -2,7 +2,7 @@
 
 _Deployment phase, 2026-07-19. Confirms the full production pipeline runs as
 one system, that paper and live differ ONLY in the execution adapter, and that
-every component works together. Latest full suite: **822 passed**._
+every component works together. Latest full suite: **833 passed**._
 
 ## 1. The central guarantee: paper and live are the same pipeline
 
@@ -46,7 +46,7 @@ object graph in both. There is no separate paper or live implementation.
 | Restart recovery | reload → broker reconcile → resume/close/adopt; idempotent | ✅ |
 | Broker reconciliation | resume matched, close orphaned-internal, adopt orphaned-broker, detect partials | ✅ |
 | Risk engine | every denial path + daily-loss latch + circuit breaker + kill switch | ✅ |
-| Strategy loading | 15 intraday strategies discovered from the registry (no hand list) | ✅ |
+| Strategy loading | 16 intraday strategies discovered from the registry (no hand list) | ✅ |
 | Scanner | strategy-agnostic evaluate over the watchlist, newest-bar-only, dedup | ✅ |
 | Scheduler | bar-close cadence per timeframe + grace; quiet off-hours; sleep hint | ✅ |
 | Logging | JSONL event log per day + structured logs on every path | ✅ |

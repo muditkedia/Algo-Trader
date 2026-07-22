@@ -74,8 +74,9 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
     nifty = context.get("NIFTY50", pd.DataFrame())
     nifty_exact = pd.DataFrame()
     if not nifty.empty:
-        nifty_exact = nifty[["date", "open"]].copy().rename(
-            columns={"open": "nifty_open"})
+        nifty_exact = nifty[["date", "open", "high", "low"]].copy().rename(
+            columns={"open": "nifty_open", "high": "nifty_high",
+                     "low": "nifty_low"})
         nifty_prior, _, _, _ = prior_session_metrics(nifty)
         nifty_day = local_dates(nifty).dt.normalize()
         nifty_session_open = nifty["open"].groupby(nifty_day).transform("first")
@@ -86,6 +87,9 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
         nifty_ib_high, nifty_ib_low, _ = opening_range(nifty, 30)
         nifty_exact["nifty_ib_high"] = nifty_ib_high.to_numpy()
         nifty_exact["nifty_ib_low"] = nifty_ib_low.to_numpy()
+        nifty_or_high, nifty_or_low, _ = opening_range(nifty, 5)
+        nifty_exact["nifty_or_high"] = nifty_or_high.to_numpy()
+        nifty_exact["nifty_or_low"] = nifty_or_low.to_numpy()
         nifty_exact = nifty_exact.sort_values("date")
     trend = completed_15m_trend(nifty)
 
@@ -110,9 +114,13 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
             merged["nifty_vwap"] = np.nan
             merged["nifty_close"] = np.nan
             merged["nifty_open"] = np.nan
+            merged["nifty_high"] = np.nan
+            merged["nifty_low"] = np.nan
             merged["nifty_gap_pct"] = np.nan
             merged["nifty_ib_high"] = np.nan
             merged["nifty_ib_low"] = np.nan
+            merged["nifty_or_high"] = np.nan
+            merged["nifty_or_low"] = np.nan
         if not trend.empty:
             merged = pd.merge_asof(merged.sort_values("date"), trend,
                                    on="date", direction="backward")

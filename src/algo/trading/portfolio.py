@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from typing import Dict, List
 
+import pandas as pd
+
 from algo.core.logging import get_logger
 from algo.trading.models import Order, Position, now_iso
 
@@ -73,6 +75,24 @@ class PortfolioEngine:
                    and o.session_block_group in wanted
                    and o.session == session for o in self.pending_orders())
 
+    def timed_blocked(self, symbol: str, groups: tuple,
+                      signal_time) -> bool:
+        wanted = set(groups)
+        now = pd.Timestamp(signal_time)
+        def active(group, until) -> bool:
+            return group in wanted and bool(until) and now <= pd.Timestamp(until)
+        if any(p.symbol == symbol and active(
+                p.timed_block_group, p.timed_block_until)
+               for p in self.open_positions()):
+            return True
+        if any(t.get("symbol") == symbol and active(
+                t.get("timed_block_group", ""),
+                t.get("timed_block_until", "")) for t in self.closed_trades):
+            return True
+        return any(o.symbol == symbol and o.intent == "entry" and active(
+            o.timed_block_group, o.timed_block_until)
+            for o in self.pending_orders())
+
     def deployed_capital(self) -> float:
         return sum(p.entry_price * p.open_quantity for p in self.open_positions())
 
@@ -126,6 +146,8 @@ class PortfolioEngine:
             "exclusive_group": position.exclusive_group,
             "active_conflict_group": position.active_conflict_group,
             "session_block_group": position.session_block_group,
+            "timed_block_group": position.timed_block_group,
+            "timed_block_until": position.timed_block_until,
         }
         self.closed_trades.append(record)
         self.persist()

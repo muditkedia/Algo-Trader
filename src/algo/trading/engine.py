@@ -806,6 +806,7 @@ class ProductionEngine:
             quantity=filled, entry_price=fill, entry_ts=now_iso(),
             stop=stop, initial_stop=stop, target=target,
             target2=order.entry_target2,
+            timeout_target=order.entry_timeout_target,
             partial_fraction=order.partial_fraction,
             trail_mode=order.trail_mode, open_quantity=filled,
             session=order.session, last_price=fill,
@@ -813,6 +814,8 @@ class ProductionEngine:
             exclusive_group=order.exclusive_group,
             active_conflict_group=order.active_conflict_group,
             session_block_group=order.session_block_group,
+            timed_block_group=order.timed_block_group,
+            timed_block_until=order.timed_block_until,
             last_managed_bar=order.signal_bar_time)
         self.portfolio.add_position(pos)
         self.events.emit("position", action="open", symbol=order.symbol,

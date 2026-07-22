@@ -1,6 +1,25 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-06 Initial Balance Breakout)_
+_Last updated: 2026-07-23 (STRAT-07 Opening Liquidity Sweep)_
+
+## STRAT-07 Opening Liquidity Sweep complete (2026-07-23)
+
+`liquidity_sweep_5m` is the new sole STRAT-07 implementation. It is
+bidirectional and enforces nearest opening/prior-day boundary sweeps, 0.5ATR
+depth, 40% rejection wick, range reclaim, same-slot RVOL, liquidity, RSI,
+NIFTY non-confirmation, CPR/prior-level confluence, and the 09:20–10:30 window.
+It owns the wick/ATR stop, VWAP-or-1.5R partial, breakeven, directional opposite
+boundary, chandelier, VWAP timeout, and square-off.
+
+Execution now supports directional second targets and entry-time level
+timeouts. Signals, orders, positions, closed records, recovery, and risk now
+support persisted time-bounded blockers, enabling the exact 60-minute
+STRAT-01/06 suppression. Full detail is in
+`docs/STRAT07_LIQUIDITY_SWEEP_5M.md`.
+
+Validation: Python compilation succeeded and the clean complete suite passed
+with 833 tests. All 16 registered strategies participated in scanner and exit
+verification.
 
 ## STRAT-06 Initial Balance Breakout complete (2026-07-23)
 
@@ -126,7 +145,7 @@ framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
 STRAT-01 through STRAT-03 are complete. Sequential implementation continues
-with STRAT-07.
+with STRAT-08.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

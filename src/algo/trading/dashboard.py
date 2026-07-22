@@ -55,6 +55,7 @@ STRATEGY_NAMES = {
     "gapgo_5m": "Gap & Go Acceleration (STRAT-04)",
     "gap_fill_failure_5m": "Gap Fill Failure Reversal (STRAT-05)",
     "initial_balance_5m": "Initial Balance Breakout (STRAT-06)",
+    "liquidity_sweep_5m": "Opening Liquidity Sweep (STRAT-07)",
     "insidebar_15m": "Inside Bar Breakout",
     "supertrend_15m": "Supertrend Continuation",
     "cpr_reversal_15m": "CPR Reversal",
@@ -90,6 +91,9 @@ ENTRY_RULES = {
     "initial_balance_5m": "Price accepted beyond the buffered 30-minute "
                           "initial balance on strong same-slot RVOL with "
                           "VWAP, EMA, NIFTY-IB and CPR clearance",
+    "liquidity_sweep_5m": "A shallow high-RVOL stop run through the nearest "
+                          "opening/prior-day boundary printed a dominant "
+                          "wick and closed back inside",
     "insidebar_15m": "An inside bar formed inside its mother bar and price "
                      "closed above the mother bar's high",
     "supertrend_15m": "Supertrend(10,3) state flipped bullish",

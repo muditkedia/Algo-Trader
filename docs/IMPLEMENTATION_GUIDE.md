@@ -364,6 +364,16 @@ NIFTY’s own IB, CPR clearance, and time. It owns the midpoint/ATR-capped stop,
 1.5R partial, breakeven, chandelier, VWAP invalidation, stagnation, and
 square-off. See `docs/STRAT06_INITIAL_BALANCE_5M.md`.
 
+## 5E. Opening Liquidity Sweep — `liquidity_sweep_5m`
+
+STRAT-07 is a new bidirectional 5-minute reversal implementation. It requires
+a shallow stop run through the nearest opening/prior-day boundary, a dominant
+rejection wick, reclaim, same-slot RVOL, RSI extreme, NIFTY non-confirmation,
+level confluence, liquidity, and time alignment. It owns a wick/ATR stop,
+VWAP-or-1.5R partial, breakeven, opposite-boundary target, chandelier, VWAP
+timeout, and square-off, and suppresses ORB/IBB for exactly 60 minutes. See
+`docs/STRAT07_LIQUIDITY_SWEEP_5M.md`.
+
 ## 6. EMA Pullback Continuation — `pullback_15m`
 
 1. **Original strategy name:** intraday EMA pullback (trend-pullback

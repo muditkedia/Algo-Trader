@@ -9,11 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **15 intraday strategies** via auto-discovery:
+registers **16 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **15** | 6 × 5m, 8 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **16** | 7 × 5m, 8 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -83,6 +83,7 @@ them; the other two declare their pre-reset profile as their own):
 | `gapgo_5m` | wider of opening extreme / 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `gap_fill_failure_5m` | beyond failure pivot by 0.15 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `initial_balance_5m` | IB midpoint, capped at 1.5 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
+| `liquidity_sweep_5m` | beyond sweep wick by 0.1 ATR | VWAP or 1.5R, 50%; then opposite OR bound | breakeven then post-partial 1.75 ATR chandelier |
 | `insidebar_15m` | below the inside bar's low | 2R | none |
 | `supertrend_15m` | at the Supertrend line | none (ride the state) | the Supertrend line itself (`column` trail) |
 | `cpr_reversal_15m` | below the rejection bar's low | the central floor pivot | none |
@@ -110,7 +111,7 @@ no capital constraint, fractional share quantities).
 
 ---
 
-## 2. Intraday strategies (15) — the current intraday library
+## 2. Intraday strategies (16) — the current intraday library
 
 ### 2.1 Opening Range Breakout — `orb_5m`
 
@@ -475,6 +476,16 @@ EMA, liquidity, NIFTY-IB, CPR, and time gates. It owns a collared fill,
 midpoint/ATR-capped stop, 1.5R half exit, breakeven, chandelier, VWAP and
 stagnation invalidation, and square-off. See
 `docs/STRAT06_INITIAL_BALANCE_5M.md`.
+
+### 2.16 Opening Liquidity Sweep — `liquidity_sweep_5m`
+
+STRAT-07 trades a shallow, high-RVOL stop run through the nearest opening or
+prior-day boundary after a dominant rejection wick closes back inside. RSI,
+NIFTY non-confirmation, CPR/prior-level confluence, liquidity, and time gates
+filter the setup. Execution uses a wick/ATR stop, VWAP-or-1.5R partial,
+breakeven, opposite opening boundary, chandelier, VWAP timeout, square-off,
+and persisted 60-minute ORB/IBB suppression. See
+`docs/STRAT07_LIQUIDITY_SWEEP_5M.md`.
 
 ---
 

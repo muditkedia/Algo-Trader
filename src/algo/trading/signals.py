@@ -33,6 +33,7 @@ class TradingSignal:
     stop: float
     target: Optional[float] = None
     target2: Optional[float] = None
+    timeout_target: Optional[float] = None
     confidence: float = 0.0
     session: str = ""                 # signal bar's session date (ISO)
     direction: Direction = Direction.LONG
@@ -47,6 +48,9 @@ class TradingSignal:
     active_conflict_group: str = ""
     session_block_group: str = ""
     blocked_by_session_groups: tuple = ()
+    timed_block_group: str = ""
+    timed_block_until: str = ""
+    blocked_by_timed_groups: tuple = ()
     atr_at_entry: float = 0.0
     structural_stop: float = 0.0
 
@@ -81,11 +85,20 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
         return None
     target = _target(prepared, index, entry, stop, spec, direction)
     target2 = None
-    if spec.partial_fraction > 0 and spec.target2_col:
-        t2 = float(prepared[spec.target2_col].iloc[index])
+    target2_col = ((spec.target2_long_col if direction == Direction.LONG
+                    else spec.target2_short_col) or spec.target2_col)
+    if spec.partial_fraction > 0 and target2_col:
+        t2 = float(prepared[target2_col].iloc[index])
         valid = t2 > entry if direction == Direction.LONG else t2 < entry
         if pd.notna(t2) and valid:
             target2 = t2
+    timeout_target = None
+    timeout_col = (spec.timeout_target_long_col
+                   if direction == Direction.LONG
+                   else spec.timeout_target_short_col)
+    if spec.timeout_bars is not None and timeout_col:
+        value = float(prepared[timeout_col].iloc[index])
+        timeout_target = value if pd.notna(value) else None
     try:
         scored = strategy.confidence_for(prepared.iloc[: index + 1], direction)
         conf = float(scored.score)
@@ -105,7 +118,8 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
     return TradingSignal(
         symbol=str(row.get("symbol", "")), strategy=strategy.name,
         timeframe=timeframe, bar_time=bar_time, entry_ref=entry, spec=spec,
-        stop=float(stop), target=target, target2=target2, confidence=conf,
+        stop=float(stop), target=target, target2=target2,
+        timeout_target=timeout_target, confidence=conf,
         session=str(bar_time.normalize().date()), direction=direction,
         trigger_price=trigger, limit_price=limit, regime_score=regime,
         priority_score=priority, grade_multiplier=grade,
@@ -115,6 +129,11 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
         active_conflict_group=strategy.meta.active_conflict_group,
         session_block_group=strategy.meta.session_block_group,
         blocked_by_session_groups=strategy.meta.blocked_by_session_groups,
+        timed_block_group=strategy.meta.timed_block_group,
+        timed_block_until=(str(pd.Timestamp(row["date"]) + pd.Timedelta(
+            minutes=strategy.meta.timed_block_minutes))
+            if strategy.meta.timed_block_group else ""),
+        blocked_by_timed_groups=strategy.meta.blocked_by_timed_groups,
         atr_at_entry=float(atr_value),
         structural_stop=float(row[(spec.stop_long_col
                                    if direction == Direction.LONG

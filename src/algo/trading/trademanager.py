@@ -109,6 +109,14 @@ class TradeManager:
         if invalidation_col and bool(bar.get(invalidation_col, False)):
             return ManageDecision("exit", price=c,
                                   reason="structural_invalidation")
+        if (is_new_bar and spec.timeout_bars is not None
+                and position.timeout_target is not None
+                and position.bars_held >= spec.timeout_bars):
+            reached = (position.highest_since_entry >= position.timeout_target
+                       if is_long else
+                       position.lowest_since_entry <= position.timeout_target)
+            if not reached:
+                return ManageDecision("exit", price=c, reason="target_timeout")
         if (is_new_bar and spec.no_progress_bars is not None
                 and position.bars_held >= spec.no_progress_bars):
             initial_risk = abs(position.entry_price - position.initial_stop)

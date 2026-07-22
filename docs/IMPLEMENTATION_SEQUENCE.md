@@ -93,6 +93,7 @@ order can be changed at review):
 | 3.2b | `gapgo_5m` **complete** | STRAT-04: bidirectional retained-gap acceleration, asymmetric opening RVOL, NIFTY gap, session suppression |
 | 3.2c | `gap_fill_failure_5m` **complete** | STRAT-05: partial-fill pivot state, reversal RVOL, NIFTY trend, post-Gap-Go permission |
 | 3.2d | `initial_balance_5m` **complete** | STRAT-06: immutable 30-minute IB, width/RVOL acceptance, NIFTY IB and CPR clearance |
+| 3.2e | `liquidity_sweep_5m` **complete** | STRAT-07: wick/depth reclaim, directional targets, VWAP timeout, 60-minute persisted suppression |
 | 3.3 | `cpr_breakout_15m` | narrow-CPR gate + two-day relation + gap context (F10/F3), RVOL, index alignment, morning window |
 | 3.4 | `vwap_15m` | slope requirement, reclaim cap, range-day rejection, index alignment, window |
 | 3.5 | retired `first_pullback_15m` | Superseded by completed STRAT-02 `orb_retest_5m`; no duplicate implementation retained |

@@ -62,6 +62,8 @@ class ExecutionSpec:
     #: stop / square-off.
     partial_fraction: float = 0.0
     target2_col: Optional[str] = None
+    target2_long_col: Optional[str] = None
+    target2_short_col: Optional[str] = None
 
     # ------------------------------------------------------------ trailing
     #: ``none`` | ``chandelier`` (ATR trail + profit-lock ladder from the
@@ -83,6 +85,11 @@ class ExecutionSpec:
     #: R multiple. Both must be set together.
     no_progress_bars: Optional[int] = None
     no_progress_r: float = 0.0
+    #: Exit after ``timeout_bars`` unless price has touched the directional
+    #: entry-time target column (for level-specific time-decay rules).
+    timeout_bars: Optional[int] = None
+    timeout_target_long_col: Optional[str] = None
+    timeout_target_short_col: Optional[str] = None
 
     # -------------------------------------------------------------- sizing
     #: Strategy ceilings; the account risk engine always applies the stricter
@@ -134,6 +141,11 @@ class ExecutionSpec:
             raise ValueError("no-progress bars and R threshold must be set together")
         if self.no_progress_bars is not None and self.no_progress_bars < 1:
             raise ValueError("no_progress_bars must be positive")
+        if self.timeout_bars is not None and self.timeout_bars < 1:
+            raise ValueError("timeout_bars must be positive")
+        if self.timeout_bars is not None and not (
+                self.timeout_target_long_col and self.timeout_target_short_col):
+            raise ValueError("timeout_bars needs directional target columns")
         if self.risk_per_trade_pct is not None \
                 and not 0 < self.risk_per_trade_pct <= 1:
             raise ValueError("risk_per_trade_pct must be in (0, 1]")

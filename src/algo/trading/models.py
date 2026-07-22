@@ -78,6 +78,7 @@ class Order:
     entry_stop: float = 0.0
     entry_target: Optional[float] = None
     entry_target2: Optional[float] = None
+    entry_timeout_target: Optional[float] = None
     partial_fraction: float = 0.0
     trail_mode: str = "none"
     atr_at_entry: float = 0.0
@@ -86,6 +87,8 @@ class Order:
     active_conflict_group: str = ""
     entry_target_r: float = 0.0
     session_block_group: str = ""
+    timed_block_group: str = ""
+    timed_block_until: str = ""
     last_managed_bar: str = ""
 
     def to_dict(self) -> dict:
@@ -127,6 +130,7 @@ class Position:
     initial_stop: float
     target: Optional[float] = None
     target2: Optional[float] = None
+    timeout_target: Optional[float] = None
     partial_fraction: float = 0.0
     partial_done: bool = False
     trail_mode: str = "none"          # none | chandelier | column
@@ -144,6 +148,8 @@ class Position:
     exclusive_group: str = ""
     active_conflict_group: str = ""
     session_block_group: str = ""
+    timed_block_group: str = ""
+    timed_block_until: str = ""
     last_managed_bar: str = ""
 
     def __post_init__(self) -> None:

@@ -112,6 +112,7 @@ class OrderManager:
             signal_bar_time=str(signal.bar_time), session=signal.session,
             entry_stop=signal.stop, entry_target=signal.target,
             entry_target2=signal.target2,
+            entry_timeout_target=signal.timeout_target,
             partial_fraction=signal.spec.partial_fraction,
             trail_mode=signal.spec.trail,
             atr_at_entry=getattr(signal, "atr_at_entry", 0.0),
@@ -119,6 +120,8 @@ class OrderManager:
             exclusive_group=signal.exclusive_group,
             active_conflict_group=signal.active_conflict_group,
             session_block_group=signal.session_block_group,
+            timed_block_group=signal.timed_block_group,
+            timed_block_until=signal.timed_block_until,
             entry_target_r=(abs(float(signal.target) - signal.entry_ref)
                             / signal.risk_per_unit
                             if signal.target is not None
