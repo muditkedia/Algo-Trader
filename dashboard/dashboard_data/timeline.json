@@ -1,344 +1,1208 @@
 {
- "generated_at": "2026-07-20T08:03:18.925762+00:00",
+ "generated_at": "2026-07-22T07:14:48.344716+00:00",
  "schema": 2,
  "data": {
-  "count": 56,
+  "count": 521,
   "events": [
    {
-    "time": "13:25:36",
+    "time": "12:43:13",
+    "text": "BUY filled COLPAL @ Rs 2,085.22",
+    "kind": "position",
+    "ts": "2026-07-22T07:13:13.957763+00:00"
+   },
+   {
+    "time": "12:43:13",
+    "text": "BUY entry COLPAL qty 71.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-22T07:13:13.947489+00:00"
+   },
+   {
+    "time": "12:43:13",
+    "text": "COLPAL qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T07:13:13.927370+00:00"
+   },
+   {
+    "time": "12:37:01",
+    "text": "GRASIM closed (stop_loss) @ Rs 3,156.17 | P&L Rs -210",
+    "kind": "position",
+    "ts": "2026-07-22T07:07:01.239981+00:00"
+   },
+   {
+    "time": "12:37:01",
+    "text": "SELL exit GRASIM qty 47.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-22T07:07:01.229671+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "TORNTPHARM rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 5,013, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.812591+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "TORNTPHARM qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.810169+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "TORNTPHARM rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 5,013, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.809170+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "TORNTPHARM qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.804357+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "PFC rejected - below minimum allocation: the largest position the caps allow is 15 share(s) = Rs 6,185, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.804357+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "PFC qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.803213+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "PFC rejected - below minimum allocation: the largest position the caps allow is 15 share(s) = Rs 6,185, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.801580+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "PFC qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.800574+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "MOTHERSON rejected - below minimum allocation: the largest position the caps allow is 44 share(s) = Rs 6,467, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.798913+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "MOTHERSON qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.797147+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "JSWENERGY rejected - below minimum allocation: the largest position the caps allow is 11 share(s) = Rs 6,242, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.796140+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "JSWENERGY qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.794132+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "IOC rejected - below minimum allocation: the largest position the caps allow is 45 share(s) = Rs 6,433, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.791078+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "IOC qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.791078+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "IOC rejected - below minimum allocation: the largest position the caps allow is 45 share(s) = Rs 6,433, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.789683+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "IOC qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.788325+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "GAIL rejected - below minimum allocation: the largest position the caps allow is 37 share(s) = Rs 6,411, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.787325+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "GAIL qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.785426+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "ABB rejected - cannot size a whole lot at 7581.50: stop distance 18.51/share needs >4,819 risk budget or >6,556 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.783321+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "ABB qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.782323+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "TATACONSUM rejected - below minimum allocation: the largest position the caps allow is 6 share(s) = Rs 6,498, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.780323+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "TATACONSUM qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.778309+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "SUNPHARMA rejected - below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 5,843, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.776704+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "SUNPHARMA qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.775704+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "SUNPHARMA rejected - below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 5,843, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.773706+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "SUNPHARMA qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.771707+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "SUNPHARMA rejected - below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 5,843, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.770727+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "SUNPHARMA qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.768705+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "POWERGRID rejected - below minimum allocation: the largest position the caps allow is 22 share(s) = Rs 6,325, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.767705+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "POWERGRID qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.765705+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "POWERGRID rejected - below minimum allocation: the largest position the caps allow is 22 share(s) = Rs 6,325, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.764705+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "POWERGRID qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.762699+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "NTPC rejected - below minimum allocation: the largest position the caps allow is 18 share(s) = Rs 6,270, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.761697+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "NTPC qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.759018+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "M&M rejected - below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 6,400, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.755934+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "M&M qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.755934+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "LT rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,829, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.755014+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "LT qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.752053+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "INFY rejected - below minimum allocation: the largest position the caps allow is 6 share(s) = Rs 6,366, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.752053+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "INFY qualified CPR Reversal",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.748799+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "HINDUNILVR rejected - below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 6,457, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.748799+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "HINDUNILVR qualified NR7 Intraday",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.747206+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "HCLTECH rejected - below minimum allocation: the largest position the caps allow is 5 share(s) = Rs 6,194, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T07:07:00.746073+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "HCLTECH qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.741959+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "BUY filled GRASIM @ Rs 3,160.63",
+    "kind": "position",
+    "ts": "2026-07-22T07:07:00.741959+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "BUY entry GRASIM qty 47.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-22T07:07:00.733455+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "GRASIM qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.717467+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "BUY filled EICHERMOT @ Rs 7,626.02",
+    "kind": "position",
+    "ts": "2026-07-22T07:07:00.713963+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "BUY entry EICHERMOT qty 19.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-22T07:07:00.707916+00:00"
+   },
+   {
+    "time": "12:37:00",
+    "text": "EICHERMOT qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T07:07:00.689500+00:00"
+   },
+   {
+    "time": "12:35:07",
     "text": "Engine started - preflight complete",
     "kind": "system",
-    "ts": "2026-07-20T07:55:36.168243+00:00"
+    "ts": "2026-07-22T07:05:07.990645+00:00"
    },
    {
-    "time": "13:25:35",
+    "time": "12:35:07",
     "text": "Recovery: reconciled",
     "kind": "system",
-    "ts": "2026-07-20T07:55:35.658273+00:00"
+    "ts": "2026-07-22T07:05:07.515642+00:00"
    },
    {
-    "time": "13:25:35",
+    "time": "12:35:07",
     "text": "Recovery: orphaned_internal",
     "kind": "system",
-    "ts": "2026-07-20T07:55:35.654327+00:00"
+    "ts": "2026-07-22T07:05:07.508992+00:00"
    },
    {
-    "time": "13:25:35",
-    "text": "Recovery: orphaned_internal",
-    "kind": "system",
-    "ts": "2026-07-20T07:55:35.647321+00:00"
-   },
-   {
-    "time": "13:25:35",
-    "text": "Recovery: orphaned_internal",
-    "kind": "system",
-    "ts": "2026-07-20T07:55:35.638197+00:00"
-   },
-   {
-    "time": "13:25:35",
-    "text": "Recovery: orphaned_internal",
-    "kind": "system",
-    "ts": "2026-07-20T07:55:35.629200+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "UNITDSPR rejected - cannot size a whole lot at 1376.50: stop distance 3.96/share needs >8,947 risk budget or >12 capital for one lot",
-    "kind": "reject",
-    "ts": "2026-07-20T06:31:43.284810+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "UNITDSPR qualified VWAP Pullback",
-    "kind": "signal",
-    "ts": "2026-07-20T06:31:43.284810+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "PNB rejected - cannot size a whole lot at 106.01: stop distance 0.75/share needs >8,947 risk budget or >12 capital for one lot",
-    "kind": "reject",
-    "ts": "2026-07-20T06:31:43.283812+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "PNB qualified VWAP Pullback",
-    "kind": "signal",
-    "ts": "2026-07-20T06:31:43.281806+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "PNB rejected - cannot size a whole lot at 106.01: stop distance 0.58/share needs >8,947 risk budget or >12 capital for one lot",
-    "kind": "reject",
-    "ts": "2026-07-20T06:31:43.281806+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "PNB qualified First Pullback After Breakout",
-    "kind": "signal",
-    "ts": "2026-07-20T06:31:43.278292+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "ICICIPRULI rejected - cannot size a whole lot at 497.45: stop distance 2.30/share needs >8,947 risk budget or >12 capital for one lot",
-    "kind": "reject",
-    "ts": "2026-07-20T06:31:43.278292+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "ICICIPRULI qualified CPR Reversal",
-    "kind": "signal",
-    "ts": "2026-07-20T06:31:43.278292+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "GAIL rejected - symbol already held: GAIL",
-    "kind": "reject",
-    "ts": "2026-07-20T06:31:43.277279+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "GAIL qualified VWAP Pullback",
-    "kind": "signal",
-    "ts": "2026-07-20T06:31:43.274861+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "BUY filled GAIL @ Rs 171.83",
+    "time": "12:30:26",
+    "text": "ADANIENT closed (stop_loss) @ Rs 3,173.94 | P&L Rs -929",
     "kind": "position",
-    "ts": "2026-07-20T06:31:43.271573+00:00"
+    "ts": "2026-07-22T07:00:26.400036+00:00"
    },
    {
-    "time": "12:01:43",
-    "text": "GAIL qualified Opening Range Breakout",
+    "time": "12:30:26",
+    "text": "SELL exit ADANIENT qty 46.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-22T07:00:26.400036+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "TORNTPHARM rejected - cannot size a whole lot at 5012.80: stop distance 61.70/share needs >5,169 risk budget or >4,162 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.144228+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "TORNTPHARM qualified EMA Pullback Continuation",
     "kind": "signal",
-    "ts": "2026-07-20T06:31:43.268560+00:00"
+    "ts": "2026-07-22T06:23:20.140084+00:00"
    },
    {
-    "time": "12:01:43",
-    "text": "BUY filled RELIANCE @ Rs 1,329.07",
+    "time": "11:53:20",
+    "text": "TORNTPHARM rejected - cannot size a whole lot at 5012.80: stop distance 27.60/share needs >5,169 risk budget or >4,162 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.136217+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "TORNTPHARM qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.134211+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "PFC rejected - below minimum allocation: the largest position the caps allow is 10 share(s) = Rs 4,124, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.133205+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "PFC qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.127706+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "PFC rejected - below minimum allocation: the largest position the caps allow is 10 share(s) = Rs 4,124, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.127706+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "PFC qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.127706+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "MOTHERSON rejected - below minimum allocation: the largest position the caps allow is 28 share(s) = Rs 4,115, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.127030+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "MOTHERSON qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.123734+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "JSWENERGY rejected - below minimum allocation: the largest position the caps allow is 7 share(s) = Rs 3,972, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.122924+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "JSWENERGY qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.120350+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "IOC rejected - below minimum allocation: the largest position the caps allow is 29 share(s) = Rs 4,146, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.117894+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "IOC qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.115386+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "IOC rejected - below minimum allocation: the largest position the caps allow is 29 share(s) = Rs 4,146, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.113754+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "IOC qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.111396+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "GAIL rejected - below minimum allocation: the largest position the caps allow is 24 share(s) = Rs 4,158, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.109876+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "GAIL qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.107648+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "COLPAL rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 2,096, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.104650+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "COLPAL qualified Opening Range Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.102649+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "CANBK rejected - below minimum allocation: the largest position the caps allow is 32 share(s) = Rs 4,064, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.099648+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "CANBK qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.096131+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "CANBK rejected - below minimum allocation: the largest position the caps allow is 32 share(s) = Rs 4,064, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.095132+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "CANBK qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.089643+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "CANBK rejected - below minimum allocation: the largest position the caps allow is 32 share(s) = Rs 4,064, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.089643+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "CANBK qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.087321+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BANKBARODA rejected - below minimum allocation: the largest position the caps allow is 16 share(s) = Rs 3,943, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.086314+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BANKBARODA qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.083489+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "ABB rejected - cannot size a whole lot at 7612.00: stop distance 65.19/share needs >5,169 risk budget or >4,162 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.081486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "ABB qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.079486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "TATACONSUM rejected - below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 3,249, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.078486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "TATACONSUM qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.076486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "SUNPHARMA rejected - below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 3,895, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.075486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "SUNPHARMA qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.074486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "SUNPHARMA rejected - below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 3,895, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.073486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "SUNPHARMA qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.072486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "SUNPHARMA rejected - below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 3,895, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.071487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "SUNPHARMA qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.069486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "POWERGRID rejected - below minimum allocation: the largest position the caps allow is 14 share(s) = Rs 4,025, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.068487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "POWERGRID qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.067486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "POWERGRID rejected - below minimum allocation: the largest position the caps allow is 14 share(s) = Rs 4,025, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.066486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "POWERGRID qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.065486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "NTPC rejected - below minimum allocation: the largest position the caps allow is 11 share(s) = Rs 3,832, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.064487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "NTPC qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.063486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "M&M rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,200, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.062486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "M&M qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.061486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "LT rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,829, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.060486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "LT qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.058487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "INFY rejected - below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 3,183, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.057486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "INFY qualified CPR Reversal",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.056486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "HINDUNILVR rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 2,152, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.055487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "HINDUNILVR qualified NR7 Intraday",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.054486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "HCLTECH rejected - below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 3,716, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.053486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "HCLTECH qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.052487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "GRASIM rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,160, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.051486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "GRASIM qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.049486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "EICHERMOT rejected - cannot size a whole lot at 7624.50: stop distance 95.45/share needs >5,169 risk budget or >4,162 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.048487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "EICHERMOT qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.047487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BPCL rejected - below minimum allocation: the largest position the caps allow is 12 share(s) = Rs 3,847, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.046486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BPCL qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.045487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BPCL rejected - below minimum allocation: the largest position the caps allow is 12 share(s) = Rs 3,847, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.044487+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BPCL qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.042486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BPCL rejected - below minimum allocation: the largest position the caps allow is 12 share(s) = Rs 3,847, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.041486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BPCL qualified First Pullback After Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.040488+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BPCL rejected - below minimum allocation: the largest position the caps allow is 12 share(s) = Rs 3,847, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.038486+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BPCL qualified CPR Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.036488+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BAJAJ-AUTO rejected - cannot size a whole lot at 10883.00: stop distance 143.51/share needs >5,169 risk budget or >4,162 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:23:20.035492+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BAJAJ-AUTO qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:23:20.034491+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "BUY filled ADANIENT @ Rs 3,194.14",
     "kind": "position",
-    "ts": "2026-07-20T06:31:43.267619+00:00"
+    "ts": "2026-07-22T06:23:20.033493+00:00"
    },
    {
-    "time": "12:01:43",
-    "text": "RELIANCE qualified VWAP Pullback",
+    "time": "11:53:20",
+    "text": "BUY entry ADANIENT qty 46.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-22T06:23:20.023141+00:00"
+   },
+   {
+    "time": "11:53:20",
+    "text": "ADANIENT qualified VWAP Pullback",
     "kind": "signal",
-    "ts": "2026-07-20T06:31:43.262565+00:00"
+    "ts": "2026-07-22T06:23:20.001974+00:00"
    },
    {
-    "time": "12:01:43",
-    "text": "BUY filled MARUTI @ Rs 13,826.76",
+    "time": "11:51:32",
+    "text": "BUY filled BRITANNIA @ Rs 5,515.10",
     "kind": "position",
-    "ts": "2026-07-20T06:31:43.261464+00:00"
+    "ts": "2026-07-22T06:21:32.082138+00:00"
    },
    {
-    "time": "12:01:43",
-    "text": "MARUTI qualified VWAP Pullback",
+    "time": "11:51:32",
+    "text": "BUY entry BRITANNIA qty 27.0 -> FILLED",
+    "kind": "order",
+    "ts": "2026-07-22T06:21:32.072373+00:00"
+   },
+   {
+    "time": "11:51:32",
+    "text": "BRITANNIA qualified Bollinger Squeeze Breakout (1h)",
     "kind": "signal",
-    "ts": "2026-07-20T06:31:43.255933+00:00"
+    "ts": "2026-07-22T06:21:32.054590+00:00"
    },
    {
-    "time": "12:01:43",
-    "text": "BUY filled HDFCBANK @ Rs 820.96",
-    "kind": "position",
-    "ts": "2026-07-20T06:31:43.254702+00:00"
-   },
-   {
-    "time": "12:01:43",
-    "text": "HDFCBANK qualified VWAP Pullback",
-    "kind": "signal",
-    "ts": "2026-07-20T06:31:43.250325+00:00"
-   },
-   {
-    "time": "12:00:17",
+    "time": "11:51:30",
     "text": "Engine started - preflight complete",
     "kind": "system",
-    "ts": "2026-07-20T06:30:17.315557+00:00"
+    "ts": "2026-07-22T06:21:30.358043+00:00"
    },
    {
-    "time": "12:00:16",
+    "time": "11:51:29",
     "text": "Recovery: reconciled",
     "kind": "system",
-    "ts": "2026-07-20T06:30:16.877753+00:00"
+    "ts": "2026-07-22T06:21:29.928489+00:00"
    },
    {
-    "time": "12:00:16",
+    "time": "11:51:29",
     "text": "Recovery: orphaned_internal",
     "kind": "system",
-    "ts": "2026-07-20T06:30:16.873472+00:00"
+    "ts": "2026-07-22T06:21:29.913678+00:00"
    },
    {
-    "time": "12:00:16",
+    "time": "11:51:29",
     "text": "Recovery: orphaned_internal",
     "kind": "system",
-    "ts": "2026-07-20T06:30:16.865727+00:00"
+    "ts": "2026-07-22T06:21:29.913678+00:00"
    },
    {
-    "time": "12:00:16",
-    "text": "Recovery: orphaned_internal",
-    "kind": "system",
-    "ts": "2026-07-20T06:30:16.856993+00:00"
-   },
-   {
-    "time": "12:00:16",
-    "text": "Recovery: orphaned_internal",
-    "kind": "system",
-    "ts": "2026-07-20T06:30:16.846078+00:00"
-   },
-   {
-    "time": "09:30:33",
-    "text": "UNITDSPR rejected - cannot size a whole lot at 1376.50: stop distance 3.96/share needs >9,007 risk budget or >12 capital for one lot",
+    "time": "11:33:57",
+    "text": "IOC rejected - below minimum allocation: the largest position the caps allow is 30 share(s) = Rs 4,289, under the 25% floor of Rs 75,000",
     "kind": "reject",
-    "ts": "2026-07-20T04:00:33.659534+00:00"
+    "ts": "2026-07-22T06:03:57.025835+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "UNITDSPR qualified VWAP Pullback",
+    "time": "11:33:57",
+    "text": "IOC qualified VWAP Pullback",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.659534+00:00"
+    "ts": "2026-07-22T06:03:57.025835+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "PNB rejected - cannot size a whole lot at 106.01: stop distance 0.75/share needs >9,007 risk budget or >12 capital for one lot",
+    "time": "11:33:57",
+    "text": "IOC rejected - below minimum allocation: the largest position the caps allow is 10 share(s) = Rs 1,430, under the 25% floor of Rs 75,000",
     "kind": "reject",
-    "ts": "2026-07-20T04:00:33.656100+00:00"
+    "ts": "2026-07-22T06:03:57.025835+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "PNB qualified VWAP Pullback",
+    "time": "11:33:57",
+    "text": "IOC qualified EMA Pullback Continuation",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.656100+00:00"
+    "ts": "2026-07-22T06:03:57.024363+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "PNB rejected - cannot size a whole lot at 106.01: stop distance 0.58/share needs >9,007 risk budget or >12 capital for one lot",
+    "time": "11:33:57",
+    "text": "GAIL rejected - below minimum allocation: the largest position the caps allow is 40 share(s) = Rs 6,930, under the 25% floor of Rs 75,000",
     "kind": "reject",
-    "ts": "2026-07-20T04:00:33.656100+00:00"
+    "ts": "2026-07-22T06:03:57.023368+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "PNB qualified First Pullback After Breakout",
+    "time": "11:33:57",
+    "text": "GAIL qualified Inside Bar Breakout",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.656100+00:00"
+    "ts": "2026-07-22T06:03:57.022369+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "ICICIPRULI rejected - cannot size a whole lot at 497.45: stop distance 2.30/share needs >9,007 risk budget or >12 capital for one lot",
+    "time": "11:33:57",
+    "text": "COLPAL rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 2,096, under the 25% floor of Rs 75,000",
     "kind": "reject",
-    "ts": "2026-07-20T04:00:33.656100+00:00"
+    "ts": "2026-07-22T06:03:57.021370+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "ICICIPRULI qualified CPR Reversal",
+    "time": "11:33:57",
+    "text": "COLPAL qualified Opening Range Breakout",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.655072+00:00"
+    "ts": "2026-07-22T06:03:57.019293+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "GAIL rejected - symbol already held: GAIL",
+    "time": "11:33:57",
+    "text": "CANBK rejected - below minimum allocation: the largest position the caps allow is 25 share(s) = Rs 3,175, under the 25% floor of Rs 75,000",
     "kind": "reject",
-    "ts": "2026-07-20T04:00:33.654767+00:00"
+    "ts": "2026-07-22T06:03:57.018295+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "GAIL qualified VWAP Pullback",
+    "time": "11:33:57",
+    "text": "CANBK qualified VWAP Pullback",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.653754+00:00"
+    "ts": "2026-07-22T06:03:57.016381+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "BUY filled GAIL @ Rs 171.83",
-    "kind": "position",
-    "ts": "2026-07-20T04:00:33.652953+00:00"
+    "time": "11:33:57",
+    "text": "CANBK rejected - below minimum allocation: the largest position the caps allow is 11 share(s) = Rs 1,397, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:03:57.015295+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "BUY entry GAIL qty 2.0 -> FILLED",
-    "kind": "order",
-    "ts": "2026-07-20T04:00:33.647882+00:00"
-   },
-   {
-    "time": "09:30:33",
-    "text": "GAIL qualified Opening Range Breakout",
+    "time": "11:33:57",
+    "text": "CANBK qualified EMA Pullback Continuation",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.643659+00:00"
+    "ts": "2026-07-22T06:03:57.013286+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "BUY filled RELIANCE @ Rs 1,329.07",
-    "kind": "position",
-    "ts": "2026-07-20T04:00:33.642376+00:00"
+    "time": "11:33:57",
+    "text": "CANBK rejected - below minimum allocation: the largest position the caps allow is 27 share(s) = Rs 3,429, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:03:57.011889+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "BUY entry RELIANCE qty 9.0 -> FILLED",
-    "kind": "order",
-    "ts": "2026-07-20T04:00:33.639696+00:00"
-   },
-   {
-    "time": "09:30:33",
-    "text": "RELIANCE qualified VWAP Pullback",
+    "time": "11:33:57",
+    "text": "CANBK qualified Inside Bar Breakout",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.635593+00:00"
+    "ts": "2026-07-22T06:03:57.010890+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "BUY filled MARUTI @ Rs 13,826.76",
-    "kind": "position",
-    "ts": "2026-07-20T04:00:33.634593+00:00"
+    "time": "11:33:57",
+    "text": "INFY rejected - below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 3,183, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:03:57.009889+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "BUY entry MARUTI qty 10.0 -> FILLED",
-    "kind": "order",
-    "ts": "2026-07-20T04:00:33.632369+00:00"
-   },
-   {
-    "time": "09:30:33",
-    "text": "MARUTI qualified VWAP Pullback",
+    "time": "11:33:57",
+    "text": "INFY qualified CPR Reversal",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.626968+00:00"
+    "ts": "2026-07-22T06:03:57.007741+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "BUY filled HDFCBANK @ Rs 820.96",
-    "kind": "position",
-    "ts": "2026-07-20T04:00:33.625918+00:00"
+    "time": "11:33:57",
+    "text": "HINDUNILVR rejected - cannot size a whole lot at 2152.20: stop distance 24.70/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:03:57.006741+00:00"
    },
    {
-    "time": "09:30:33",
-    "text": "BUY entry HDFCBANK qty 182.0 -> FILLED",
-    "kind": "order",
-    "ts": "2026-07-20T04:00:33.613680+00:00"
-   },
-   {
-    "time": "09:30:33",
-    "text": "HDFCBANK qualified VWAP Pullback",
+    "time": "11:33:57",
+    "text": "HINDUNILVR qualified NR7 Intraday",
     "kind": "signal",
-    "ts": "2026-07-20T04:00:33.590145+00:00"
+    "ts": "2026-07-22T06:03:57.005740+00:00"
    },
    {
-    "time": "09:00:44",
-    "text": "Engine started - preflight complete",
-    "kind": "system",
-    "ts": "2026-07-20T03:30:44.137049+00:00"
+    "time": "11:33:57",
+    "text": "HCLTECH rejected - below minimum allocation: the largest position the caps allow is 7 share(s) = Rs 8,672, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:03:57.004741+00:00"
    },
    {
-    "time": "09:00:43",
-    "text": "Recovery: reconciled",
-    "kind": "system",
-    "ts": "2026-07-20T03:30:43.244580+00:00"
+    "time": "11:33:57",
+    "text": "HCLTECH qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:03:57.003740+00:00"
    },
    {
-    "time": "05:32:39",
-    "text": "Engine started - preflight complete",
-    "kind": "system",
-    "ts": "2026-07-20T00:02:39.815297+00:00"
+    "time": "11:33:57",
+    "text": "GRASIM rejected - below minimum allocation: the largest position the caps allow is 14 share(s) = Rs 44,240, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:03:57.002741+00:00"
    },
    {
-    "time": "05:32:39",
-    "text": "Recovery: reconciled",
-    "kind": "system",
-    "ts": "2026-07-20T00:02:39.253116+00:00"
+    "time": "11:33:57",
+    "text": "GRASIM qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:03:57.001741+00:00"
+   },
+   {
+    "time": "11:33:57",
+    "text": "EICHERMOT rejected - cannot size a whole lot at 7624.50: stop distance 95.45/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:03:57.000741+00:00"
+   },
+   {
+    "time": "11:33:56",
+    "text": "EICHERMOT qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T06:03:56.998740+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BANKBARODA rejected - below minimum allocation: the largest position the caps allow is 43 share(s) = Rs 10,597, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.784703+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BANKBARODA qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.782515+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "ADANIENSOL rejected - symbol already held: ADANIENSOL",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.781520+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "ADANIENSOL qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.779515+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "ABB rejected - cannot size a whole lot at 7612.00: stop distance 65.19/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.778513+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "ABB qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.777373+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BPCL rejected - below minimum allocation: the largest position the caps allow is 6 share(s) = Rs 1,924, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.775367+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BPCL qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.774367+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BPCL rejected - below minimum allocation: the largest position the caps allow is 11 share(s) = Rs 3,527, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.773367+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BPCL qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.772370+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BPCL rejected - below minimum allocation: the largest position the caps allow is 11 share(s) = Rs 3,527, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.771372+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BPCL qualified First Pullback After Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.769019+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BPCL rejected - below minimum allocation: the largest position the caps allow is 12 share(s) = Rs 3,847, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.768055+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BPCL qualified CPR Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.767054+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BAJAJ-AUTO rejected - cannot size a whole lot at 10883.00: stop distance 143.51/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.766046+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "BAJAJ-AUTO qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.765057+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "ADANIENT rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,194, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T06:02:02.763496+00:00"
+   },
+   {
+    "time": "11:32:02",
+    "text": "ADANIENT qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T06:02:02.761849+00:00"
+   },
+   {
+    "time": "11:28:07",
+    "text": "TATACONSUM rejected - below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 1,083, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T05:58:07.030456+00:00"
+   },
+   {
+    "time": "11:28:07",
+    "text": "TATACONSUM qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T05:58:07.029458+00:00"
+   },
+   {
+    "time": "11:26:16",
+    "text": "BRITANNIA rejected - cannot size a whole lot at 5514.00: stop distance 79.00/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T05:56:16.855690+00:00"
+   },
+   {
+    "time": "11:26:16",
+    "text": "BRITANNIA qualified Bollinger Squeeze Breakout (1h)",
+    "kind": "signal",
+    "ts": "2026-07-22T05:56:16.853914+00:00"
+   },
+   {
+    "time": "11:22:54",
+    "text": "TORNTPHARM rejected - cannot size a whole lot at 5012.80: stop distance 61.70/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T05:52:54.281565+00:00"
+   },
+   {
+    "time": "11:22:54",
+    "text": "TORNTPHARM qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T05:52:54.281565+00:00"
+   },
+   {
+    "time": "11:22:54",
+    "text": "TORNTPHARM rejected - cannot size a whole lot at 5012.80: stop distance 27.60/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T05:52:54.281565+00:00"
+   },
+   {
+    "time": "11:22:54",
+    "text": "TORNTPHARM qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T05:52:54.281565+00:00"
+   },
+   {
+    "time": "11:20:44",
+    "text": "SUNPHARMA rejected - below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 3,895, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T05:50:44.815028+00:00"
+   },
+   {
+    "time": "11:20:44",
+    "text": "SUNPHARMA qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T05:50:44.813025+00:00"
+   },
+   {
+    "time": "11:20:44",
+    "text": "SUNPHARMA rejected - cannot size a whole lot at 1947.60: stop distance 23.32/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T05:50:44.813025+00:00"
+   },
+   {
+    "time": "11:20:44",
+    "text": "SUNPHARMA qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T05:50:44.811023+00:00"
+   },
+   {
+    "time": "11:20:44",
+    "text": "SUNPHARMA rejected - below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 3,895, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T05:50:44.811023+00:00"
+   },
+   {
+    "time": "11:20:44",
+    "text": "SUNPHARMA qualified Inside Bar Breakout",
+    "kind": "signal",
+    "ts": "2026-07-22T05:50:44.809021+00:00"
+   },
+   {
+    "time": "11:18:47",
+    "text": "HAVELLS rejected - below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 2,424, under the 25% floor of Rs 75,000",
+    "kind": "reject",
+    "ts": "2026-07-22T05:48:47.160415+00:00"
+   },
+   {
+    "time": "11:18:47",
+    "text": "HAVELLS qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T05:48:47.160415+00:00"
+   },
+   {
+    "time": "11:17:02",
+    "text": "COLPAL rejected - cannot size a whole lot at 2088.80: stop distance 26.75/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T05:47:02.194007+00:00"
+   },
+   {
+    "time": "11:17:02",
+    "text": "COLPAL qualified EMA Pullback Continuation",
+    "kind": "signal",
+    "ts": "2026-07-22T05:47:02.193006+00:00"
+   },
+   {
+    "time": "11:17:02",
+    "text": "BOSCHLTD rejected - cannot size a whole lot at 41070.00: stop distance 154.45/share needs >21 risk budget or >54,927 capital for one lot",
+    "kind": "reject",
+    "ts": "2026-07-22T05:47:02.193006+00:00"
+   },
+   {
+    "time": "11:17:02",
+    "text": "BOSCHLTD qualified VWAP Pullback",
+    "kind": "signal",
+    "ts": "2026-07-22T05:47:02.192006+00:00"
    }
   ]
  }

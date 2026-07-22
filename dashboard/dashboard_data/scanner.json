@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-07-20T08:03:18.902893+00:00",
+ "generated_at": "2026-07-22T07:14:48.063986+00:00",
  "schema": 2,
  "data": {
   "token_mapping": {
@@ -16,33 +16,164 @@
    "status": "OK"
   },
   "market_data": {
-   "status": "UNABLE TO FETCH",
-   "headline": "15m: UNABLE TO FETCH candles for 3/99 symbols - fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate' (examples: ADANIENT, KOTAKBANK, MRF)",
-   "reasons": {
-    "fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'": 3
-   },
-   "examples": [
-    "ADANIENT",
-    "KOTAKBANK",
-    "MRF"
-   ],
+   "status": "PARTIAL",
+   "headline": "15m: PARTIAL update - 17/97 served, 80 pending, queue 174, rate-limited 12",
+   "reasons": {},
+   "examples": [],
    "timeframes": {
     "15m": {
-     "ok": false,
+     "ok": true,
+     "offline": false,
      "timeframe": "15m",
-     "blocked": 3,
+     "blocked": 0,
      "total": 99,
-     "reasons": {
-      "fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'": 3
-     },
-     "examples": [
-      "ADANIENT",
-      "KOTAKBANK",
-      "MRF"
-     ],
-     "headline": "15m: UNABLE TO FETCH candles for 3/99 symbols - fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate' (examples: ADANIENT, KOTAKBANK, MRF)",
-     "offline": false
+     "reasons": {},
+     "examples": [],
+     "headline": "15m: updated 17/99 symbols"
+    },
+    "1h": {
+     "ok": true,
+     "offline": false,
+     "timeframe": "1h",
+     "blocked": 0,
+     "total": 99,
+     "reasons": {},
+     "examples": [],
+     "headline": "1h: updated 2/99 symbols"
     }
+   },
+   "update_progress": {
+    "timeframe": "15m",
+    "expected_bar": "2026-07-22 06:45:00+00:00",
+    "total": 97,
+    "served": 17,
+    "failed": 0,
+    "pending": 80,
+    "state": "PARTIAL",
+    "queue_depth": 174,
+    "retry_queue_size": 172,
+    "rate_limited_requests": 12,
+    "headline": "15m: PARTIAL update - 17/97 served, 80 pending, queue 174, rate-limited 12",
+    "last_poll_requeued": 0,
+    "last_poll_deferred": 174,
+    "last_poll_sent": 0
+   },
+   "pipeline": {
+    "provider": "smartapi",
+    "status": "OK",
+    "detail": "serving",
+    "capabilities": {
+     "candle_symbols_per_request": 1,
+     "quote_symbols_per_request": 50,
+     "streaming": false,
+     "hourly_candle_budget": 5000
+    },
+    "scheduler": {
+     "timeframes": [
+      {
+       "timeframe": "15m",
+       "expected_bar": "2026-07-22 06:45:00+00:00",
+       "served_bar": null,
+       "due": true,
+       "pending": 80,
+       "pass_total": 97,
+       "pass_served": 17,
+       "pass_failed": 0,
+       "next_due": "12:45:20",
+       "next_due_seconds": 31
+      },
+      {
+       "timeframe": "1h",
+       "expected_bar": "2026-07-22 05:45:00+00:00",
+       "served_bar": null,
+       "due": true,
+       "pending": 92,
+       "pass_total": 94,
+       "pass_served": 2,
+       "pass_failed": 0,
+       "next_due": "13:15:20",
+       "next_due_seconds": 1831
+      }
+     ],
+     "seconds_until_next": 31.937015
+    },
+    "queue": {
+     "depth": 174,
+     "by_kind": {
+      "candles": 172,
+      "quotes": 2
+     },
+     "dropped": 0,
+     "next": "candles/15m DMART [2026-07-22 06:00:00+00:00 -> 2026-07-22 06:59:00+00:00]"
+    },
+    "transport": {
+     "source": "smartapi",
+     "status": "OK",
+     "candles": {
+      "sent": 31,
+      "rejections": 12,
+      "deferrals": 483,
+      "penalty_seconds": 30.0,
+      "floor_interval_seconds": 0.0,
+      "wait_seconds": 15.719,
+      "windows": [
+       {
+        "name": "candles/s",
+        "capacity": 3,
+        "used": 0,
+        "remaining": 3,
+        "window_seconds": 1.0
+       },
+       {
+        "name": "candles/min",
+        "capacity": 180,
+        "used": 2,
+        "remaining": 178,
+        "window_seconds": 60.0
+       },
+       {
+        "name": "candles/hour",
+        "capacity": 5000,
+        "used": 31,
+        "remaining": 4969,
+        "window_seconds": 3600.0
+       }
+      ]
+     },
+     "quotes": {
+      "sent": 0,
+      "rejections": 0,
+      "deferrals": 0,
+      "penalty_seconds": 0.0,
+      "floor_interval_seconds": 0.0,
+      "wait_seconds": 0.0,
+      "windows": [
+       {
+        "name": "quote/s",
+        "capacity": 1,
+        "used": 0,
+        "remaining": 1,
+        "window_seconds": 1.0
+       },
+       {
+        "name": "quote/min",
+        "capacity": 500,
+        "used": 0,
+        "remaining": 500,
+        "window_seconds": 60.0
+       },
+       {
+        "name": "quote/hour",
+        "capacity": 5000,
+        "used": 0,
+        "remaining": 5000,
+        "window_seconds": 3600.0
+       }
+      ]
+     }
+    },
+    "latency_ms": 153.7,
+    "latency_p95_ms": 203.0
    }
   },
   "watchlist_size": 99,
@@ -85,20 +216,158 @@
    "1h"
   ],
   "headline": "Looking for opportunities across 99 stocks using 12 strategies.",
-  "next_scan_seconds": 60,
-  "session_seconds_remaining": 7001,
+  "next_scan_seconds": 31,
+  "session_seconds_remaining": 9911,
   "progress": null,
   "current_activity": "Waiting for next completed candle.",
   "activity": [
    {
-    "ts": "2026-07-20T08:03:17.563670+00:00",
-    "time": "13:33:17",
-    "message": "Market data: 15m: UNABLE TO FETCH candles for 3/99 symbols - fetch error: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate' (examples: ADANIENT, KOTAKBANK, MRF)",
-    "detail": ""
+    "ts": "2026-07-22T07:14:48.000604+00:00",
+    "time": "12:44:48",
+    "message": "1h scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
    },
    {
-    "ts": "2026-07-20T07:55:36.169252+00:00",
-    "time": "13:25:36",
+    "ts": "2026-07-22T07:14:47.936982+00:00",
+    "time": "12:44:47",
+    "message": "Scanning 99 symbols on 1h",
+    "detail": "Evaluating: volexp_1h"
+   },
+   {
+    "ts": "2026-07-22T07:14:47.458353+00:00",
+    "time": "12:44:47",
+    "message": "15m scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:14:46.831441+00:00",
+    "time": "12:44:46",
+    "message": "Scanning 99 symbols on 15m",
+    "detail": "Evaluating: cpr_breakout_15m, cpr_reversal_15m, first_pullback_15m, gapgo_15m, insidebar_15m, nr7_intraday_15m, orb_15m, pullback_15m, supertrend_15m, vwap_15m, vwap_pullback_15m"
+   },
+   {
+    "ts": "2026-07-22T07:13:14.448963+00:00",
+    "time": "12:43:14",
+    "message": "1h scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:13:14.402775+00:00",
+    "time": "12:43:14",
+    "message": "Scanning 99 symbols on 1h",
+    "detail": "Evaluating: volexp_1h"
+   },
+   {
+    "ts": "2026-07-22T07:13:13.927370+00:00",
+    "time": "12:43:13",
+    "message": "15m scan complete - 1 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:13:13.034295+00:00",
+    "time": "12:43:13",
+    "message": "Scanning 99 symbols on 15m",
+    "detail": "Evaluating: cpr_breakout_15m, cpr_reversal_15m, first_pullback_15m, gapgo_15m, insidebar_15m, nr7_intraday_15m, orb_15m, pullback_15m, supertrend_15m, vwap_15m, vwap_pullback_15m"
+   },
+   {
+    "ts": "2026-07-22T07:11:40.986181+00:00",
+    "time": "12:41:40",
+    "message": "1h scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:11:40.946997+00:00",
+    "time": "12:41:40",
+    "message": "Scanning 99 symbols on 1h",
+    "detail": "Evaluating: volexp_1h"
+   },
+   {
+    "ts": "2026-07-22T07:11:40.498540+00:00",
+    "time": "12:41:40",
+    "message": "15m scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:11:40.453975+00:00",
+    "time": "12:41:40",
+    "message": "Scanning 99 symbols on 15m",
+    "detail": "Evaluating: cpr_breakout_15m, cpr_reversal_15m, first_pullback_15m, gapgo_15m, insidebar_15m, nr7_intraday_15m, orb_15m, pullback_15m, supertrend_15m, vwap_15m, vwap_pullback_15m"
+   },
+   {
+    "ts": "2026-07-22T07:10:08.039690+00:00",
+    "time": "12:40:08",
+    "message": "1h scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:10:07.995262+00:00",
+    "time": "12:40:07",
+    "message": "Scanning 99 symbols on 1h",
+    "detail": "Evaluating: volexp_1h"
+   },
+   {
+    "ts": "2026-07-22T07:10:07.587442+00:00",
+    "time": "12:40:07",
+    "message": "15m scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:10:06.747130+00:00",
+    "time": "12:40:06",
+    "message": "Scanning 99 symbols on 15m",
+    "detail": "Evaluating: cpr_breakout_15m, cpr_reversal_15m, first_pullback_15m, gapgo_15m, insidebar_15m, nr7_intraday_15m, orb_15m, pullback_15m, supertrend_15m, vwap_15m, vwap_pullback_15m"
+   },
+   {
+    "ts": "2026-07-22T07:08:34.143151+00:00",
+    "time": "12:38:34",
+    "message": "1h scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:08:34.093849+00:00",
+    "time": "12:38:34",
+    "message": "Scanning 99 symbols on 1h",
+    "detail": "Evaluating: volexp_1h"
+   },
+   {
+    "ts": "2026-07-22T07:08:33.642869+00:00",
+    "time": "12:38:33",
+    "message": "15m scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:08:33.062945+00:00",
+    "time": "12:38:33",
+    "message": "Scanning 99 symbols on 15m",
+    "detail": "Evaluating: cpr_breakout_15m, cpr_reversal_15m, first_pullback_15m, gapgo_15m, insidebar_15m, nr7_intraday_15m, orb_15m, pullback_15m, supertrend_15m, vwap_15m, vwap_pullback_15m"
+   },
+   {
+    "ts": "2026-07-22T07:07:01.945124+00:00",
+    "time": "12:37:01",
+    "message": "1h scan complete - 0 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:07:01.241979+00:00",
+    "time": "12:37:01",
+    "message": "Scanning 99 symbols on 1h",
+    "detail": "Evaluating: volexp_1h"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.689500+00:00",
+    "time": "12:37:00",
+    "message": "15m scan complete - 24 signal(s)",
+    "detail": "Waiting for next completed candle."
+   },
+   {
+    "ts": "2026-07-22T07:06:38.715960+00:00",
+    "time": "12:36:38",
+    "message": "Scanning 99 symbols on 15m",
+    "detail": "Evaluating: cpr_breakout_15m, cpr_reversal_15m, first_pullback_15m, gapgo_15m, insidebar_15m, nr7_intraday_15m, orb_15m, pullback_15m, supertrend_15m, vwap_15m, vwap_pullback_15m"
+   },
+   {
+    "ts": "2026-07-22T07:05:07.990645+00:00",
+    "time": "12:35:07",
     "message": "Engine started",
     "detail": "Preflight complete"
    }

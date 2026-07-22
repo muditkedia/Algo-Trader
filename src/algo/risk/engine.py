@@ -1,4 +1,4 @@
-"""Risk engine - PROMOTED VERBATIM from archive/crypto-freqtrade/.../risk_engine.py.
+"""Risk engine - PROMOTED VERBATIM from the archived crypto risk_engine.py (git history).
 
 The archive README flagged this module as a promotion candidate: its functions
 are pure (no Freqtrade, no market assumptions), so they are reused as-is rather

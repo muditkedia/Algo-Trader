@@ -1,8 +1,175 @@
 {
- "generated_at": "2026-07-20T08:03:18.902893+00:00",
+ "generated_at": "2026-07-22T07:14:48.068982+00:00",
  "schema": 2,
  "data": {
-  "count": 0,
-  "positions": []
+  "count": 2,
+  "positions": [
+   {
+    "execution_plan": {
+     "state": "Holding - waiting for the stop or square-off",
+     "next_action": "Trail the stop upward from Rs 7,529.05; exit on the trailed stop or square off at 15:15.",
+     "triggers": [
+      {
+       "condition": "price trades down to Rs 7,529.05",
+       "action": "Exit the full remaining 19 shares (initial stop)",
+       "kind": "stop",
+       "level": 7529.05
+      },
+      {
+       "condition": "the clock reaches 15:15",
+       "action": "Square off at market regardless of P&L, target or trailing state",
+       "kind": "squareoff",
+       "level": null
+      },
+      {
+       "condition": "price closes higher and the ATR trail rises above the current stop",
+       "action": "Raise the stop (ratchet only - it is never widened)",
+       "kind": "trail",
+       "level": null
+      }
+     ],
+     "trailing": "Chandelier: the stop ratchets up by ATR once in profit, and never widens",
+     "squareoff_time": "15:15",
+     "current_price": 7625.0
+    },
+    "triggers": [
+     {
+      "condition": "price trades down to Rs 7,529.05",
+      "action": "Exit the full remaining 19 shares (initial stop)",
+      "kind": "stop",
+      "level": 7529.05
+     },
+     {
+      "condition": "the clock reaches 15:15",
+      "action": "Square off at market regardless of P&L, target or trailing state",
+      "kind": "squareoff",
+      "level": null
+     },
+     {
+      "condition": "price closes higher and the ATR trail rises above the current stop",
+      "action": "Raise the stop (ratchet only - it is never widened)",
+      "kind": "trail",
+      "level": null
+     }
+    ],
+    "trailing_rule": "Chandelier: the stop ratchets up by ATR once in profit, and never widens",
+    "squareoff_time": "15:15",
+    "seconds_to_squareoff": 9011,
+    "intraday": true,
+    "price_source": "CANDLE",
+    "position_id": "EICHERMOT-pullback_15m-1784699100000000000",
+    "symbol": "EICHERMOT",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "quantity": 19.0,
+    "entry_price": 7626.02,
+    "current_price": 7625.0,
+    "pnl": -19.47,
+    "pnl_pct": -0.01,
+    "stop_loss": 7529.05,
+    "initial_stop": 7529.05,
+    "target_1": null,
+    "target_2": null,
+    "partial_done": false,
+    "trailing": false,
+    "entry_time": "12:37:00",
+    "state": "Holding - waiting for the stop or square-off",
+    "next_action": "Trail the stop upward from Rs 7,529.05; exit on the trailed stop or square off at 15:15.",
+    "explainability": {
+     "entry_trigger": "In an EMA20>EMA50 uptrend, price dipped to the fast EMA and closed back above it",
+     "volume_confirmation": "Not part of this strategy's entry rule",
+     "trend_confirmation": "Entry rule includes its own trend/state condition",
+     "risk_approval": "Approved - risk Rs 1,843 <= per-trade limit Rs 10,000 portfolio risk budget",
+     "capital_approval": "Approved - stake Rs 144,894 within exposure cap Rs 150,000 (half the day's capital)",
+     "duplicate_check": "Passed - no existing position in EICHERMOT",
+     "daily_loss_check": "Passed - day P&L above the Rs 10,000 loss limit",
+     "reason_executed": "EMA Pullback Continuation triggered on EICHERMOT and all account risk gates approved the entry."
+    },
+    "headline": "Bought EICHERMOT at Rs 7,626.02"
+   },
+   {
+    "execution_plan": {
+     "state": "Holding - waiting for the stop or square-off",
+     "next_action": "Trail the stop upward from Rs 2,060.43; exit on the trailed stop or square off at 15:15.",
+     "triggers": [
+      {
+       "condition": "price trades down to Rs 2,060.43",
+       "action": "Exit the full remaining 71 shares (initial stop)",
+       "kind": "stop",
+       "level": 2060.43
+      },
+      {
+       "condition": "the clock reaches 15:15",
+       "action": "Square off at market regardless of P&L, target or trailing state",
+       "kind": "squareoff",
+       "level": null
+      },
+      {
+       "condition": "price closes higher and the ATR trail rises above the current stop",
+       "action": "Raise the stop (ratchet only - it is never widened)",
+       "kind": "trail",
+       "level": null
+      }
+     ],
+     "trailing": "Chandelier: the stop ratchets up by ATR once in profit, and never widens",
+     "squareoff_time": "15:15",
+     "current_price": 2081.1
+    },
+    "triggers": [
+     {
+      "condition": "price trades down to Rs 2,060.43",
+      "action": "Exit the full remaining 71 shares (initial stop)",
+      "kind": "stop",
+      "level": 2060.43
+     },
+     {
+      "condition": "the clock reaches 15:15",
+      "action": "Square off at market regardless of P&L, target or trailing state",
+      "kind": "squareoff",
+      "level": null
+     },
+     {
+      "condition": "price closes higher and the ATR trail rises above the current stop",
+      "action": "Raise the stop (ratchet only - it is never widened)",
+      "kind": "trail",
+      "level": null
+     }
+    ],
+    "trailing_rule": "Chandelier: the stop ratchets up by ATR once in profit, and never widens",
+    "squareoff_time": "15:15",
+    "seconds_to_squareoff": 9011,
+    "intraday": true,
+    "price_source": "CANDLE",
+    "position_id": "COLPAL-pullback_15m-1784702700000000000",
+    "symbol": "COLPAL",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "quantity": 71.0,
+    "entry_price": 2085.22,
+    "current_price": 2081.1,
+    "pnl": -292.3,
+    "pnl_pct": -0.2,
+    "stop_loss": 2060.43,
+    "initial_stop": 2060.43,
+    "target_1": null,
+    "target_2": null,
+    "partial_done": false,
+    "trailing": false,
+    "entry_time": "12:43:13",
+    "state": "Holding - waiting for the stop or square-off",
+    "next_action": "Trail the stop upward from Rs 2,060.43; exit on the trailed stop or square off at 15:15.",
+    "explainability": {
+     "entry_trigger": "In an EMA20>EMA50 uptrend, price dipped to the fast EMA and closed back above it",
+     "volume_confirmation": "Not part of this strategy's entry rule",
+     "trend_confirmation": "Entry rule includes its own trend/state condition",
+     "risk_approval": "Approved - risk Rs 1,760 <= per-trade limit Rs 10,000 portfolio risk budget",
+     "capital_approval": "Approved - stake Rs 148,050 within exposure cap Rs 150,000 (half the day's capital)",
+     "duplicate_check": "Passed - no existing position in COLPAL",
+     "daily_loss_check": "Passed - day P&L above the Rs 10,000 loss limit",
+     "reason_executed": "EMA Pullback Continuation triggered on COLPAL and all account risk gates approved the entry."
+    },
+    "headline": "Bought COLPAL at Rs 2,085.22"
+   }
+  ]
  }
 }

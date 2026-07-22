@@ -17,7 +17,7 @@ broker's margin allowance), so callers pass the product. Nothing here assumes
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from algo.core.config import from_dict

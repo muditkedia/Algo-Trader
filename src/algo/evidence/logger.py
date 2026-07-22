@@ -20,9 +20,7 @@ from typing import Iterable, List, Optional
 
 from algo.core.logging import get_logger
 from algo.evidence.database import EvidenceDB
-from algo.evidence.models import (
-    Run, Signal, SignalOutcome, StrategyRecord, StrategyStatus, TradeRecord,
-)
+from algo.evidence.models import Run, Signal, SignalOutcome, StrategyRecord, TradeRecord
 
 logger = get_logger("evidence.logger")
 

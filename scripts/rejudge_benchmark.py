@@ -23,7 +23,6 @@ import logging
 import sys
 from pathlib import Path
 
-import pandas as pd
 
 from algo.core.costs import NseEquityCostModel
 from algo.core.logging import configure, get_logger

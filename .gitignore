@@ -20,8 +20,6 @@ logs/
 user_data/data/
 user_data/evidence/
 user_data/backtest_results/
-user_data/hyperopt_results/
-user_data/plot/
 user_data/logs/
 user_data/*.sqlite
 

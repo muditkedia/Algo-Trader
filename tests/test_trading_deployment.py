@@ -4,10 +4,9 @@ central guarantee that PAPER and LIVE drive the EXACT same pipeline with only
 the adapter differing.
 """
 
-from datetime import datetime, time
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
-import numpy as np
 import pandas as pd
 import pytest
 

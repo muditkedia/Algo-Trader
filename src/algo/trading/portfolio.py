@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from algo.core.logging import get_logger
 from algo.trading.models import Order, Position, now_iso

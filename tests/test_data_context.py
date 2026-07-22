@@ -7,9 +7,7 @@ stores.
 
 import json
 
-import numpy as np
 import pandas as pd
-import pytest
 
 from algo.data import manifest
 from algo.data.audit import (

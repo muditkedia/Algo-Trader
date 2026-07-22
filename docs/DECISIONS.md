@@ -873,7 +873,8 @@ the same indicators in pure pandas — Wilder RSI/ATR/ADX use the identical
 formulas already battle-tested in the validation regime labeler — and ports
 `crossed_above`/`crossed_below` verbatim from the archive. Session-scoped
 equity additions (session VWAP, opening range) reset per NSE session. The
-archived talib version remains in `archive/crypto-freqtrade/` for reference.
+archived talib version remains in git history (`archive/crypto-freqtrade/`,
+removed in the repository cleanup) for reference.
 
 ## D-015 — Kotak Neo SDK has no historical-candle API; accumulate forward (2026-07-15)
 
@@ -943,7 +944,8 @@ that would be speculative infrastructure.
 Freqtrade is structurally crypto-only (CCXT brokers, no NSE path, no session
 calendar) so it is retired, not adapted. The project moves to a standard
 src-layout Python package (`src/algo`, editable install, pytest), and the crypto
-code is preserved under `archive/crypto-freqtrade/` — nothing deleted. The
+code was preserved under `archive/crypto-freqtrade/` (now removed; it remains
+available in git history). The
 market-agnostic reuse candidates (indicators, risk_engine, trade_manager,
 decision_engine) are flagged there for Phase-2 promotion. The validation package
 was relocated into the platform and decoupled from `algo_core`.

@@ -32,7 +32,7 @@ import pandas as pd
 from algo.core.logging import get_logger
 from algo.data import ohlcv
 from algo.data.quality import QualityReport, check_ohlcv, invalid_row_mask
-from algo.marketdata.queue import CANDLES, DataRequest, QUOTES
+from algo.marketdata.queue import DataRequest, QUOTES
 from algo.marketdata.ratelimit import AdaptiveRateLimiter
 from algo.marketdata.source import MarketDataSource, Quote
 

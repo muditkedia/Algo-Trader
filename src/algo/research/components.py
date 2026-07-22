@@ -19,7 +19,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 
-from algo.core.indicators import atr, crossed_above, rsi, volume_ratio
+from algo.core.indicators import crossed_above, rsi, volume_ratio
 
 Metric = Callable[[pd.DataFrame], pd.Series]      # per-symbol ranking metric
 Condition = Callable[[pd.DataFrame], pd.Series]   # per-symbol boolean

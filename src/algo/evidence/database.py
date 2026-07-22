@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 from algo.core.logging import get_logger
 from algo.evidence import schema as schema_mod

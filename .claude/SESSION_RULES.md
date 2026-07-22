@@ -55,7 +55,6 @@ Examples include:
 - linting
 - syntax checks
 - unit tests
-- Freqtrade validation
 - backtests
 
 Use the smallest validation necessary for the task.

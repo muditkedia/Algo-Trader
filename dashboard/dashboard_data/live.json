@@ -1,11 +1,11 @@
 {
- "generated_at": "2026-07-20T08:03:18.894885+00:00",
+ "generated_at": "2026-07-22T07:16:01.161649+00:00",
  "schema": 2,
  "data": {
   "timing": {
    "market_open": true,
    "status": "OPEN",
-   "session_date": "2026-07-20",
+   "session_date": "2026-07-22",
    "squareoff_time": "15:15",
    "entry_cutoff_time": "15:00",
    "timeframes": [
@@ -13,28 +13,71 @@
     "1h"
    ],
    "next_candle": {
-    "15m": 701,
-    "1h": 2501
+    "15m": 838,
+    "1h": 1738
    },
-   "seconds_to_squareoff": 6101,
-   "seconds_to_entry_cutoff": 5201,
+   "seconds_to_squareoff": 8938,
+   "seconds_to_entry_cutoff": 8038,
    "seconds_to_open": null,
-   "session_seconds_remaining": 7001
+   "session_seconds_remaining": 9838
   },
-  "positions": [],
-  "position_count": 0,
-  "portfolio_value": -179646.87,
-  "deployed_capital": 0.0,
-  "available_capital": 100000.0,
-  "realized_pnl": -279646.87,
-  "unrealized_pnl": 0.0,
-  "total_pnl": -279646.87,
-  "open_risk": 0,
-  "remaining_risk_budget": 0.0,
+  "positions": [
+   {
+    "position_id": "EICHERMOT-pullback_15m-1784699100000000000",
+    "symbol": "EICHERMOT",
+    "current_price": 7621.5,
+    "price_source": "CANDLE",
+    "quantity": 19.0,
+    "value": 144808.5,
+    "pnl": -85.97,
+    "pnl_pct": -0.06,
+    "stop": 7529.05,
+    "distance_to_stop_pct": 1.23
+   },
+   {
+    "position_id": "COLPAL-pullback_15m-1784702700000000000",
+    "symbol": "COLPAL",
+    "current_price": 2083.7,
+    "price_source": "CANDLE",
+    "quantity": 71.0,
+    "value": 147942.7,
+    "pnl": -107.7,
+    "pnl_pct": -0.07,
+    "stop": 2060.43,
+    "distance_to_stop_pct": 1.13
+   }
+  ],
+  "position_count": 2,
+  "portfolio_value": 296356.03,
+  "deployed_capital": 292944.88,
+  "available_capital": 7055.12,
+  "realized_pnl": -3450.29,
+  "unrealized_pnl": -193.68,
+  "total_pnl": -3643.97,
+  "open_risk": 3602.74,
+  "remaining_risk_budget": 2946.97,
   "quotes_live": false,
   "quote_age_seconds": null,
-  "data_status": "STALE",
-  "data_headline": "15m: STALE DATA - 3/99 symbols are 13 or more bars behind (examples: ADANIENT, KOTAKBANK, MRF)",
-  "data_age_seconds": 1098.9
+  "data_status": "UPDATE_IN_PROGRESS",
+  "data_headline": "15m: update in progress - 1/99 served, 98 pending, queue 192, rate-limited 13",
+  "freshness_status": "STALE",
+  "update_status": "UPDATE_IN_PROGRESS",
+  "update_progress": {
+   "timeframe": "15m",
+   "expected_bar": "2026-07-22 07:00:00+00:00",
+   "total": 99,
+   "served": 1,
+   "failed": 0,
+   "pending": 98,
+   "state": "UPDATE_IN_PROGRESS",
+   "queue_depth": 192,
+   "retry_queue_size": 190,
+   "rate_limited_requests": 13,
+   "headline": "15m: update in progress - 1/99 served, 98 pending, queue 192, rate-limited 13",
+   "last_poll_requeued": 0,
+   "last_poll_deferred": 192,
+   "last_poll_sent": 0
+  },
+  "data_age_seconds": 1861.2
  }
 }

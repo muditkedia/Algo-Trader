@@ -42,7 +42,7 @@ Execution conventions (all deliberate, all documented):
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional
 
 import numpy as np

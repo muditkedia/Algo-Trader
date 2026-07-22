@@ -11,7 +11,7 @@ core "no duplicate downloads" guarantee holds at the scheduling layer too.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 import pandas as pd
 

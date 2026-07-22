@@ -41,10 +41,7 @@ import pandas as pd
 from algo.core.logging import get_logger
 from algo.data import ohlcv
 from algo.marketdata.capabilities import ProviderCapabilities
-from algo.marketdata.queue import (
-    CANDLES, DataRequest, P_QUOTE, QUOTES, RequestQueue,
-)
-from algo.marketdata.ratelimit import AdaptiveRateLimiter
+from algo.marketdata.queue import DataRequest, QUOTES, RequestQueue
 from algo.marketdata.scheduler import TimeframeScheduler
 from algo.marketdata.source import MarketDataSource, NullSource
 from algo.marketdata.state import (

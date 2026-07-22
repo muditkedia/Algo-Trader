@@ -7,7 +7,7 @@ straight into the event log and state files.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Optional
 
 import pandas as pd

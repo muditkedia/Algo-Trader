@@ -37,7 +37,7 @@ from __future__ import annotations
 import time
 from collections import OrderedDict, deque
 from dataclasses import dataclass, field
-from typing import Deque, Dict, List, Optional, Tuple
+from typing import Deque, Dict, List, Optional
 
 import pandas as pd
 

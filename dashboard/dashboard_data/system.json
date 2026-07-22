@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-07-20T08:03:18.900764+00:00",
+ "generated_at": "2026-07-22T07:14:48.059516+00:00",
  "schema": 2,
  "data": {
   "engine_running": true,
@@ -7,21 +7,38 @@
   "live_armed": false,
   "market_open": true,
   "market_status": "OPEN",
-  "current_time_ist": "2026-07-20 13:33:18",
-  "session_date": "2026-07-20",
+  "current_time_ist": "2026-07-22 12:44:48",
+  "session_date": "2026-07-22",
   "broker": {
    "name": "paper",
    "is_live": false,
    "connected": true
   },
-  "data_feed_connected": false,
-  "data_feed_status": "UNABLE TO FETCH",
-  "scanner_status": "HALTED",
+  "data_feed_connected": true,
+  "data_feed_status": "PARTIAL",
+  "update_status": "PARTIAL",
+  "update_progress": {
+   "timeframe": "15m",
+   "expected_bar": "2026-07-22 06:45:00+00:00",
+   "total": 97,
+   "served": 17,
+   "failed": 0,
+   "pending": 80,
+   "state": "PARTIAL",
+   "queue_depth": 174,
+   "retry_queue_size": 172,
+   "rate_limited_requests": 12,
+   "headline": "15m: PARTIAL update - 17/97 served, 80 pending, queue 174, rate-limited 12",
+   "last_poll_requeued": 0,
+   "last_poll_deferred": 174,
+   "last_poll_sent": 0
+  },
+  "scanner_status": "SCANNING",
   "scheduler_status": "ACTIVE",
   "recovery_status": "COMPLETE",
-  "trading_halted": true,
-  "halt_reason": "daily loss limit hit (-279647 <= -8000)",
-  "started_at": "2026-07-20T07:55:35.582074+00:00",
+  "trading_halted": false,
+  "halt_reason": "",
+  "started_at": "2026-07-22T07:05:07.446204+00:00",
   "squareoff_time": "15:15",
   "entry_cutoff_time": "15:00"
  }

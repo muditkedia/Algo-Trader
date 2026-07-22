@@ -9,7 +9,6 @@ reach its horizon would be force-closed on entry day, every day.
 ``pytest -s`` prints the participation table.
 """
 
-import pytest
 
 from algo.core.enums import HoldingScope
 from algo.strategies.library import ALL_STRATEGIES

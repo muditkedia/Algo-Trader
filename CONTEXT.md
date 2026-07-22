@@ -5,7 +5,7 @@ This repository is the single source of truth for the project.
 ## Documentation
 
 Architecture:
-- architecture/
+- docs/ (PROJECT_STATE.md, MARKET_DATA_ARCHITECTURE_V2.md, PRODUCTION_STACK.md)
 
 Development Rules:
 - .claude/

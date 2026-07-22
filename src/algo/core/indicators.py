@@ -11,7 +11,7 @@ Provenance and reuse:
 * The talib-based ``add_core_indicators`` from the archive is NOT carried over:
   TA-Lib is a C dependency that is painful on Windows and adds nothing the
   pandas implementations don't provide. The archived talib version remains in
-  ``archive/crypto-freqtrade/`` for reference (decision D-017).
+  git history (``archive/crypto-freqtrade/``, since removed) - decision D-017.
 
 Equity additions (session-scoped, needed by the intraday strategies):
 ``session_vwap`` and ``opening_range`` group by calendar day (a UTC-stored
@@ -103,7 +103,7 @@ def volume_ratio(volume: pd.Series, window: int = 20) -> pd.Series:
 
 
 # ------------------------------------------------------------ cross triggers
-# Verbatim from archive/crypto-freqtrade/strategies/algo_core/indicators.py.
+# Verbatim from the archived crypto core's indicators.py (see git history).
 
 
 def crossed_above(series: pd.Series, reference: pd.Series) -> pd.Series:

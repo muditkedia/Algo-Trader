@@ -19,7 +19,7 @@ its concrete crypto profiles are archived, not reused.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 
 import pandas as pd
 

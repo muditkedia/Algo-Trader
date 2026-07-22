@@ -1,25 +1,25 @@
 {
- "generated_at": "2026-07-20T08:03:18.933770+00:00",
+ "generated_at": "2026-07-22T07:14:48.359846+00:00",
  "schema": 2,
  "data": {
   "cpu_percent": null,
   "ram_percent": null,
   "metrics_available": false,
   "components": {
-   "engine": "HALTED",
+   "engine": "OK",
    "scanner": "OK",
    "broker": "OK",
-   "data_feed": "DEGRADED",
+   "data_feed": "OK",
    "scheduler": "OK",
    "recovery": "OK"
   },
-  "cycles": 1,
+  "cycles": 508,
   "errors_today": 0,
   "error_streak": 0,
   "circuit_breaker_limit": 5,
-  "risk_tripped": true,
-  "trip_reason": "daily loss limit hit (-279647 <= -8000)",
-  "last_export": "2026-07-20T07:55:36.217893+00:00",
+  "risk_tripped": false,
+  "trip_reason": "",
+  "last_export": "2026-07-22T07:14:47.817417+00:00",
   "export_failures": {},
   "export_degraded": false
  }

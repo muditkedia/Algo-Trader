@@ -4,7 +4,6 @@ pipeline runs the FROZEN strategy + execution-spec code with the paper adapter,
 and that restart recovery resumes the resulting position.
 """
 
-import numpy as np
 import pandas as pd
 import pytest
 

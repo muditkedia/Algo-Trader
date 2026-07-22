@@ -28,12 +28,13 @@ import pytest
 
 from algo.data.store import MarketDataStore
 from algo.marketdata import (
-    MarketDataService, MarketState, NullSource, RateLimit, SMARTAPI_CAPABILITIES,
-    TimeframeScheduler,
-)
+    MarketDataService,
+    MarketState,
+    NullSource,
+    RateLimit,
+    SMARTAPI_CAPABILITIES)
 from algo.marketdata.capabilities import ProviderCapabilities
-from algo.marketdata.source import MarketDataSource, Quote
-from algo.marketdata.transport import Transport
+from algo.marketdata.source import MarketDataSource
 from algo.trading.clock import IST, MarketClock
 
 TF = "15m"

@@ -25,9 +25,7 @@ from algo.data.ingest import CANNOT_FETCH, NO_NEW_DATA, IngestionEngine
 from algo.data.providers.smartapi import (
     SmartApiDataProvider, SmartApiInstruments,
 )
-from algo.data.providers.smartapi.instruments import (
-    CACHE_FILE, MappingReport, normalize_symbol,
-)
+from algo.data.providers.smartapi.instruments import CACHE_FILE, normalize_symbol
 from algo.data.store import MarketDataStore
 
 SCRIP = json.dumps([

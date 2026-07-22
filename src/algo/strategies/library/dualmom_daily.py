@@ -18,9 +18,7 @@ from algo.core.enums import Direction, HoldingScope
 from algo.execution import atr_trail_swing
 from algo.strategies.base import StrategyMeta
 from algo.strategies.confidence import Component, ConfidenceScore, clip01, weighted
-from algo.strategies.cross_section import (
-    CrossSectionalDecileStrategy, decile_flag, entered,
-)
+from algo.strategies.cross_section import CrossSectionalDecileStrategy, entered
 
 
 @dataclass(frozen=True)

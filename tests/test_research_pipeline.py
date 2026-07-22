@@ -16,7 +16,7 @@ import pytest
 from algo.core.enums import Direction, HoldingScope
 from algo.evidence.database import EvidenceDB, MEMORY
 from algo.research import edge_lab, reporting
-from algo.research.engine import ResearchEngine, SignalSet, product_for_strategy
+from algo.research.engine import ResearchEngine, product_for_strategy
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.library import ALL_STRATEGIES, REGISTRY
 from algo.strategies.registry import StrategyRegistry

@@ -161,7 +161,6 @@ def benchmark(n: int) -> dict:
     t_risk = time.perf_counter() - t
 
     # ---- 7) execution (paper) ----------------------------------------------
-    from algo.trading.models import Order, Side
     t = time.perf_counter()
     for i in range(min(5, len(signals))):
         engine.orders.adapter.update_quotes({signals[i].symbol: 100.0})

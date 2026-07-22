@@ -14,7 +14,7 @@ research engine measures the pair.
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Sequence
+from typing import Dict, Optional
 
 import pandas as pd
 

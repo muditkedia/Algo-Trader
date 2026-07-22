@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import hashlib
 import time
-from typing import Optional
 
 from algo.core.logging import get_logger
 from algo.trading.adapters.base import BrokerError

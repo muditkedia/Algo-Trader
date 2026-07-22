@@ -14,9 +14,10 @@ import pytest
 from algo.core.costs import FlatCostModel, Product
 from algo.core.enums import HoldingScope
 from algo.execution import (
-    ExecutionSpec, atr_trail_intraday, atr_trail_swing, execute_signal,
-    structural_intraday,
-)
+    ExecutionSpec,
+    atr_trail_intraday,
+    atr_trail_swing,
+    execute_signal)
 from algo.research.simulator import simulate_trade
 from algo.risk.engine import RiskParams
 from algo.strategies.library import (

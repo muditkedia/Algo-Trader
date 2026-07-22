@@ -5,10 +5,7 @@ adapter is the only mode-dependent piece; tests use PaperBroker and a stub
 live client to prove the arming guard and reconciliation without a broker.
 """
 
-import json
-import os
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -25,7 +22,7 @@ from algo.trading.portfolio import PortfolioEngine
 from algo.trading.recovery import RecoveryManager
 from algo.trading.risk import AccountRiskEngine
 from algo.trading.signals import TradingSignal
-from algo.trading.trademanager import ManageDecision, TradeManager
+from algo.trading.trademanager import TradeManager
 
 
 def _cfg(tmp_path, **kw):

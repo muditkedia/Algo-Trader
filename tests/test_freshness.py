@@ -16,7 +16,6 @@ These tests pin the distinctions that failure could not make:
 from datetime import datetime
 
 import pandas as pd
-import pytest
 
 from algo.trading import freshness as fr
 from algo.trading.clock import IST, MarketClock

@@ -4,7 +4,7 @@ This file contains the persistent working memory for the project.
 
 ## Current Objective
 
-Build a modular adaptive algorithmic trading system using Freqtrade.
+Build a modular adaptive algorithmic trading platform for Indian equities on Angel One SmartAPI.
 
 Primary goals:
 
@@ -20,8 +20,7 @@ Profitability is evaluated only after engineering validation.
 ## Technology
 
 - Python
-- Docker
-- Freqtrade
+- Angel One SmartAPI
 - Git
 - GitHub
 - VS Code

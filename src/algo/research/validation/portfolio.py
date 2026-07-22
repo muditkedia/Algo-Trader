@@ -18,7 +18,6 @@ from __future__ import annotations
 import math
 from typing import Dict, Optional
 
-import numpy as np
 import pandas as pd
 
 from .logging_utils import get_logger

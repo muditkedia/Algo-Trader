@@ -13,7 +13,7 @@ import pytest
 
 from algo.core.costs import FlatCostModel, NseCostParams, NseEquityCostModel, \
     Product
-from algo.execution import ExecutionSpec, execute_signal, structural_intraday
+from algo.execution import ExecutionSpec, execute_signal
 from algo.research.validation import metrics
 from algo.risk.engine import RiskParams
 from algo.strategies.library import (

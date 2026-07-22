@@ -1,4 +1,4 @@
-"""Edge lab - promoted from archive/crypto-freqtrade/scripts/measure_entry_edge.py.
+"""Edge lab - promoted from the archived crypto measure_entry_edge.py (git history).
 
 The L-009 methodology, verbatim in substance: a candidate is defined by ONLY
 its entry rule, exits are ignored, and we measure what the entry itself is

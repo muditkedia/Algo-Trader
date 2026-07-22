@@ -1,289 +1,961 @@
 {
- "generated_at": "2026-07-20T08:03:18.918490+00:00",
+ "generated_at": "2026-07-22T07:14:48.104637+00:00",
  "schema": 2,
  "data": {
-  "potential_count": 18,
-  "rejected_count": 10,
+  "potential_count": 237,
+  "rejected_count": 221,
   "potential": [
    {
-    "ts": "2026-07-20T06:31:43.284810+00:00",
-    "time": "12:01:43",
-    "symbol": "UNITDSPR",
+    "ts": "2026-07-22T07:13:13.927370+00:00",
+    "time": "12:43:13",
+    "symbol": "COLPAL",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 2084.8,
+    "stop": 2060.425818400267,
+    "target": 0.0,
+    "confidence": 75.9
+   },
+   {
+    "ts": "2026-07-22T07:07:00.810169+00:00",
+    "time": "12:37:00",
+    "symbol": "TORNTPHARM",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 5012.8,
+    "stop": 4951.104081987949,
+    "target": 0.0,
+    "confidence": 84.2
+   },
+   {
+    "ts": "2026-07-22T07:07:00.804357+00:00",
+    "time": "12:37:00",
+    "symbol": "TORNTPHARM",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 5012.8,
+    "stop": 4985.2,
+    "target": 5068.000000000001,
+    "confidence": 64.6
+   },
+   {
+    "ts": "2026-07-22T07:07:00.803213+00:00",
+    "time": "12:37:00",
+    "symbol": "PFC",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 412.35,
+    "stop": 407.99456200935737,
+    "target": 0.0,
+    "confidence": 91.3
+   },
+   {
+    "ts": "2026-07-22T07:07:00.800574+00:00",
+    "time": "12:37:00",
+    "symbol": "PFC",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 412.35,
+    "stop": 410.4,
+    "target": 416.2500000000001,
+    "confidence": 78.1
+   },
+   {
+    "ts": "2026-07-22T07:07:00.797147+00:00",
+    "time": "12:37:00",
+    "symbol": "MOTHERSON",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "entry": 1376.5,
-    "stop": 1372.5351752236368,
-    "target": 1384.4296495527265,
-    "confidence": 100.0
+    "entry": 146.98,
+    "stop": 146.52994297945835,
+    "target": 147.88011404108326,
+    "confidence": 75.9
    },
    {
-    "ts": "2026-07-20T06:31:43.281806+00:00",
-    "time": "12:01:43",
-    "symbol": "PNB",
+    "ts": "2026-07-22T07:07:00.794132+00:00",
+    "time": "12:37:00",
+    "symbol": "JSWENERGY",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "entry": 106.01,
-    "stop": 105.25869096467795,
-    "target": 107.51261807064411,
-    "confidence": 100.0
+    "entry": 567.45,
+    "stop": 564.8781982618999,
+    "target": 572.5936034762003,
+    "confidence": 72.9
    },
    {
-    "ts": "2026-07-20T06:31:43.278292+00:00",
-    "time": "12:01:43",
-    "symbol": "PNB",
-    "strategy_id": "first_pullback_15m",
-    "strategy": "First Pullback After Breakout",
-    "entry": 106.01,
-    "stop": 105.43,
-    "target": 107.17,
-    "confidence": 95.5
+    "ts": "2026-07-22T07:07:00.791078+00:00",
+    "time": "12:37:00",
+    "symbol": "IOC",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 142.96,
+    "stop": 142.28790327994125,
+    "target": 144.30419344011753,
+    "confidence": 82.9
    },
    {
-    "ts": "2026-07-20T06:31:43.278292+00:00",
-    "time": "12:01:43",
-    "symbol": "ICICIPRULI",
+    "ts": "2026-07-22T07:07:00.788325+00:00",
+    "time": "12:37:00",
+    "symbol": "IOC",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 142.96,
+    "stop": 141.07,
+    "target": 0.0,
+    "confidence": 69.6
+   },
+   {
+    "ts": "2026-07-22T07:07:00.785426+00:00",
+    "time": "12:37:00",
+    "symbol": "GAIL",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 173.26,
+    "stop": 172.75,
+    "target": 174.27999999999997,
+    "confidence": 72.0
+   },
+   {
+    "ts": "2026-07-22T07:07:00.782323+00:00",
+    "time": "12:37:00",
+    "symbol": "ABB",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 7581.5,
+    "stop": 7562.9922713121305,
+    "target": 7618.515457375739,
+    "confidence": 52.5
+   },
+   {
+    "ts": "2026-07-22T07:07:00.778309+00:00",
+    "time": "12:37:00",
+    "symbol": "TATACONSUM",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 1083.0,
+    "stop": 1069.5686646492359,
+    "target": 0.0,
+    "confidence": 70.9
+   },
+   {
+    "ts": "2026-07-22T07:07:00.775704+00:00",
+    "time": "12:37:00",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 1947.6,
+    "stop": 1939.2164258579783,
+    "target": 1964.3671482840432,
+    "confidence": 75.7
+   },
+   {
+    "ts": "2026-07-22T07:07:00.771707+00:00",
+    "time": "12:37:00",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 1947.6,
+    "stop": 1924.2842315503713,
+    "target": 0.0,
+    "confidence": 81.8
+   },
+   {
+    "ts": "2026-07-22T07:07:00.768705+00:00",
+    "time": "12:37:00",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 1947.6,
+    "stop": 1940.6,
+    "target": 1961.6,
+    "confidence": 58.9
+   },
+   {
+    "ts": "2026-07-22T07:07:00.765705+00:00",
+    "time": "12:37:00",
+    "symbol": "POWERGRID",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 287.5,
+    "stop": 285.8203090098457,
+    "target": 290.8593819803086,
+    "confidence": 82.7
+   },
+   {
+    "ts": "2026-07-22T07:07:00.762699+00:00",
+    "time": "12:37:00",
+    "symbol": "POWERGRID",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 287.5,
+    "stop": 285.85,
+    "target": 290.79999999999995,
+    "confidence": 69.2
+   },
+   {
+    "ts": "2026-07-22T07:07:00.759018+00:00",
+    "time": "12:37:00",
+    "symbol": "NTPC",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 348.35,
+    "stop": 347.0793625292259,
+    "target": 350.8912749415483,
+    "confidence": 67.3
+   },
+   {
+    "ts": "2026-07-22T07:07:00.755934+00:00",
+    "time": "12:37:00",
+    "symbol": "M&M",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 3200.0,
+    "stop": 3194.743810794955,
+    "target": 3210.5123784100897,
+    "confidence": 42.7
+   },
+   {
+    "ts": "2026-07-22T07:07:00.752053+00:00",
+    "time": "12:37:00",
+    "symbol": "LT",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 3828.8,
+    "stop": 3792.7318682360365,
+    "target": 0.0,
+    "confidence": 72.3
+   },
+   {
+    "ts": "2026-07-22T07:07:00.748799+00:00",
+    "time": "12:37:00",
+    "symbol": "INFY",
     "strategy_id": "cpr_reversal_15m",
     "strategy": "CPR Reversal",
-    "entry": 497.45,
-    "stop": 495.15,
-    "target": 513.8000000000001,
+    "entry": 1061.0,
+    "stop": 1055.0,
+    "target": 1077.4333333333332,
     "confidence": 100.0
    },
    {
-    "ts": "2026-07-20T06:31:43.274861+00:00",
-    "time": "12:01:43",
-    "symbol": "GAIL",
+    "ts": "2026-07-22T07:07:00.747206+00:00",
+    "time": "12:37:00",
+    "symbol": "HINDUNILVR",
+    "strategy_id": "nr7_intraday_15m",
+    "strategy": "NR7 Intraday",
+    "entry": 2152.2,
+    "stop": 2127.5,
+    "target": 0.0,
+    "confidence": 75.3
+   },
+   {
+    "ts": "2026-07-22T07:07:00.741959+00:00",
+    "time": "12:37:00",
+    "symbol": "HCLTECH",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "entry": 171.8,
-    "stop": 171.0585769008447,
-    "target": 173.2828461983106,
-    "confidence": 100.0
+    "entry": 1238.8,
+    "stop": 1235.974666403514,
+    "target": 1244.4506671929719,
+    "confidence": 57.1
    },
    {
-    "ts": "2026-07-20T06:31:43.268560+00:00",
-    "time": "12:01:43",
+    "ts": "2026-07-22T07:07:00.717467+00:00",
+    "time": "12:37:00",
+    "symbol": "GRASIM",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 3160.0,
+    "stop": 3158.5405106186977,
+    "target": 3162.9189787626046,
+    "confidence": 12.2
+   },
+   {
+    "ts": "2026-07-22T07:07:00.689500+00:00",
+    "time": "12:37:00",
+    "symbol": "EICHERMOT",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 7624.5,
+    "stop": 7529.047511826664,
+    "target": 0.0,
+    "confidence": 74.3
+   },
+   {
+    "ts": "2026-07-22T06:23:20.140084+00:00",
+    "time": "11:53:20",
+    "symbol": "TORNTPHARM",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 5012.8,
+    "stop": 4951.104081987949,
+    "target": 0.0,
+    "confidence": 84.2
+   },
+   {
+    "ts": "2026-07-22T06:23:20.134211+00:00",
+    "time": "11:53:20",
+    "symbol": "TORNTPHARM",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 5012.8,
+    "stop": 4985.2,
+    "target": 5068.000000000001,
+    "confidence": 64.6
+   },
+   {
+    "ts": "2026-07-22T06:23:20.127706+00:00",
+    "time": "11:53:20",
+    "symbol": "PFC",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 412.35,
+    "stop": 407.99456200935737,
+    "target": 0.0,
+    "confidence": 91.3
+   },
+   {
+    "ts": "2026-07-22T06:23:20.127706+00:00",
+    "time": "11:53:20",
+    "symbol": "PFC",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 412.35,
+    "stop": 410.4,
+    "target": 416.2500000000001,
+    "confidence": 78.1
+   },
+   {
+    "ts": "2026-07-22T06:23:20.123734+00:00",
+    "time": "11:53:20",
+    "symbol": "MOTHERSON",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 146.98,
+    "stop": 146.52994297945835,
+    "target": 147.88011404108326,
+    "confidence": 75.9
+   },
+   {
+    "ts": "2026-07-22T06:23:20.120350+00:00",
+    "time": "11:53:20",
+    "symbol": "JSWENERGY",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 567.45,
+    "stop": 564.8781982618999,
+    "target": 572.5936034762003,
+    "confidence": 72.9
+   },
+   {
+    "ts": "2026-07-22T06:23:20.115386+00:00",
+    "time": "11:53:20",
+    "symbol": "IOC",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 142.96,
+    "stop": 142.28790327994125,
+    "target": 144.30419344011753,
+    "confidence": 82.9
+   },
+   {
+    "ts": "2026-07-22T06:23:20.111396+00:00",
+    "time": "11:53:20",
+    "symbol": "IOC",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 142.96,
+    "stop": 141.07,
+    "target": 0.0,
+    "confidence": 69.6
+   },
+   {
+    "ts": "2026-07-22T06:23:20.107648+00:00",
+    "time": "11:53:20",
     "symbol": "GAIL",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 173.26,
+    "stop": 172.75,
+    "target": 174.27999999999997,
+    "confidence": 72.0
+   },
+   {
+    "ts": "2026-07-22T06:23:20.102649+00:00",
+    "time": "11:53:20",
+    "symbol": "COLPAL",
     "strategy_id": "orb_15m",
     "strategy": "Opening Range Breakout",
-    "entry": 171.8,
-    "stop": 169.47,
-    "target": 173.83,
-    "confidence": 64.1
+    "entry": 2096.0,
+    "stop": 2078.0,
+    "target": 2099.8,
+    "confidence": 63.7
    },
    {
-    "ts": "2026-07-20T06:31:43.262565+00:00",
-    "time": "12:01:43",
-    "symbol": "RELIANCE",
+    "ts": "2026-07-22T06:23:20.096131+00:00",
+    "time": "11:53:20",
+    "symbol": "CANBK",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "entry": 1328.8,
-    "stop": 1321.1931755484027,
-    "target": 1344.0136489031945,
-    "confidence": 100.0
+    "entry": 126.99,
+    "stop": 126.18381927955414,
+    "target": 128.60236144089168,
+    "confidence": 81.4
    },
    {
-    "ts": "2026-07-20T06:31:43.255933+00:00",
-    "time": "12:01:43",
-    "symbol": "MARUTI",
+    "ts": "2026-07-22T06:23:20.089643+00:00",
+    "time": "11:53:20",
+    "symbol": "CANBK",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 126.99,
+    "stop": 125.25,
+    "target": 0.0,
+    "confidence": 49.9
+   },
+   {
+    "ts": "2026-07-22T06:23:20.087321+00:00",
+    "time": "11:53:20",
+    "symbol": "CANBK",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 126.99,
+    "stop": 126.24,
+    "target": 128.49,
+    "confidence": 63.8
+   },
+   {
+    "ts": "2026-07-22T06:23:20.083489+00:00",
+    "time": "11:53:20",
+    "symbol": "BANKBARODA",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "entry": 13824.0,
-    "stop": 13787.489697113666,
-    "target": 13897.020605772668,
-    "confidence": 100.0
+    "entry": 246.45,
+    "stop": 245.97002416855048,
+    "target": 247.409951662899,
+    "confidence": 64.8
    },
    {
-    "ts": "2026-07-20T06:31:43.250325+00:00",
-    "time": "12:01:43",
-    "symbol": "HDFCBANK",
+    "ts": "2026-07-22T06:23:20.079486+00:00",
+    "time": "11:53:20",
+    "symbol": "ABB",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "entry": 820.8,
-    "stop": 818.0789313618217,
-    "target": 826.2421372763565,
-    "confidence": 93.8
+    "entry": 7612.0,
+    "stop": 7546.805357881221,
+    "target": 7742.389284237557,
+    "confidence": 80.7
    },
    {
-    "ts": "2026-07-20T04:00:33.659534+00:00",
-    "time": "09:30:33",
-    "symbol": "UNITDSPR",
+    "ts": "2026-07-22T06:23:20.076486+00:00",
+    "time": "11:53:20",
+    "symbol": "TATACONSUM",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 1083.0,
+    "stop": 1069.5686646492359,
+    "target": 0.0,
+    "confidence": 70.9
+   },
+   {
+    "ts": "2026-07-22T06:23:20.074486+00:00",
+    "time": "11:53:20",
+    "symbol": "SUNPHARMA",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "entry": 1376.5,
-    "stop": 1372.5351752236368,
-    "target": 1384.4296495527265,
-    "confidence": 100.0
+    "entry": 1947.6,
+    "stop": 1939.2164258579783,
+    "target": 1964.3671482840432,
+    "confidence": 75.7
    },
    {
-    "ts": "2026-07-20T04:00:33.656100+00:00",
-    "time": "09:30:33",
-    "symbol": "PNB",
+    "ts": "2026-07-22T06:23:20.072486+00:00",
+    "time": "11:53:20",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 1947.6,
+    "stop": 1924.2842315503713,
+    "target": 0.0,
+    "confidence": 81.8
+   },
+   {
+    "ts": "2026-07-22T06:23:20.069486+00:00",
+    "time": "11:53:20",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 1947.6,
+    "stop": 1940.6,
+    "target": 1961.6,
+    "confidence": 58.9
+   },
+   {
+    "ts": "2026-07-22T06:23:20.067486+00:00",
+    "time": "11:53:20",
+    "symbol": "POWERGRID",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "entry": 106.01,
-    "stop": 105.25869096467795,
-    "target": 107.51261807064411,
-    "confidence": 100.0
+    "entry": 287.5,
+    "stop": 285.8203090098457,
+    "target": 290.8593819803086,
+    "confidence": 82.7
    },
    {
-    "ts": "2026-07-20T04:00:33.656100+00:00",
-    "time": "09:30:33",
-    "symbol": "PNB",
-    "strategy_id": "first_pullback_15m",
-    "strategy": "First Pullback After Breakout",
-    "entry": 106.01,
-    "stop": 105.43,
-    "target": 107.17,
-    "confidence": 95.5
+    "ts": "2026-07-22T06:23:20.065486+00:00",
+    "time": "11:53:20",
+    "symbol": "POWERGRID",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "entry": 287.5,
+    "stop": 285.85,
+    "target": 290.79999999999995,
+    "confidence": 69.2
    },
    {
-    "ts": "2026-07-20T04:00:33.655072+00:00",
-    "time": "09:30:33",
-    "symbol": "ICICIPRULI",
+    "ts": "2026-07-22T06:23:20.063486+00:00",
+    "time": "11:53:20",
+    "symbol": "NTPC",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 348.35,
+    "stop": 347.0793625292259,
+    "target": 350.8912749415483,
+    "confidence": 67.3
+   },
+   {
+    "ts": "2026-07-22T06:23:20.061486+00:00",
+    "time": "11:53:20",
+    "symbol": "M&M",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "entry": 3200.0,
+    "stop": 3194.743810794955,
+    "target": 3210.5123784100897,
+    "confidence": 42.7
+   },
+   {
+    "ts": "2026-07-22T06:23:20.058487+00:00",
+    "time": "11:53:20",
+    "symbol": "LT",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "entry": 3828.8,
+    "stop": 3792.7318682360365,
+    "target": 0.0,
+    "confidence": 72.3
+   },
+   {
+    "ts": "2026-07-22T06:23:20.056486+00:00",
+    "time": "11:53:20",
+    "symbol": "INFY",
     "strategy_id": "cpr_reversal_15m",
     "strategy": "CPR Reversal",
-    "entry": 497.45,
-    "stop": 495.15,
-    "target": 513.8000000000001,
+    "entry": 1061.0,
+    "stop": 1055.0,
+    "target": 1077.4333333333332,
     "confidence": 100.0
-   },
-   {
-    "ts": "2026-07-20T04:00:33.653754+00:00",
-    "time": "09:30:33",
-    "symbol": "GAIL",
-    "strategy_id": "vwap_pullback_15m",
-    "strategy": "VWAP Pullback",
-    "entry": 171.8,
-    "stop": 171.0585769008447,
-    "target": 173.2828461983106,
-    "confidence": 100.0
-   },
-   {
-    "ts": "2026-07-20T04:00:33.643659+00:00",
-    "time": "09:30:33",
-    "symbol": "GAIL",
-    "strategy_id": "orb_15m",
-    "strategy": "Opening Range Breakout",
-    "entry": 171.8,
-    "stop": 169.47,
-    "target": 173.83,
-    "confidence": 64.1
-   },
-   {
-    "ts": "2026-07-20T04:00:33.635593+00:00",
-    "time": "09:30:33",
-    "symbol": "RELIANCE",
-    "strategy_id": "vwap_pullback_15m",
-    "strategy": "VWAP Pullback",
-    "entry": 1328.8,
-    "stop": 1321.1931755484027,
-    "target": 1344.0136489031945,
-    "confidence": 100.0
-   },
-   {
-    "ts": "2026-07-20T04:00:33.626968+00:00",
-    "time": "09:30:33",
-    "symbol": "MARUTI",
-    "strategy_id": "vwap_pullback_15m",
-    "strategy": "VWAP Pullback",
-    "entry": 13824.0,
-    "stop": 13787.489697113666,
-    "target": 13897.020605772668,
-    "confidence": 100.0
-   },
-   {
-    "ts": "2026-07-20T04:00:33.590145+00:00",
-    "time": "09:30:33",
-    "symbol": "HDFCBANK",
-    "strategy_id": "vwap_pullback_15m",
-    "strategy": "VWAP Pullback",
-    "entry": 820.8,
-    "stop": 818.0789313618217,
-    "target": 826.2421372763565,
-    "confidence": 93.8
    }
   ],
   "rejected": [
    {
-    "ts": "2026-07-20T06:31:43.284810+00:00",
-    "time": "12:01:43",
-    "symbol": "UNITDSPR",
+    "ts": "2026-07-22T07:07:00.812591+00:00",
+    "time": "12:37:00",
+    "symbol": "TORNTPHARM",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 5,013, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.809170+00:00",
+    "time": "12:37:00",
+    "symbol": "TORNTPHARM",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 5,013, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.804357+00:00",
+    "time": "12:37:00",
+    "symbol": "PFC",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 15 share(s) = Rs 6,185, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.801580+00:00",
+    "time": "12:37:00",
+    "symbol": "PFC",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 15 share(s) = Rs 6,185, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.798913+00:00",
+    "time": "12:37:00",
+    "symbol": "MOTHERSON",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "reason": "cannot size a whole lot at 1376.50: stop distance 3.96/share needs >8,947 risk budget or >12 capital for one lot"
+    "reason": "below minimum allocation: the largest position the caps allow is 44 share(s) = Rs 6,467, under the 25% floor of Rs 75,000"
    },
    {
-    "ts": "2026-07-20T06:31:43.283812+00:00",
-    "time": "12:01:43",
-    "symbol": "PNB",
+    "ts": "2026-07-22T07:07:00.796140+00:00",
+    "time": "12:37:00",
+    "symbol": "JSWENERGY",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "reason": "cannot size a whole lot at 106.01: stop distance 0.75/share needs >8,947 risk budget or >12 capital for one lot"
+    "reason": "below minimum allocation: the largest position the caps allow is 11 share(s) = Rs 6,242, under the 25% floor of Rs 75,000"
    },
    {
-    "ts": "2026-07-20T06:31:43.281806+00:00",
-    "time": "12:01:43",
-    "symbol": "PNB",
-    "strategy_id": "first_pullback_15m",
-    "strategy": "First Pullback After Breakout",
-    "reason": "cannot size a whole lot at 106.01: stop distance 0.58/share needs >8,947 risk budget or >12 capital for one lot"
+    "ts": "2026-07-22T07:07:00.791078+00:00",
+    "time": "12:37:00",
+    "symbol": "IOC",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 45 share(s) = Rs 6,433, under the 25% floor of Rs 75,000"
    },
    {
-    "ts": "2026-07-20T06:31:43.278292+00:00",
-    "time": "12:01:43",
-    "symbol": "ICICIPRULI",
+    "ts": "2026-07-22T07:07:00.789683+00:00",
+    "time": "12:37:00",
+    "symbol": "IOC",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 45 share(s) = Rs 6,433, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.787325+00:00",
+    "time": "12:37:00",
+    "symbol": "GAIL",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 37 share(s) = Rs 6,411, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.783321+00:00",
+    "time": "12:37:00",
+    "symbol": "ABB",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "cannot size a whole lot at 7581.50: stop distance 18.51/share needs >4,819 risk budget or >6,556 capital for one lot"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.780323+00:00",
+    "time": "12:37:00",
+    "symbol": "TATACONSUM",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 6 share(s) = Rs 6,498, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.776704+00:00",
+    "time": "12:37:00",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 5,843, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.773706+00:00",
+    "time": "12:37:00",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 5,843, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.770727+00:00",
+    "time": "12:37:00",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 5,843, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.767705+00:00",
+    "time": "12:37:00",
+    "symbol": "POWERGRID",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 22 share(s) = Rs 6,325, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.764705+00:00",
+    "time": "12:37:00",
+    "symbol": "POWERGRID",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 22 share(s) = Rs 6,325, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.761697+00:00",
+    "time": "12:37:00",
+    "symbol": "NTPC",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 18 share(s) = Rs 6,270, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.755934+00:00",
+    "time": "12:37:00",
+    "symbol": "M&M",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 6,400, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.755014+00:00",
+    "time": "12:37:00",
+    "symbol": "LT",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,829, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.752053+00:00",
+    "time": "12:37:00",
+    "symbol": "INFY",
     "strategy_id": "cpr_reversal_15m",
     "strategy": "CPR Reversal",
-    "reason": "cannot size a whole lot at 497.45: stop distance 2.30/share needs >8,947 risk budget or >12 capital for one lot"
+    "reason": "below minimum allocation: the largest position the caps allow is 6 share(s) = Rs 6,366, under the 25% floor of Rs 75,000"
    },
    {
-    "ts": "2026-07-20T06:31:43.277279+00:00",
-    "time": "12:01:43",
+    "ts": "2026-07-22T07:07:00.748799+00:00",
+    "time": "12:37:00",
+    "symbol": "HINDUNILVR",
+    "strategy_id": "nr7_intraday_15m",
+    "strategy": "NR7 Intraday",
+    "reason": "below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 6,457, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T07:07:00.746073+00:00",
+    "time": "12:37:00",
+    "symbol": "HCLTECH",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 5 share(s) = Rs 6,194, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.144228+00:00",
+    "time": "11:53:20",
+    "symbol": "TORNTPHARM",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "cannot size a whole lot at 5012.80: stop distance 61.70/share needs >5,169 risk budget or >4,162 capital for one lot"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.136217+00:00",
+    "time": "11:53:20",
+    "symbol": "TORNTPHARM",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "cannot size a whole lot at 5012.80: stop distance 27.60/share needs >5,169 risk budget or >4,162 capital for one lot"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.133205+00:00",
+    "time": "11:53:20",
+    "symbol": "PFC",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 10 share(s) = Rs 4,124, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.127706+00:00",
+    "time": "11:53:20",
+    "symbol": "PFC",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 10 share(s) = Rs 4,124, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.127030+00:00",
+    "time": "11:53:20",
+    "symbol": "MOTHERSON",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 28 share(s) = Rs 4,115, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.122924+00:00",
+    "time": "11:53:20",
+    "symbol": "JSWENERGY",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 7 share(s) = Rs 3,972, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.117894+00:00",
+    "time": "11:53:20",
+    "symbol": "IOC",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 29 share(s) = Rs 4,146, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.113754+00:00",
+    "time": "11:53:20",
+    "symbol": "IOC",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 29 share(s) = Rs 4,146, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.109876+00:00",
+    "time": "11:53:20",
     "symbol": "GAIL",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 24 share(s) = Rs 4,158, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.104650+00:00",
+    "time": "11:53:20",
+    "symbol": "COLPAL",
+    "strategy_id": "orb_15m",
+    "strategy": "Opening Range Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 2,096, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.099648+00:00",
+    "time": "11:53:20",
+    "symbol": "CANBK",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "reason": "symbol already held: GAIL"
+    "reason": "below minimum allocation: the largest position the caps allow is 32 share(s) = Rs 4,064, under the 25% floor of Rs 75,000"
    },
    {
-    "ts": "2026-07-20T04:00:33.659534+00:00",
-    "time": "09:30:33",
-    "symbol": "UNITDSPR",
+    "ts": "2026-07-22T06:23:20.095132+00:00",
+    "time": "11:53:20",
+    "symbol": "CANBK",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 32 share(s) = Rs 4,064, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.089643+00:00",
+    "time": "11:53:20",
+    "symbol": "CANBK",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 32 share(s) = Rs 4,064, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.086314+00:00",
+    "time": "11:53:20",
+    "symbol": "BANKBARODA",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "reason": "cannot size a whole lot at 1376.50: stop distance 3.96/share needs >9,007 risk budget or >12 capital for one lot"
+    "reason": "below minimum allocation: the largest position the caps allow is 16 share(s) = Rs 3,943, under the 25% floor of Rs 75,000"
    },
    {
-    "ts": "2026-07-20T04:00:33.656100+00:00",
-    "time": "09:30:33",
-    "symbol": "PNB",
+    "ts": "2026-07-22T06:23:20.081486+00:00",
+    "time": "11:53:20",
+    "symbol": "ABB",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "reason": "cannot size a whole lot at 106.01: stop distance 0.75/share needs >9,007 risk budget or >12 capital for one lot"
+    "reason": "cannot size a whole lot at 7612.00: stop distance 65.19/share needs >5,169 risk budget or >4,162 capital for one lot"
    },
    {
-    "ts": "2026-07-20T04:00:33.656100+00:00",
-    "time": "09:30:33",
-    "symbol": "PNB",
-    "strategy_id": "first_pullback_15m",
-    "strategy": "First Pullback After Breakout",
-    "reason": "cannot size a whole lot at 106.01: stop distance 0.58/share needs >9,007 risk budget or >12 capital for one lot"
+    "ts": "2026-07-22T06:23:20.078486+00:00",
+    "time": "11:53:20",
+    "symbol": "TATACONSUM",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 3,249, under the 25% floor of Rs 75,000"
    },
    {
-    "ts": "2026-07-20T04:00:33.656100+00:00",
-    "time": "09:30:33",
-    "symbol": "ICICIPRULI",
+    "ts": "2026-07-22T06:23:20.075486+00:00",
+    "time": "11:53:20",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 3,895, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.073486+00:00",
+    "time": "11:53:20",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 3,895, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.071487+00:00",
+    "time": "11:53:20",
+    "symbol": "SUNPHARMA",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 2 share(s) = Rs 3,895, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.068487+00:00",
+    "time": "11:53:20",
+    "symbol": "POWERGRID",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 14 share(s) = Rs 4,025, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.066486+00:00",
+    "time": "11:53:20",
+    "symbol": "POWERGRID",
+    "strategy_id": "insidebar_15m",
+    "strategy": "Inside Bar Breakout",
+    "reason": "below minimum allocation: the largest position the caps allow is 14 share(s) = Rs 4,025, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.064487+00:00",
+    "time": "11:53:20",
+    "symbol": "NTPC",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 11 share(s) = Rs 3,832, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.062486+00:00",
+    "time": "11:53:20",
+    "symbol": "M&M",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,200, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.060486+00:00",
+    "time": "11:53:20",
+    "symbol": "LT",
+    "strategy_id": "pullback_15m",
+    "strategy": "EMA Pullback Continuation",
+    "reason": "below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,829, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.057486+00:00",
+    "time": "11:53:20",
+    "symbol": "INFY",
     "strategy_id": "cpr_reversal_15m",
     "strategy": "CPR Reversal",
-    "reason": "cannot size a whole lot at 497.45: stop distance 2.30/share needs >9,007 risk budget or >12 capital for one lot"
+    "reason": "below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 3,183, under the 25% floor of Rs 75,000"
    },
    {
-    "ts": "2026-07-20T04:00:33.654767+00:00",
-    "time": "09:30:33",
-    "symbol": "GAIL",
+    "ts": "2026-07-22T06:23:20.055487+00:00",
+    "time": "11:53:20",
+    "symbol": "HINDUNILVR",
+    "strategy_id": "nr7_intraday_15m",
+    "strategy": "NR7 Intraday",
+    "reason": "below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 2,152, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.053486+00:00",
+    "time": "11:53:20",
+    "symbol": "HCLTECH",
     "strategy_id": "vwap_pullback_15m",
     "strategy": "VWAP Pullback",
-    "reason": "symbol already held: GAIL"
+    "reason": "below minimum allocation: the largest position the caps allow is 3 share(s) = Rs 3,716, under the 25% floor of Rs 75,000"
+   },
+   {
+    "ts": "2026-07-22T06:23:20.051486+00:00",
+    "time": "11:53:20",
+    "symbol": "GRASIM",
+    "strategy_id": "vwap_pullback_15m",
+    "strategy": "VWAP Pullback",
+    "reason": "below minimum allocation: the largest position the caps allow is 1 share(s) = Rs 3,160, under the 25% floor of Rs 75,000"
    }
   ],
   "waiting_condition": "Waiting for the next completed candle on 15m, 1h."

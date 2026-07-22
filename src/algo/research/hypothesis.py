@@ -22,7 +22,7 @@ library, so nothing here adds a tradeable strategy or a promotion path.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Sequence, Tuple
 
 import pandas as pd

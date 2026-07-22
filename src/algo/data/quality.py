@@ -14,7 +14,7 @@ non-session day is expected, not a gap), unlike the crypto 24/7 grid.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 
 import pandas as pd
 
