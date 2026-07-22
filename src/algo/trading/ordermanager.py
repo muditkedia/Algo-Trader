@@ -17,7 +17,7 @@ import time
 from algo.core.logging import get_logger
 from algo.trading.adapters.base import BrokerError
 from algo.trading.eventlog import EventLog
-from algo.trading.models import Order, OrderStatus, Side, now_iso
+from algo.trading.models import Order, OrderStatus, OrderType, Side, now_iso
 
 logger = get_logger("trading.orders")
 
@@ -88,17 +88,35 @@ class OrderManager:
                     pass
 
     def market_entry(self, signal, quantity: float, position_id: str) -> Order:
+        return self.entry(signal, quantity, position_id, force_market=True)
+
+    def entry(self, signal, quantity: float, position_id: str,
+              force_market: bool = False) -> Order:
         # ``risk_per_share`` lets the portfolio risk engine RESERVE this
         # order's risk from the moment it is recorded (before the broker even
         # acknowledges it), so orders submitted close together cannot
         # collectively exceed the day's risk budget. It is released
         # automatically when the order reaches a terminal state.
+        is_long = signal.direction.value == "long"
+        order_type = (OrderType.MARKET if force_market
+                      or signal.spec.entry == "signal_close" else OrderType.LIMIT)
         order = Order(
             client_order_id=client_order_id(position_id, "entry", 0),
-            symbol=signal.symbol, side=Side.BUY, quantity=quantity,
-            order_type="MARKET", strategy=signal.strategy, intent="entry",
+            symbol=signal.symbol, side=Side.BUY if is_long else Side.SELL,
+            quantity=quantity, order_type=order_type,
+            limit_price=signal.limit_price if order_type == OrderType.LIMIT else None,
+            strategy=signal.strategy, intent="entry",
             position_id=position_id,
-            risk_per_share=max(0.0, float(signal.risk_per_unit)))
+            risk_per_share=max(0.0, float(signal.risk_per_unit)),
+            direction=signal.direction.value, timeframe=signal.timeframe,
+            signal_bar_time=str(signal.bar_time), session=signal.session,
+            entry_stop=signal.stop, entry_target=signal.target,
+            entry_target2=signal.target2,
+            partial_fraction=signal.spec.partial_fraction,
+            trail_mode=signal.spec.trail,
+            atr_at_entry=getattr(signal, "atr_at_entry", 0.0),
+            structural_stop=getattr(signal, "structural_stop", signal.stop),
+            exclusive_group=signal.exclusive_group)
         return self._submit(order)
 
     def market_exit(self, position, quantity: float, reason: str,
@@ -107,7 +125,9 @@ class OrderManager:
         order = Order(
             client_order_id=client_order_id(position.position_id,
                                              f"{intent}-{reason}", seq),
-            symbol=position.symbol, side=Side.SELL, quantity=quantity,
+            symbol=position.symbol,
+            side=Side.SELL if position.is_long else Side.BUY,
+            quantity=quantity,
             order_type="MARKET", strategy=position.strategy, intent=intent,
             position_id=position.position_id, reason=reason)
         return self._submit(order)

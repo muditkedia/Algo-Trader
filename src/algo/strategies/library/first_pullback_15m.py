@@ -40,6 +40,7 @@ class FirstPullbackAfterBreakout(StrategyProfile):
 
     meta = StrategyMeta(
         name="first_pullback_15m", version="1.0",
+        exclusive_group="opening_breakout",
         direction=Direction.LONG, holding_scope=HoldingScope.INTRADAY,
         timeframe="15m", min_bars=30,
         required_columns=("close", "high", "or_high", "pullback_high",

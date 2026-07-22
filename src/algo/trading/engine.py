@@ -87,6 +87,7 @@ class ProductionEngine:
         self.events = EventLog(config.state_dir)
         self.portfolio = PortfolioEngine(config.state_path("portfolio.json"))
         self.strategies = strategies or load_intraday_strategies()
+        self.strategy_by_name = {s.name: s for s in self.strategies}
         self.specs = {s.name: s.execution for s in self.strategies}
         #: THE live timeframe set, derived from what the enabled strategies
         #: declare (config may restrict it, never extend it). The market-data
@@ -147,6 +148,10 @@ class ProductionEngine:
             store = MarketDataStore(config.store_dir)
             watch = build_watchlist(config, store, self.timeframes)
             symbols, report = watch.symbols, watch.report
+        context_symbols = sorted({symbol for strategy in self.strategies
+                                  for symbol in strategy.context_symbols})
+        trade_symbols = list(symbols)
+        symbols = list(dict.fromkeys(trade_symbols + context_symbols))
         # A streaming source finalizes candles seconds after the bucket
         # closes, so the bar grace shrinks accordingly; the REST path keeps
         # its fetch-latency grace unchanged.
@@ -166,9 +171,12 @@ class ProductionEngine:
             max_requests_per_poll=config.max_requests_per_poll,
             poll_budget_seconds=config.poll_budget_seconds)
         service.state.universe_report = report
+        service.state.context_symbols = context_symbols
         if state is not None:
             # keep the caller's object identity: tests hold a reference to it
             state.timeframes = list(self.timeframes)
+            state.set_symbols(symbols)
+            state.context_symbols = context_symbols
             state.universe_report = report
             if getattr(state, "mapping", None) is None:
                 state.mapping = service.source.mapping_report()
@@ -480,6 +488,10 @@ class ProductionEngine:
         if isinstance(self.adapter, PaperBroker):
             self.adapter.update_quotes(prices)
 
+        # Reconcile working entries before management. Limit-order strategies
+        # become positions only after the broker confirms a fill.
+        self._reconcile_entry_orders(timeframe)
+
         # 3) manage open positions (exits/partials/trails) - ALWAYS, even if
         #    the day is halted (we still protect/close existing risk)
         self._manage_open(timeframe)
@@ -636,10 +648,18 @@ class ProductionEngine:
             frame = self.state.history(pos.symbol, pos.timeframe)
             if frame.empty:
                 continue
-            bar = frame.iloc[-1]
+            strategy = self.strategy_by_name.get(pos.strategy)
+            prepared = strategy.prepare(frame) if strategy is not None else frame
+            bar = prepared.iloc[-1]
+            if pos.last_managed_bar and str(pd.Timestamp(bar.get("date"))) \
+                    == pos.last_managed_bar:
+                continue
+            previous_bar = pos.last_managed_bar
             decision = self.manager.manage(
                 pos, bar, spec=spec, past_squareoff=self.clock.past_squareoff())
             if decision.action == "hold":
+                if pos.last_managed_bar != previous_bar:
+                    self.portfolio.persist()
                 continue
             if decision.action == "trail":
                 pos.stop = decision.new_stop
@@ -695,14 +715,21 @@ class ProductionEngine:
                          if skipped else ""),
                       detail=f"Evaluating: {', '.join(names)}")
         signals = self.orchestrator.evaluate(timeframe)
+        for diagnostic in self.orchestrator.diagnostics:
+            self.events.emit("signal_rejected", **diagnostic)
         self._observe("note_scanner",
                       f"{timeframe} scan complete - {len(signals)} signal(s)",
                       detail="Waiting for next completed candle.")
         opened = 0
         for sig in signals:
             self.events.emit("signal", symbol=sig.symbol, strategy=sig.strategy,
+                             direction=sig.direction.value,
                              entry=sig.entry_ref, stop=sig.stop,
-                             target=sig.target, confidence=sig.confidence)
+                             target=sig.target, confidence=sig.confidence,
+                             regime=sig.regime_score,
+                             priority=sig.priority_score,
+                             components=sig.confidence_components,
+                             reason=sig.reason)
             decision = self.risk.check_entry(sig, self.portfolio)
             if not decision:
                 self.events.emit("risk_block", symbol=sig.symbol,
@@ -721,30 +748,105 @@ class ProductionEngine:
         if isinstance(self.adapter, PaperBroker):
             self.adapter.update_quotes({sig.symbol: sig.entry_ref})
         try:
-            order = self.orders.market_entry(sig, qty, position_id)
+            order = self.orders.entry(sig, qty, position_id)
         except Exception as exc:
             self.events.emit("error", where="entry", symbol=sig.symbol,
                              detail=str(exc))
             return False
-        fill = order.avg_fill_price or sig.entry_ref
-        pos = Position(
-            position_id=position_id, symbol=sig.symbol, strategy=sig.strategy,
-            timeframe=sig.timeframe, quantity=qty, entry_price=fill,
-            entry_ts=now_iso(), stop=sig.stop, initial_stop=sig.stop,
-            target=sig.target, target2=sig.target2,
-            partial_fraction=sig.spec.partial_fraction,
-            trail_mode=sig.spec.trail, open_quantity=qty,
-            session=sig.session, last_price=fill)
-        # ATR at entry for chandelier trailing (from the signal's frame proxy:
-        # recompute cheaply from the risk geometry is not possible, so read it
-        # off the prepared frame via the orchestrator-provided stop distance)
-        pos.atr_at_entry = max(sig.entry_ref - sig.stop, 0.0) / \
-            max(self.params.atr_stop_multiplier, 1e-9)
-        self.portfolio.add_position(pos)
-        self.events.emit("position", action="open", symbol=sig.symbol,
-                         strategy=sig.strategy, price=fill, qty=qty,
-                         stop=sig.stop)
+        if order.filled_quantity <= 0:
+            self.events.emit("order", intent="entry_working",
+                             symbol=sig.symbol, strategy=sig.strategy,
+                             limit=sig.limit_price, direction=sig.direction.value)
+            return False
+        self._apply_entry_fill(order)
         return True
+
+    def _apply_entry_fill(self, order) -> None:
+        """Create/update a position from the broker's cumulative entry fill."""
+        filled = float(order.filled_quantity)
+        if filled <= 0:
+            return
+        existing = self.portfolio.positions.get(order.position_id)
+        fill = float(order.avg_fill_price or 0.0)
+        if fill <= 0:
+            return
+        spec = self.specs[order.strategy]
+        is_long = order.direction != "short"
+        atr_value = float(order.atr_at_entry or 0.0)
+        structural = float(order.structural_stop or order.entry_stop)
+        if spec.stop_kind == "column_atr_cap":
+            cap = (fill - spec.stop_atr_mult * atr_value if is_long
+                   else fill + spec.stop_atr_mult * atr_value)
+            stop = max(structural, cap) if is_long else min(structural, cap)
+        else:
+            stop = float(order.entry_stop)
+        risk = abs(fill - stop)
+        target = (fill + spec.target_r * risk if is_long
+                  else fill - spec.target_r * risk) \
+            if spec.target_kind == "r" else order.entry_target
+        if existing is not None:
+            if filled <= existing.quantity:
+                return
+            delta = filled - existing.quantity
+            # Broker average-fill price is cumulative, not the price of just
+            # the newly reported delta.
+            existing.entry_price = fill
+            existing.quantity = filled
+            existing.open_quantity += delta
+            existing.stop = stop
+            existing.initial_stop = stop
+            existing.target = target
+            existing.last_price = fill
+            self.portfolio.persist()
+            return
+        pos = Position(
+            position_id=order.position_id, symbol=order.symbol,
+            strategy=order.strategy, timeframe=order.timeframe,
+            quantity=filled, entry_price=fill, entry_ts=now_iso(),
+            stop=stop, initial_stop=stop, target=target,
+            target2=order.entry_target2,
+            partial_fraction=order.partial_fraction,
+            trail_mode=order.trail_mode, open_quantity=filled,
+            session=order.session, last_price=fill,
+            atr_at_entry=atr_value, direction=order.direction,
+            exclusive_group=order.exclusive_group,
+            last_managed_bar=order.signal_bar_time)
+        self.portfolio.add_position(pos)
+        self.events.emit("position", action="open", symbol=order.symbol,
+                         strategy=order.strategy, direction=order.direction,
+                         price=fill, qty=filled, stop=stop)
+
+    def _reconcile_entry_orders(self, timeframe: str) -> None:
+        from algo.trading.models import OrderStatus, TERMINAL
+        for order in list(self.portfolio.orders.values()):
+            if order.intent != "entry" or order.status in TERMINAL:
+                continue
+            try:
+                refreshed = self.adapter.order_status(order)
+            except Exception as exc:
+                self.events.emit("error", where="entry_reconcile",
+                                 symbol=order.symbol, detail=str(exc))
+                continue
+            self.portfolio.record_order(refreshed)
+            if refreshed.filled_quantity > 0:
+                self._apply_entry_fill(refreshed)
+            if refreshed.status in TERMINAL:
+                continue
+            frame = self.state.history(order.symbol,
+                                       order.timeframe or timeframe)
+            latest = (pd.Timestamp(frame["date"].iloc[-1])
+                      if not frame.empty else None)
+            signal_bar = (pd.Timestamp(order.signal_bar_time)
+                          if order.signal_bar_time else None)
+            expired = (latest is not None and signal_bar is not None
+                       and latest > signal_bar)
+            if expired or self.clock.past_entry_cutoff():
+                cancelled = self.orders.cancel(refreshed)
+                self.portfolio.record_order(cancelled)
+                self.events.emit("order", intent="entry_expired",
+                                 symbol=order.symbol,
+                                 reason=("next_bar" if expired else
+                                         "entry_cutoff"))
 
     # -------------------------------------------------------- square-off
 

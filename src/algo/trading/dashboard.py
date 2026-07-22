@@ -44,7 +44,7 @@ SCHEMA_VERSION = 2
 
 #: human names for the strategy ids (display only)
 STRATEGY_NAMES = {
-    "orb_15m": "Opening Range Breakout",
+    "orb_5m": "Opening Range Breakout (STRAT-01)",
     "vwap_15m": "VWAP Trend Continuation",
     "vwap_pullback_15m": "VWAP Pullback",
     "cpr_breakout_15m": "CPR Breakout",
@@ -61,8 +61,8 @@ STRATEGY_NAMES = {
 
 #: one-line description of each strategy's ENTRY trigger (display only)
 ENTRY_RULES = {
-    "orb_15m": "Close crossed above the 15-minute opening-range high with "
-               "volume >= 1.5x its 20-bar average",
+    "orb_5m": "Buffered 5-minute opening-range break with same-slot RVOL, "
+              "VWAP, EMA, regime and confidence confirmation",
     "vwap_15m": "Price reclaimed session VWAP on a session where >=60% of "
                 "prior bars closed above VWAP",
     "vwap_pullback_15m": "Price tagged a rising session VWAP as support and "
@@ -722,28 +722,31 @@ class DashboardExporter:
 
         # 1) stop - always first, evaluated against the bar's low/open
         stop_reason = ("breakeven stop" if pos.partial_done
-                       and pos.stop >= pos.entry_price
+                       and ((pos.stop >= pos.entry_price) if pos.is_long
+                            else (pos.stop <= pos.entry_price))
                        else ("trailing stop" if pos.trailed else "initial stop"))
+        stop_verb = "down" if pos.is_long else "up"
         triggers.append({
-            "condition": f"price trades down to Rs {pos.stop:,.2f}",
+            "condition": f"price trades {stop_verb} to Rs {pos.stop:,.2f}",
             "action": f"Exit the full remaining {pos.open_quantity:g} shares "
                       f"({stop_reason})",
             "kind": "stop", "level": round(pos.stop, 2)})
 
         # 2) target / partial
         if pos.target and not pos.partial_done:
+            target_verb = "up" if pos.is_long else "down"
             if spec.partial_fraction > 0:
                 pct = int(spec.partial_fraction * 100)
                 qty = pos.open_quantity * spec.partial_fraction
                 triggers.append({
-                    "condition": f"price trades up to Rs {pos.target:,.2f} "
+                    "condition": f"price trades {target_verb} to Rs {pos.target:,.2f} "
                                  f"(target 1)",
                     "action": f"Book {pct}% ({qty:g} shares), then move the "
                               f"stop to breakeven Rs {pos.entry_price:,.2f}",
                     "kind": "partial", "level": round(pos.target, 2)})
             else:
                 triggers.append({
-                    "condition": f"price trades up to Rs {pos.target:,.2f} "
+                    "condition": f"price trades {target_verb} to Rs {pos.target:,.2f} "
                                  f"(target)",
                     "action": "Exit the full position",
                     "kind": "target", "level": round(pos.target, 2)})
@@ -824,7 +827,7 @@ class DashboardExporter:
                                              "Strategy entry condition met"),
             "volume_confirmation": (
                 "Required and satisfied (>=1.5x 20-bar average)"
-                if pos.strategy in ("orb_15m", "cpr_breakout_15m")
+                if pos.strategy in ("orb_5m", "cpr_breakout_15m")
                 else "Not part of this strategy's entry rule"),
             "trend_confirmation": (
                 "Entry rule includes its own trend/state condition"),
@@ -876,6 +879,7 @@ class DashboardExporter:
                 "symbol": pos.symbol,
                 "strategy_id": pos.strategy,
                 "strategy": STRATEGY_NAMES.get(pos.strategy, pos.strategy),
+                "direction": pos.direction,
                 "quantity": pos.open_quantity,
                 "entry_price": round(pos.entry_price, 2),
                 "current_price": round(price, 2),
@@ -1015,7 +1019,8 @@ class DashboardExporter:
             elif t == "position":
                 action = ev.get("action")
                 if action == "open":
-                    text = (f"BUY filled {sym} @ Rs "
+                    side = "BUY" if ev.get("direction") != "short" else "SELL"
+                    text = (f"{side} filled {sym} @ Rs "
                             f"{_f(ev.get('price')):,.2f}")
                 elif action == "close":
                     text = (f"{sym} closed ({ev.get('reason')}) @ Rs "

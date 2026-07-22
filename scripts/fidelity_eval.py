@@ -11,6 +11,9 @@ Runs BOTH engines from the SAME prepared signals so trades match 1:1, then:
            deltas attribute entry / stop / target+trail-swap fidelity.
 
 No optimisation, no tuning: the specs are the D-036 published forms, fixed.
+The retired ``orb_15m`` is excluded because running ``orb_5m`` against its
+frozen 15-minute fidelity spec would falsely attribute legacy evidence to the
+new implementation.
 """
 
 from __future__ import annotations
@@ -32,7 +35,7 @@ from algo.research.engine import ResearchEngine
 from algo.research.fidelity import FIDELITY_SPECS, run_fidelity
 from algo.research.validation import metrics
 from algo.strategies.library import (
-    CprBreakout, FirstPullbackAfterBreakout, OpeningRangeBreakout,
+    CprBreakout, FirstPullbackAfterBreakout,
     VwapPullback, VwapTrendContinuation,
 )
 
@@ -41,8 +44,7 @@ REPORT = ROOT / "backtest_results" / "reports" / "fidelity_eval.md"
 CAPITAL = 100_000.0
 COST = NseEquityCostModel()
 
-STRATEGIES = [("orb_15m", OpeningRangeBreakout),
-              ("vwap_pullback_15m", VwapPullback),
+STRATEGIES = [("vwap_pullback_15m", VwapPullback),
               ("vwap_15m", VwapTrendContinuation),
               ("cpr_breakout_15m", CprBreakout),
               ("first_pullback_15m", FirstPullbackAfterBreakout)]
@@ -166,38 +168,6 @@ def main() -> int:
               "held constant); d_stop = structural stop vs ATR stop; d_target "
               "= targets/partials replacing the ATR trail._"]
 
-    # ---- honest bound check: TOUCH-basis ORB (a real resting stop order) ----
-    # The trigger mode above fills only close-CONFIRMED signals (an information
-    # advantage; upper bound). A real resting order at or_high also fills on
-    # touch-and-fail bars. Simulate that: entry on the FIRST touch of or_high
-    # per session, no close condition, same published spec.
-    strat = OpeningRangeBreakout()
-    prep = eng.prepare_signals(strat, subset)
-    touch_frames, touch_signals = {}, {}
-    for sym, frame in prep.frames.items():
-        touched = (frame["after_range"] & (frame["high"] >= frame["or_high"])
-                   & frame["or_high"].notna())
-        day = frame["date"].dt.normalize()
-        first_touch = touched & (touched.groupby(day).cumsum() == 1)
-        if bool(first_touch.any()):
-            touch_frames[sym] = frame
-            touch_signals[sym] = first_touch.fillna(False)
-    touch = run_fidelity(touch_frames, touch_signals, FIDELITY_SPECS["orb_15m"],
-                         cost_model=COST)
-    st = _stats(touch)
-    confirmed = _stats(run_fidelity(prep.frames, prep.signals,
-                                    FIDELITY_SPECS["orb_15m"], cost_model=COST))
-    print(f"\nORB touch-basis (real resting order): {st}")
-    print(f"ORB close-confirmed (upper bound)   : {confirmed}")
-    lines += ["", "## Honest-bound check: ORB on a TOUCH basis "
-              f"({len(subset)}-symbol subset)", "",
-              f"- real resting-order fills (every first touch): `{st}`",
-              f"- close-confirmed fills (upper bound): `{confirmed}`", "",
-              "_The true published-execution result lies between the touch "
-              "basis (no information advantage; includes touch-and-fail bars, "
-              "note the volume-confirmation condition is also dropped here) "
-              "and the close-confirmed basis (conditions on information not "
-              "available at the fill)._"]
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text("\n".join(lines), encoding="utf-8")
     print(f"\nladder:\n{ldf.to_string()}")

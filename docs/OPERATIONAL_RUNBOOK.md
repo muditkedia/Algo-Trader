@@ -55,7 +55,7 @@ Each tick prints a dashboard:
  cycles=12 errors=0 risk_tripped=False
  realized=+0  unrealized=-320  deployed=100000
  open=2 closed=1 wins=1 losses=0
- RELIANCE     orb_15m    qty=20 entry=2450.10 stop=2431.00 uPnL=-180
+ RELIANCE     orb_5m     qty=20 entry=2450.10 stop=2431.00 uPnL=-180
 ```
 
 - `status=ok` — normal. `degraded` — data or broker hiccup (it keeps managing

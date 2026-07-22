@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 from algo.core.logging import get_logger
-from algo.trading.config import RiskLimits
+from algo.trading.config import MAX_PER_TRADE_FRACTION, RiskLimits
 
 logger = get_logger("trading.risk")
 
@@ -81,7 +81,8 @@ def position_open_risk(position) -> float:
     breakeven it is exactly zero and once the stop is in profit it stays zero
     (never negative - a winning position does not create risk budget).
     """
-    distance = float(position.entry_price) - float(position.stop)
+    sign = getattr(position, "sign", 1.0)
+    distance = sign * (float(position.entry_price) - float(position.stop))
     return max(0.0, distance) * float(position.open_quantity)
 
 
@@ -199,6 +200,11 @@ class AccountRiskEngine:
                 and portfolio.has_symbol(signal.symbol)):
             return RiskDecision(False,
                                 f"symbol already held: {signal.symbol}")
+        if signal.exclusive_group and portfolio.executed_group_this_session(
+                signal.symbol, signal.exclusive_group, signal.session):
+            return RiskDecision(
+                False, f"session suppression: {signal.symbol}/"
+                       f"{signal.exclusive_group} already executed")
 
         # position-sizing validation: the sizer applies every constraint, so
         # an entry is tradeable exactly when it yields a non-zero quantity
@@ -210,7 +216,7 @@ class AccountRiskEngine:
                 False, f"no capital left: {state.deployed_capital:,.0f} of "
                        f"{L.deploy_today:,.0f} deployed")
         if signal.risk_per_unit <= 0:
-            return RiskDecision(False, "stop is not below the entry price")
+            return RiskDecision(False, "stop is not protective for direction")
         if state.remaining <= 0:
             return RiskDecision(
                 False, f"portfolio risk budget exhausted: open "
@@ -243,7 +249,10 @@ class AccountRiskEngine:
         # the sizer guarantees every cap; assert rather than re-deciding, so
         # the two paths can never drift apart silently
         assert signal.risk_per_unit * qty <= state.remaining + 1e-6
-        assert qty * signal.entry_ref <= L.max_per_trade + 1e-6
+        strategy_cap = (signal.spec.max_capital_per_trade
+                        or MAX_PER_TRADE_FRACTION)
+        assert qty * signal.entry_ref <= min(
+            L.max_per_trade, L.deploy_today * strategy_cap) + 1e-6
         return RiskDecision(True)
 
     def size_for(self, signal, portfolio) -> float:
@@ -286,7 +295,12 @@ class AccountRiskEngine:
         available = L.deploy_today if available is None else float(available)
 
         # capital constraints -> a share count
-        capital_allowed = min(L.max_per_trade, max(available, 0.0))
+        strategy_cap = getattr(signal.spec, "max_capital_per_trade", None)
+        capital_allowed = min(
+            L.max_per_trade,
+            L.deploy_today * strategy_cap if strategy_cap is not None
+            else L.max_per_trade,
+            max(available, 0.0))
         qty = capital_allowed / entry
 
         # portfolio risk constraint: (entry - stop) x qty <= remaining budget
@@ -295,7 +309,13 @@ class AccountRiskEngine:
             return 0.0            # no valid stop -> not tradeable
         budget = (L.max_daily_loss if risk_budget is None
                   else max(0.0, float(risk_budget)))
+        strategy_risk = getattr(signal.spec, "risk_per_trade_pct", None)
+        if strategy_risk is not None:
+            budget = min(budget, L.deploy_today * strategy_risk)
         qty = min(qty, budget / risk_per_share)
+
+        # The specification applies the confidence grade after both base caps.
+        qty *= max(0.0, min(1.0, float(signal.grade_multiplier)))
 
         # exchange lot size + whole shares
         lot = max(int(L.lot_size or 1), 1)
@@ -311,7 +331,10 @@ class AccountRiskEngine:
         # still available, or the remaining portfolio risk budget is skipped,
         # never padded. Sizing up to satisfy a minimum would let the softest
         # constraint override the hardest one, which is exactly backwards.
-        floor = float(L.min_per_trade)
+        # An explicit strategy allocation model (such as STRAT-01's 20% cap
+        # with 50/75% grade scaling) is authoritative and must not be rejected
+        # by the generic 25% "worth taking" floor.
+        floor = 0.0 if strategy_cap is not None else float(L.min_per_trade)
         if apply_minimum and floor > 0 and qty * entry < floor:
             return 0.0
         return qty

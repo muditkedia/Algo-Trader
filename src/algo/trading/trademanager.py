@@ -60,49 +60,94 @@ class TradeManager:
                       float(bar["low"]), float(bar["close"]))
         stop = position.stop
         entry = position.entry_price
+        is_long = position.is_long
+        sign = position.sign
+        bar_key = str(pd.Timestamp(bar.get("date")))
+        is_new_bar = bar_key != position.last_managed_bar
+        if is_new_bar:
+            position.last_managed_bar = bar_key
+            position.bars_held += 1
+            position.highest_since_entry = max(position.highest_since_entry, h)
+            position.lowest_since_entry = min(position.lowest_since_entry, l)
 
         # 1) stop first, honest gap fill at the open
-        if l <= stop or o <= stop:
-            gap = o < stop
-            price = o if o < stop else stop
+        stop_hit = (l <= stop or o <= stop) if is_long else (h >= stop or o >= stop)
+        if stop_hit:
+            gap = o < stop if is_long else o > stop
+            price = ((o if o < stop else stop) if is_long
+                     else (o if o > stop else stop))
+            at_be = stop >= entry if is_long else stop <= entry
             reason = ("breakeven_stop" if position.partial_done
-                      and stop >= entry else
+                      and at_be else
                       ("trailing_stop" if position.trailed else "stop_loss"))
             return ManageDecision("exit", price=price, reason=reason,
                                   gap_fill=gap)
 
         # 2) target (honest gap fill), optional partial at the first target
         target = position.target
-        if target is not None and (h >= target or o >= target):
-            fill = max(target, o)
+        target_hit = (target is not None and
+                      ((h >= target or o >= target) if is_long
+                       else (l <= target or o <= target)))
+        if target_hit:
+            fill = max(target, o) if is_long else min(target, o)
             if spec.partial_fraction > 0 and not position.partial_done:
                 qty = position.open_quantity * spec.partial_fraction
                 return ManageDecision("partial", price=fill, reason="partial",
                                       partial_qty=qty,
-                                      new_stop=max(stop, entry),
-                                      gap_fill=o > target)
+                                      new_stop=(max(stop, entry) if is_long
+                                                else min(stop, entry)),
+                                      gap_fill=(o > target if is_long
+                                                else o < target))
             return ManageDecision("exit", price=fill, reason="target",
-                                  gap_fill=o > target)
+                                  gap_fill=(o > target if is_long
+                                            else o < target))
 
-        # 3) intraday square-off (session rule)
+        # 3) close-confirmed strategy invalidation / no-progress timeout
+        invalidation_col = (spec.invalidation_long_col if is_long
+                            else spec.invalidation_short_col)
+        invalidation_col = invalidation_col or spec.invalidation_col
+        if invalidation_col and bool(bar.get(invalidation_col, False)):
+            return ManageDecision("exit", price=c,
+                                  reason="structural_invalidation")
+        if (is_new_bar and spec.no_progress_bars is not None
+                and position.bars_held >= spec.no_progress_bars):
+            initial_risk = abs(position.entry_price - position.initial_stop)
+            progress_r = (sign * (c - entry) / initial_risk
+                          if initial_risk > 0 else float("-inf"))
+            if progress_r < spec.no_progress_r:
+                return ManageDecision("exit", price=c, reason="no_progress")
+
+        # 4) intraday square-off (session rule)
         if spec.intraday and past_squareoff:
             return ManageDecision("exit", price=c, reason="session_squareoff")
 
-        # 4) trailing (ratchet only), per the declaration
+        # 5) trailing (ratchet only), per the declaration
         new_stop = None
-        if spec.trail == "chandelier":
-            cand = trailing_stop_price(entry, c, c / entry - 1.0,
-                                       position.atr_at_entry, self.params)
+        if spec.trail == "chandelier" and (
+                position.partial_done or not spec.trail_after_partial):
+            if spec.trail_after_partial:
+                cand = (position.highest_since_entry
+                        - spec.trail_atr_mult * position.atr_at_entry
+                        if is_long else position.lowest_since_entry
+                        + spec.trail_atr_mult * position.atr_at_entry)
+            else:
+                cand = trailing_stop_price(
+                    entry, c, sign * (c / entry - 1.0),
+                    position.atr_at_entry, self.params)
             if cand is not None:
-                raised = min(cand, c * (1 - 1e-4))
-                if raised > stop:
-                    new_stop = raised
+                bounded = (min(cand, c * (1 - 1e-4)) if is_long
+                           else max(cand, c * (1 + 1e-4)))
+                improves = bounded > stop if is_long else bounded < stop
+                if improves:
+                    new_stop = bounded
         elif spec.trail == "column" and spec.trail_col:
             cand = bar.get(spec.trail_col)
             if cand is not None and np.isfinite(cand):
-                raised = min(float(cand), c * (1 - 1e-4))
-                if raised > stop:
-                    new_stop = raised
+                bounded = (min(float(cand), c * (1 - 1e-4)) if is_long
+                           else max(float(cand), c * (1 + 1e-4)))
+                improves = bounded > stop if is_long else bounded < stop
+                if improves:
+                    new_stop = bounded
         if new_stop is not None:
             return ManageDecision("trail", new_stop=new_stop, reason="trail")
 

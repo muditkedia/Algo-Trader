@@ -162,6 +162,7 @@ class MarketState:
                  latency_window: int = 200) -> None:
         self.store = store
         self.symbols: List[str] = list(symbols)
+        self.context_symbols: List[str] = []
         self.timeframes: List[str] = list(timeframes)
         self.history_bars = int(history_bars)
         self.stale_tolerance_bars = int(stale_tolerance_bars)

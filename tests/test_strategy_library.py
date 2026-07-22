@@ -10,6 +10,8 @@ from algo.strategies.library import (
     VolatilityExpansionBreakout1h, VwapTrendContinuation,
 )
 from algo.strategies.library.pullback_15m import PullbackParams
+from algo.core.enums import Direction
+from strat01_fixtures import strat01_frames
 
 
 # ------------------------------------------------------------ frame builders
@@ -45,49 +47,33 @@ def _ema_step(prev: float, value: float, period: int) -> float:
     return alpha * value + (1 - alpha) * prev
 
 
-# ---------------------------------------------------------------- ORB (15m)
-
-def _orb_frame():
-    """Two sessions; session-2 bar 22 breaks the opening-range high on 3x
-    volume. Frame ENDS on the breakout bar."""
-    d1 = _intraday_dates("2024-03-04", 25)
-    d2 = _intraday_dates("2024-03-05", 23)
-    closes, highs, lows, vols = [], [], [], []
-    # session 1: quiet
-    for i in range(25):
-        c = 100.0 + 0.05 * (i % 3)
-        closes.append(c); highs.append(c + 0.3); lows.append(c - 0.3)
-        vols.append(100.0)
-    # session 2 bar 0: opening range with high 105
-    closes.append(104.0); highs.append(105.0); lows.append(99.0); vols.append(100.0)
-    # session 2 bars 1..21: below the range high
-    for i in range(1, 22):
-        c = 102.0 + 0.05 * (i % 4)
-        closes.append(c); highs.append(c + 0.4); lows.append(c - 0.4)
-        vols.append(100.0)
-    # session 2 bar 22: breakout on volume
-    closes.append(106.0); highs.append(106.5); lows.append(103.9); vols.append(300.0)
-    return _frame(list(d1) + list(d2), closes, highs, lows, vols)
+# ---------------------------------------------------------------- STRAT-01 ORB (5m)
 
 
 def test_orb_fires_on_confirmed_breakout():
+    frames = strat01_frames("long")
     strat = OpeningRangeBreakout()
-    prepared = strat.prepare(_orb_frame())
-    signal = strat.entry_signal(prepared)
+    prepared = strat.prepare(frames["RELIANCE"])
+    strat.prepare_context({"RELIANCE": prepared},
+                          {"NIFTY50": frames["NIFTY50"]})
+    signal = strat.entry_signals(prepared)[Direction.LONG]
     assert bool(signal.iloc[-1])                     # breakout bar fires
     assert int(signal.sum()) == 1                    # and ONLY that bar
-    conf = strat.confidence(prepared)
+    conf = strat.confidence_for(prepared, Direction.LONG)
     assert 0.0 <= conf.score <= 1.0 and conf.reason
-    assert set(conf.components) == {"volume_surge", "range_tightness",
-                                    "close_strength"}
-    assert conf.components["volume_surge"]["score"] > 0.5   # 3x volume
+    assert conf.score >= 0.55
+    assert strat.regime_score(prepared, Direction.LONG) >= 0.60
 
 
 def test_orb_requires_volume_confirmation():
-    frame = _orb_frame()
-    frame.loc[frame.index[-1], "volume"] = 100.0     # same break, no surge
+    frames = strat01_frames("long")
+    frame = frames["RELIANCE"]
+    frame.loc[frame.index[-1], "volume"] = 500_000.0
     strat = OpeningRangeBreakout()
-    signal = strat.entry_signal(strat.prepare(frame))
+    prepared = strat.prepare(frame)
+    strat.prepare_context({"RELIANCE": prepared},
+                          {"NIFTY50": frames["NIFTY50"]})
+    signal = strat.entry_signals(prepared)[Direction.LONG]
     assert int(signal.sum()) == 0
 
 
@@ -264,7 +250,7 @@ def test_unprepared_frame_never_raises(cls):
 @pytest.mark.parametrize("cls", ALL_STRATEGIES, ids=lambda c: c.meta.name)
 def test_metadata_contract(cls):
     meta = cls.meta
-    assert meta.enabled and meta.timeframe in ("15m", "1h")
+    assert meta.enabled and meta.timeframe in ("5m", "15m", "1h")
     assert meta.supported_regimes and meta.hypothesis
     assert meta.expected_behaviour and meta.known_failure_modes
     assert meta.required_columns

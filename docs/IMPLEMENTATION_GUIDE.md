@@ -3,7 +3,7 @@
 _Written 2026-07-19. Phase 1+2 of the practitioner-faithfulness pass.
 Documentation only — no strategy code was modified._
 
-**Scope:** the seven implemented intraday strategies (`orb_15m`, `vwap_15m`,
+**Scope:** the seven implemented intraday strategies (`orb_5m`, `vwap_15m`,
 `vwap_pullback_15m`, `cpr_breakout_15m`, `first_pullback_15m`, `pullback_15m`,
 `volexp_1h`). For each: the canonical practitioner implementation — including
 the context and quality rules experienced traders apply that articles and
@@ -52,7 +52,17 @@ of the strategy as practised, not optimisations:
 
 ---
 
-## 1. Opening Range Breakout — `orb_15m`
+## 1. Opening Range Breakout — `orb_5m` (current canonical implementation)
+
+STRAT-01 now implements the master 5-minute, bidirectional design. It uses a
+0.1% buffered break, same-slot 10-session RVOL (2.0 long / 2.5 short), NIFTY
+and stock structure, 0.5–2.5 ATR opening-range width, regime/confidence gates,
+a limit collar with confirmed-fill state transition, midpoint/1.5 ATR-capped
+stop, 1.5R half exit, breakeven, post-partial 2 ATR chandelier, VWAP
+invalidation, and a six-bar no-progress exit. See `docs/STRAT01_ORB_5M.md` for
+the full contract and documented input substitutions.
+
+### Retired `orb_15m` practitioner comparison (legacy evidence only)
 
 1. **Original strategy name:** Opening Range Breakout (ORB).
 2. **Canonical description:** the first minutes of the session establish the
@@ -414,7 +424,7 @@ loses consistently-recommended context; L = near-faithful already).
 
 | Strategy | Current implementation | Common practitioner implementation | Missing elements | Implementation priority |
 |---|---|---|---|---|
-| `orb_15m` | 15m OR; close-confirmed break + rolling-20 volume ≥1.5×; OR-low stop; 1×-range target; square-off | Narrow-OR mornings on RVOL with index aligned and gap context; OR-low/mid stop; 1×-range scale, BE after 1R; morning-window entries | Time-of-day RVOL; index gate; OR-width rejection; gap rules; entry cutoff; event skip; BE-at-1R | **High** — context gates are the strategy's selection core |
+| `orb_5m` | Specification STRAT-01; see `STRAT01_ORB_5M.md` | Implemented | Optional spread/membership inputs substituted conservatively; sector cap awaits metadata | **Complete except documented sector-metadata dependency** |
 | `vwap_pullback_15m` | Rising VWAP; 0.2% tag holding; resume trigger; below-VWAP stop; 2R; square-off | FIRST/second VWAP test only, on a real trend day, with volume signature and index confirmation | Test-count cap (fixes documented 5–9× over-fire); volume signature; flat-VWAP rejection; index gate; time cutoff | **High** — over-firing means we mostly trade setups practitioners refuse |
 | `cpr_breakout_15m` | Causal CPR; TC break + volume; BC stop; R1 partial→BE→R2; square-off | Same trade but ONLY on narrow-CPR days with supportive two-day relationship and sane gap; morning entries | Narrow-CPR gate; two-day relationship; gap rejection; virgin-CPR context; RVOL; index gate; morning window | **High** — day-type selection *is* the CPR method |
 | `vwap_15m` | 60% buyer-control; reclaim cross; dip-low stop; 2R; square-off | Reclaim on RISING VWAP, first/second reclaim only, trend-day context, volume signature | Slope requirement; reclaim-count cap; range-day rejection; index gate; time cutoff | **Medium** |

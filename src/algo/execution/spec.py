@@ -27,14 +27,13 @@ from typing import Optional
 
 @dataclass(frozen=True)
 class ExecutionSpec:
-    """One strategy's complete execution declaration (long-only)."""
+    """One strategy's complete execution declaration."""
 
-    #: How a signal becomes a fill. ``signal_close`` (the only implemented
-    #: mode) fills at the close of the bar whose close-confirmed signal fired -
-    #: the honest, implementable timing for close-confirmed entry conditions
-    #: (trigger-level resting orders were measured in the Phase-17 fidelity
-    #: audit to carry an information advantage bar data cannot honestly fill).
+    #: ``signal_close`` uses the completed-bar close. ``limit_collar`` submits
+    #: a marketable limit around the strategy's trigger and creates a position
+    #: only after the broker confirms a fill.
     entry: str = "signal_close"
+    slippage_collar_pct: float = 0.0
 
     # ---------------------------------------------------------- stop-loss
     #: ``column``: a structural level computed by the strategy's own
@@ -45,6 +44,8 @@ class ExecutionSpec:
     stop_col: Optional[str] = None
     stop_atr_mult: float = 2.0
     hard_stop_pct: Optional[float] = 0.06
+    #: ``column_atr_cap`` combines a structural column with a maximum distance
+    #: from entry (long=max(column, entry-mult*ATR), short=min(...)).
 
     # ------------------------------------------------------- profit target
     #: ``none`` | ``column`` (level from ``target_col``) | ``r``
@@ -66,6 +67,24 @@ class ExecutionSpec:
     #: the stop upward, never widens it).
     trail: str = "none"
     trail_col: Optional[str] = None
+    trail_atr_mult: float = 2.0
+    trail_after_partial: bool = False
+
+    # ------------------------------------------------------- invalidation
+    #: Boolean prepared-frame column that closes an open trade when true.
+    invalidation_col: Optional[str] = None
+    invalidation_long_col: Optional[str] = None
+    invalidation_short_col: Optional[str] = None
+    #: Close after this many completed bars when progress is below the stated
+    #: R multiple. Both must be set together.
+    no_progress_bars: Optional[int] = None
+    no_progress_r: float = 0.0
+
+    # -------------------------------------------------------------- sizing
+    #: Strategy ceilings; the account risk engine always applies the stricter
+    #: of these and the central portfolio limits.
+    risk_per_trade_pct: Optional[float] = None
+    max_capital_per_trade: Optional[float] = None
 
     # ------------------------------------- session / holding / square-off
     #: Intraday: entries are forbidden on the session's last bar, positions
@@ -78,12 +97,15 @@ class ExecutionSpec:
     max_hold_bars: Optional[int] = None
 
     def __post_init__(self) -> None:
-        if self.entry != "signal_close":
+        if self.entry not in ("signal_close", "limit_collar"):
             raise ValueError(f"unsupported entry timing {self.entry!r}")
-        if self.stop_kind not in ("column", "atr_structure"):
+        if self.entry == "limit_collar" and self.slippage_collar_pct <= 0:
+            raise ValueError("limit_collar entry needs a positive collar")
+        if self.stop_kind not in ("column", "column_atr_cap",
+                                  "atr_structure"):
             raise ValueError(f"unknown stop_kind {self.stop_kind!r}")
-        if self.stop_kind == "column" and not self.stop_col:
-            raise ValueError("stop_kind='column' needs stop_col")
+        if self.stop_kind in ("column", "column_atr_cap") and not self.stop_col:
+            raise ValueError(f"stop_kind={self.stop_kind!r} needs stop_col")
         if self.target_kind not in ("none", "column", "r"):
             raise ValueError(f"unknown target_kind {self.target_kind!r}")
         if self.target_kind == "column" and not self.target_col:
@@ -98,6 +120,18 @@ class ExecutionSpec:
             raise ValueError(f"unknown trail {self.trail!r}")
         if self.trail == "column" and not self.trail_col:
             raise ValueError("trail='column' needs trail_col")
+        if self.trail_atr_mult <= 0:
+            raise ValueError("trail_atr_mult must be positive")
+        if (self.no_progress_bars is None) != (self.no_progress_r == 0.0):
+            raise ValueError("no-progress bars and R threshold must be set together")
+        if self.no_progress_bars is not None and self.no_progress_bars < 1:
+            raise ValueError("no_progress_bars must be positive")
+        if self.risk_per_trade_pct is not None \
+                and not 0 < self.risk_per_trade_pct <= 1:
+            raise ValueError("risk_per_trade_pct must be in (0, 1]")
+        if self.max_capital_per_trade is not None \
+                and not 0 < self.max_capital_per_trade <= 1:
+            raise ValueError("max_capital_per_trade must be in (0, 1]")
         if self.intraday and self.allow_overnight:
             raise ValueError("intraday specs cannot allow overnight holds")
         if not self.intraday and self.max_hold_bars is None:

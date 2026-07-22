@@ -99,6 +99,7 @@ class RecoveryManager:
                                  symbol=pos.symbol, position=pos.position_id)
                 continue
             # partial fill: broker qty < our expected open qty
+            pos.direction = "long" if bp["quantity"] > 0 else "short"
             if abs(bp["quantity"]) < pos.open_quantity - 1e-6:
                 pos.open_quantity = abs(bp["quantity"])
                 report.partial_fills.append(pos.position_id)
@@ -116,7 +117,8 @@ class RecoveryManager:
                 quantity=abs(bp["quantity"]), entry_price=bp["avg_price"],
                 entry_ts=now_iso(), stop=0.0, initial_stop=0.0,
                 open_quantity=abs(bp["quantity"]), status="OPEN",
-                session=self.portfolio.session_date)
+                session=self.portfolio.session_date,
+                direction="long" if bp["quantity"] > 0 else "short")
             self.portfolio.add_position(adopted)
             report.orphaned_broker.append(symbol)
             self.events.emit("recovery", action="orphaned_broker",

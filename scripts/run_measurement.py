@@ -23,7 +23,7 @@ Usage:
     .venv/Scripts/python scripts/run_measurement.py \
         --store-dir user_data/data/nse                              # real store
         [--symbols RELIANCE,TCS | --symbols-file file]
-        [--strategies orb_15m]             # measure a subset, same bars
+        [--strategies orb_5m]              # measure a subset, same bars
 
 With ``--store-dir`` (e.g. after scripts/download_history.py) the REAL evidence
 DB (user_data/evidence/evidence.db) is used, verdicts are persisted as strategy

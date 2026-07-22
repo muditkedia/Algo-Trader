@@ -44,6 +44,16 @@ class PortfolioEngine:
     def has_symbol(self, symbol: str) -> bool:
         return any(p.symbol == symbol for p in self.open_positions())
 
+    def executed_group_this_session(self, symbol: str, group: str,
+                                    session: str) -> bool:
+        if any(p.symbol == symbol and p.exclusive_group == group
+               and p.session == session for p in self.open_positions()):
+            return True
+        return any(t.get("symbol") == symbol
+                   and t.get("exclusive_group") == group
+                   and t.get("session") == session
+                   for t in self.closed_trades)
+
     def deployed_capital(self) -> float:
         return sum(p.entry_price * p.open_quantity for p in self.open_positions())
 
@@ -71,7 +81,7 @@ class PortfolioEngine:
                 p.last_price = float(px)
 
     def book_partial(self, position: Position, qty: float, price: float) -> None:
-        pnl = (price - position.entry_price) * qty
+        pnl = position.sign * (price - position.entry_price) * qty
         position.realized_pnl += pnl
         position.open_quantity -= qty
         position.partial_done = True
@@ -81,17 +91,20 @@ class PortfolioEngine:
     def close_position(self, position: Position, price: float,
                        reason: str) -> dict:
         qty = position.open_quantity
-        pnl = (price - position.entry_price) * qty + position.realized_pnl
+        pnl = (position.sign * (price - position.entry_price) * qty
+               + position.realized_pnl)
         position.realized_pnl = pnl
         position.open_quantity = 0.0
         position.status = "CLOSED"
-        self.realized_pnl += (price - position.entry_price) * qty
+        self.realized_pnl += position.sign * (price - position.entry_price) * qty
         record = {
             "position_id": position.position_id, "symbol": position.symbol,
             "strategy": position.strategy, "entry_price": position.entry_price,
             "exit_price": price, "quantity": position.quantity,
             "pnl": pnl, "exit_reason": reason, "entry_ts": position.entry_ts,
             "exit_ts": now_iso(), "session": position.session,
+            "direction": position.direction,
+            "exclusive_group": position.exclusive_group,
         }
         self.closed_trades.append(record)
         self.persist()

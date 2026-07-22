@@ -17,6 +17,7 @@ from algo.trading.engine import ProductionEngine
 from algo.marketdata import MarketState, PollReport, TimeframeScheduler
 from algo.trading.models import Order, OrderStatus, Side
 from algo.strategies.library import OpeningRangeBreakout
+from strat01_fixtures import strat01_frames
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -211,7 +212,7 @@ class CraftedFeed(MarketState):
     """MarketState serving in-memory frames; only ``history`` is substituted."""
     def __init__(self, frames):
         super().__init__(store=None, symbols=list(frames),
-                         timeframes=["15m"], history_bars=5000)
+                         timeframes=["5m"], history_bars=5000)
         self._frames = frames
         self.set_symbols(list(frames))
     def history(self, s, tf): return self._frames.get(s, pd.DataFrame()).copy()
@@ -241,7 +242,7 @@ def _engine(tmp_path, mode, monkeypatch, adapter=None):
     cfg = TradingConfig.from_dict({
         "mode": mode, "state_dir": str(tmp_path / f"s_{mode}"),
         "store_dir": str(tmp_path / "d"),
-        "symbols_file": str(tmp_path / "syms.txt"), "timeframes": ["15m"],
+        "symbols_file": str(tmp_path / "syms.txt"), "timeframes": ["5m"],
         "entry_cutoff_hour": 23, "squareoff_hour": 23,
         "live_trading_enabled": mode == "live",
         "capital": {"deploy_today": 500000},
@@ -250,7 +251,7 @@ def _engine(tmp_path, mode, monkeypatch, adapter=None):
         # snapshots of an actual trading session
         "dashboard_dir": str(tmp_path / f"dash_{mode}"),
     })
-    feed = CraftedFeed({"RELIANCE": _orb_breakout_frame()})
+    feed = CraftedFeed(strat01_frames())
     eng = ProductionEngine(cfg, state=feed, strategies=[OpeningRangeBreakout()],
                            adapter=adapter)
     eng.clock.past_entry_cutoff = lambda at=None: False
@@ -258,12 +259,12 @@ def _engine(tmp_path, mode, monkeypatch, adapter=None):
     return eng
 
 
-def test_paper_and_live_open_identical_positions_only_adapter_differs(
+def test_paper_fills_and_live_waits_for_confirmed_limit_fill(
         tmp_path, monkeypatch):
     # PAPER
     paper = _engine(tmp_path, "paper", monkeypatch)
     assert paper.startup()
-    paper.run_cycle("15m")
+    paper_result = paper.run_cycle("5m")
     ppos = paper.portfolio.open_positions()
 
     # LIVE (armed, fake SDK). Same engine class, same config except mode.
@@ -273,7 +274,7 @@ def test_paper_and_live_open_identical_positions_only_adapter_differs(
     cfg = TradingConfig.from_dict({
         "mode": "live", "live_trading_enabled": True,
         "state_dir": str(tmp_path / "s_live"), "store_dir": str(tmp_path / "d"),
-        "symbols_file": str(tmp_path / "syms.txt"), "timeframes": ["15m"],
+        "symbols_file": str(tmp_path / "syms.txt"), "timeframes": ["5m"],
         "entry_cutoff_hour": 23, "squareoff_hour": 23,
         "broker_min_interval_s": 0.0,
         "capital": {"deploy_today": 500000},
@@ -281,26 +282,34 @@ def test_paper_and_live_open_identical_positions_only_adapter_differs(
     live_adapter = AngelOneBroker(cfg, session=session,
                                   instruments=FakeInstruments(),
                                   sleep_fn=lambda s: None)
-    feed = CraftedFeed({"RELIANCE": _orb_breakout_frame()})
+    feed = CraftedFeed(strat01_frames())
     live = ProductionEngine(cfg, state=feed,
                             strategies=[OpeningRangeBreakout()],
                             adapter=live_adapter)
     live.clock.past_entry_cutoff = lambda at=None: False
     live.clock.past_squareoff = lambda at=None: False
     assert live.startup()
-    live.run_cycle("15m")
+    live_result = live.run_cycle("5m")
     lpos = live.portfolio.open_positions()
 
-    # SAME pipeline decision: one position, same symbol/strategy/qty/stop.
-    assert len(ppos) == len(lpos) == 1
-    assert ppos[0].symbol == lpos[0].symbol == "RELIANCE"
-    assert ppos[0].strategy == lpos[0].strategy == "orb_15m"
-    assert ppos[0].quantity == pytest.approx(lpos[0].quantity)
-    assert ppos[0].stop == pytest.approx(lpos[0].stop)
+    # Paper confirms immediately; the fake live SDK only acknowledges OPEN,
+    # so no live position exists until a later broker fill is reconciled.
+    assert len(ppos) == 1 and len(lpos) == 0
+    assert paper_result["opened"] == 1 and live_result["opened"] == 0
+    paper_order = next(o for o in paper.portfolio.orders.values()
+                       if o.intent == "entry")
+    live_order = next(o for o in live.portfolio.orders.values()
+                      if o.intent == "entry")
+    assert paper_order.strategy == live_order.strategy == "orb_5m"
+    assert paper_order.quantity == pytest.approx(live_order.quantity)
+    assert paper_order.limit_price == pytest.approx(live_order.limit_price)
+    assert live_order.status == OrderStatus.OPEN
     # the ONLY difference is the adapter that placed the order
     assert paper.adapter.name == "paper" and live.adapter.name == "angelone"
     # live actually routed a real placeOrder through the SDK
     assert any(c[0] == "place" for c in client.calls)
+    placed = next(params for kind, params in client.calls if kind == "place")
+    assert placed["ordertype"] == "LIMIT"
 
 
 def test_tick_manages_without_scan_when_nothing_due(tmp_path, monkeypatch):

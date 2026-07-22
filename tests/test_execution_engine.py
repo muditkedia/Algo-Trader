@@ -305,9 +305,10 @@ def test_structural_strategies_prepare_their_declared_levels():
             assert col in prepared.columns, (cls.meta.name, col)
 
 
-def test_orb_target_is_one_range_above_the_or_high():
-    bars = _session("2024-03-04", np.linspace(100, 104, 25).round(2))
-    prepared = OpeningRangeBreakout().prepare(bars)
-    after = prepared[prepared["after_range"]]
-    expected = after["or_high"] + (after["or_high"] - after["or_low"])
-    assert np.allclose(after["or_target"], expected)
+def test_orb_declares_the_specification_exit_geometry():
+    spec = OpeningRangeBreakout.execution
+    assert spec.stop_kind == "column_atr_cap" and spec.stop_col == "or_mid"
+    assert spec.stop_atr_mult == pytest.approx(1.5)
+    assert spec.target_kind == "r" and spec.target_r == pytest.approx(1.5)
+    assert spec.partial_fraction == pytest.approx(0.5)
+    assert spec.trail == "chandelier" and spec.trail_after_partial

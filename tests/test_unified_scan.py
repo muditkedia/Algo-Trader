@@ -12,7 +12,8 @@ from algo.scanner.engine import ScanEngine
 from algo.strategies.registry import StrategyRegistry
 from algo.strategies.library import ALL_STRATEGIES
 
-from tests.test_strategy_library import _orb_frame, _vwap_frame
+from tests.test_strategy_library import _vwap_frame
+from strat01_fixtures import strat01_frames
 
 
 AS_OF = pd.Timestamp("2024-03-05 16:00", tz="UTC")
@@ -21,7 +22,9 @@ AS_OF = pd.Timestamp("2024-03-05 16:00", tz="UTC")
 @pytest.fixture
 def scan_setup(store, synthetic):
     """Store: crafted firing frames plus synthetic context data."""
-    store.write("CRAFT_ORB", "15m", _orb_frame())
+    orb = strat01_frames(symbol="CRAFT_ORB")
+    store.write("CRAFT_ORB", "5m", orb["CRAFT_ORB"])
+    store.write("NIFTY50", "5m", orb["NIFTY50"])
     store.write("CRAFT_VWAP", "15m", _vwap_frame())
     for sym in ("PLAIN_A", "PLAIN_B"):     # synthetic, may or may not fire
         store.write(sym, "15m", synthetic.fetch_ohlcv(
@@ -43,7 +46,7 @@ def test_registry_discovers_the_whole_library():
     found = reg.discover("algo.strategies.library")
     # the existing intraday strategies are always present; the library grows by discovery,
     # so assert membership + consistency rather than a hardcoded roster
-    assert {"orb_15m",
+    assert {"orb_5m",
             "pullback_15m", "volexp_1h", "vwap_15m"} <= set(found)
     assert sorted(found) == [cls.meta.name for cls in ALL_STRATEGIES]
     assert reg.enabled_names() == sorted(found)
@@ -56,7 +59,7 @@ def test_unified_scan_returns_one_ranked_list(scan_setup):
     # every symbol with data was processed; crafted setups fired
     assert result.n_symbols_with_data == len(symbols)
     fired = {(o.symbol, o.strategy) for o in result.opportunities}
-    assert ("CRAFT_ORB", "orb_15m") in fired
+    assert ("CRAFT_ORB", "orb_5m") in fired
     assert ("CRAFT_VWAP", "vwap_15m") in fired
 
     # ONE list, strictly ranked 1..N, ordered by confidence descending
@@ -65,7 +68,7 @@ def test_unified_scan_returns_one_ranked_list(scan_setup):
     confidences = [o.confidence for o in result.opportunities]
     assert confidences == sorted(confidences, reverse=True)
     assert all(0.0 <= c <= 1.0 for c in confidences)
-    assert {o.strategy for o in result.opportunities} >= {"orb_15m", "vwap_15m"}
+    assert {o.strategy for o in result.opportunities} >= {"orb_5m", "vwap_15m"}
 
 
 def test_every_opportunity_written_to_evidence(scan_setup):
@@ -83,10 +86,9 @@ def test_every_opportunity_written_to_evidence(scan_setup):
         assert row["confidence_score"] == pytest.approx(opp.confidence)
     # crafted ORB signal carries its full component breakdown PLUS the
     # persisted ranking decision (every ranking decision is auditable)
-    orb = by_key[("CRAFT_ORB", "orb_15m")]
+    orb = by_key[("CRAFT_ORB", "orb_5m")]
     components = json.loads(orb["confidence_components"])
-    assert {"volume_surge", "range_tightness",
-            "close_strength", "_ranking"} <= set(components)
+    assert {"specification_score", "regime", "_ranking"} <= set(components)
     assert all(0.0 <= c["score"] <= 1.0
                for name, c in components.items() if name != "_ranking")
 
@@ -107,7 +109,9 @@ def test_rescan_creates_no_duplicate_signals(scan_setup):
 
 
 def test_scan_without_evidence_logger_still_ranks(store, synthetic):
-    store.write("CRAFT_ORB", "15m", _orb_frame())
+    orb = strat01_frames(symbol="CRAFT_ORB")
+    store.write("CRAFT_ORB", "5m", orb["CRAFT_ORB"])
+    store.write("NIFTY50", "5m", orb["NIFTY50"])
     engine = ScanEngine(store, [cls() for cls in ALL_STRATEGIES])
     result = engine.scan(AS_OF, ["CRAFT_ORB"])
-    assert any(o.strategy == "orb_15m" for o in result.opportunities)
+    assert any(o.strategy == "orb_5m" for o in result.opportunities)

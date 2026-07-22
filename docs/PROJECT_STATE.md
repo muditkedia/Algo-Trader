@@ -2,6 +2,26 @@
 
 _Last updated: 2026-07-22 (WebSocket market data: local candle engine)_
 
+## STRAT-01 canonical replacement complete (2026-07-22)
+
+The retired long-only `orb_15m` module has been replaced by the sole canonical
+`orb_5m` implementation from the master specification. STRAT-01 is
+bidirectional, uses the first 5-minute range and same-slot 10-session RVOL,
+requires stock/index/regime/confidence alignment, enters with a bounded limit
+collar, and owns its midpoint/ATR stop, 1.5R partial, breakeven transition,
+post-partial chandelier, VWAP invalidation, no-progress exit, and session exit.
+
+The execution and trading seams now carry direction and strategy-owned entry/
+exit intent end to end. Positions are created only from confirmed broker fills;
+working collar orders are reconciled and expire deterministically. Existing
+long-only strategies retain their previous defaults. Full detail, including
+the two conservative data substitutions and the unavailable sector cap, is in
+`docs/STRAT01_ORB_5M.md`.
+
+Validation: Python compilation succeeded and the complete suite passed with
+787 tests, including all 12 registered strategies in the exit and scanner
+participation matrices.
+
 ## Intraday-only strategy baseline (2026-07-22)
 
 Phase 1 of the master intraday-strategy integration is complete. The 23
@@ -12,9 +32,7 @@ forbid overnight holding. Historical research reports and the generic research
 framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
-The next approved work item is the detailed STRAT-01 comparison against the
-5-minute Opening Range Breakout specification. No STRAT-01 code changes are
-part of the Phase 1 cleanup baseline.
+STRAT-01 is complete. STRAT-02 must not begin until separately approved.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

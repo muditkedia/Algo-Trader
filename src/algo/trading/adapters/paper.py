@@ -68,11 +68,25 @@ class PaperBroker(ExecutionAdapter):
             self._orders[order.client_order_id] = order
             raise BrokerError(order.reason)
         order.broker_order_id = f"PAPER-{len(self._orders) + 1}"
-        # MARKET and triggered STOP fill immediately at the mark +/- slippage;
-        # LIMIT fills only if marketable (kept simple - the manager uses market
-        # exits, matching the backtest's fill convention)
+        # MARKET fills immediately. A LIMIT remains working unless its collar
+        # is marketable at the current quote; this is essential for the ORB
+        # engine's "position only after confirmed fill" state transition.
+        if order.order_type == "LIMIT":
+            marketable = ((order.side == Side.BUY and order.limit_price is not None
+                           and px <= order.limit_price)
+                          or (order.side == Side.SELL and order.limit_price is not None
+                              and px >= order.limit_price))
+            if not marketable:
+                order.status = OrderStatus.OPEN
+                order.updated_ts = order.created_ts = now_iso()
+                self._orders[order.client_order_id] = order
+                return order
         fill_px = px * (1 + self.slippage) if order.side == Side.BUY \
             else px * (1 - self.slippage)
+        if order.order_type == "LIMIT":
+            fill_px = (min(fill_px, float(order.limit_price))
+                       if order.side == Side.BUY
+                       else max(fill_px, float(order.limit_price)))
         order.status = OrderStatus.FILLED
         order.filled_quantity = order.quantity
         order.avg_fill_price = fill_px

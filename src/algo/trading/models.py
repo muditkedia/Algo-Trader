@@ -71,6 +71,19 @@ class Order:
     created_ts: str = ""
     updated_ts: str = ""
     reason: str = ""
+    direction: str = "long"
+    timeframe: str = ""
+    signal_bar_time: str = ""
+    session: str = ""
+    entry_stop: float = 0.0
+    entry_target: Optional[float] = None
+    entry_target2: Optional[float] = None
+    partial_fraction: float = 0.0
+    trail_mode: str = "none"
+    atr_at_entry: float = 0.0
+    structural_stop: float = 0.0
+    exclusive_group: str = ""
+    last_managed_bar: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -95,7 +108,7 @@ class Fill:
 
 @dataclass
 class Position:
-    """A managed long position and its live exit geometry. The
+    """A managed directional position and its live exit geometry. The
     ``ExecutionSpec`` that owns it is referenced by strategy name; the live
     TradeManager loads the spec and updates ``stop``/``target`` exactly as the
     backtest engine would."""
@@ -121,14 +134,32 @@ class Position:
     status: str = "OPEN"              # OPEN | CLOSING | CLOSED
     trailed: bool = False
     last_price: float = 0.0
+    direction: str = "long"
+    bars_held: int = 0
+    highest_since_entry: float = 0.0
+    lowest_since_entry: float = 0.0
+    exclusive_group: str = ""
+    last_managed_bar: str = ""
 
     def __post_init__(self) -> None:
         if not self.open_quantity:
             self.open_quantity = self.quantity
+        if not self.highest_since_entry:
+            self.highest_since_entry = self.entry_price
+        if not self.lowest_since_entry:
+            self.lowest_since_entry = self.entry_price
+
+    @property
+    def is_long(self) -> bool:
+        return self.direction != "short"
+
+    @property
+    def sign(self) -> float:
+        return 1.0 if self.is_long else -1.0
 
     def unrealized(self, price: Optional[float] = None) -> float:
         px = price if price is not None else (self.last_price or self.entry_price)
-        return (px - self.entry_price) * self.open_quantity
+        return self.sign * (px - self.entry_price) * self.open_quantity
 
     def to_dict(self) -> dict:
         return asdict(self)

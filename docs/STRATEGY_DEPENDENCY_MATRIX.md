@@ -9,7 +9,7 @@ documented in `IMPLEMENTATION_GUIDE.md`:_
 
 | Feature → | F1 clock | F2 RVOL | F3 gap | F4 sess type | F5/F6 index align | F7 VWAP slope | F8 VWAP tests | F9 OR width | F10 CPR class | F11 ATR regime | F12 BBW pct | F13 trend str | F14 VIX regime | F15 turnover | F16 events |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `orb_15m` | **R** | **R** | **R** | Rec | **R** | — | — | **R** | — | Rec | — | O | Rec | O | Rec |
+| `orb_5m` | **R** | **R** | **R** | Rec | **R** | — | — | **R** | — | **R** | — | **R** | Rec | **R** | Rec |
 | `vwap_15m` | **R** | Rec | Rec | Rec | **R** | **R** | **R** | — | — | O | — | Rec | O | O | Rec |
 | `vwap_pullback_15m` | **R** | Rec | Rec | Rec | **R** | **R** | **R** | — | — | O | — | O | O | O | Rec |
 | `cpr_breakout_15m` | **R** | **R** | **R** | Rec | **R** | — | — | O | **R** | Rec | — | — | Rec | O | Rec |

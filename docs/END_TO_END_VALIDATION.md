@@ -2,17 +2,17 @@
 
 _Deployment phase, 2026-07-19. Confirms the full production pipeline runs as
 one system, that paper and live differ ONLY in the execution adapter, and that
-every component works together. Full suite: **528 passed, 1 skipped**._
+every component works together. Latest full suite: **787 passed**._
 
 ## 1. The central guarantee: paper and live are the same pipeline
 
 `test_paper_and_live_open_identical_positions_only_adapter_differs`
-(`tests/test_trading_deployment.py`) drives the SAME crafted `orb_15m` breakout
+(`tests/test_trading_deployment.py`) drives the SAME crafted `orb_5m` breakout
 through TWO fully-wired `ProductionEngine` instances — one `mode="paper"`
 (PaperBroker), one `mode="live"` armed against a fake SmartAPI SDK
 (AngelOneBroker) — and asserts they produce the **same trading decision**:
 
-- one position each, same symbol (`RELIANCE`), same strategy (`orb_15m`),
+- one position each, same symbol (`RELIANCE`), same strategy (`orb_5m`),
 - same quantity and same stop (identical risk geometry),
 - the live engine actually routed a real `placeOrder` through the SDK,
 - the **only** difference is `adapter.name` (`paper` vs `angelone`).
@@ -26,11 +26,11 @@ object graph in both. There is no separate paper or live implementation.
 `tests/test_trading_integration.py` runs the whole engine on a crafted feed:
 
 - **Market data → scanner → signal:** a real ORB breakout session flows
-  through `feed → orchestrator.evaluate` and fires `orb_15m` on the newest bar.
+  through `feed → orchestrator.evaluate` and fires `orb_5m` on the newest bar.
 - **Risk → sizing → order → fill → position:** the signal passes the account
   risk gate, is sized at the fixed stake, placed through the OrderManager,
-  filled by PaperBroker (entry at signal-bar close + slippage), and booked as a
-  position with stop = OR low.
+  reconciled through PaperBroker and booked only after its limit-collar order
+  is confirmed filled, with the STRAT-01 midpoint/ATR-capped stop.
 - **Dedup:** a second scan on the same bar opens nothing (no duplicate).
 - **Management → honest exit:** a next-session bar gapping through the stop
   exits at the open and books a loss (backtest-faithful gap fill).

@@ -51,6 +51,7 @@ class GapAndGo(StrategyProfile):
 
     meta = StrategyMeta(
         name="gapgo_15m", version="1.0",
+        exclusive_group="opening_breakout",
         direction=Direction.LONG, holding_scope=HoldingScope.INTRADAY,
         timeframe="15m", min_bars=30,
         required_columns=("close", "high", "low", "gap_pct", "first_high",

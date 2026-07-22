@@ -267,7 +267,7 @@ def test_the_scheduler_owns_only_strategy_declared_timeframes(tmp_path):
     built from that same list - so 1h is absent when nothing uses it."""
     from algo.trading.config import TradingConfig
     from algo.trading.engine import ProductionEngine
-    from algo.strategies.library import OpeningRangeBreakout   # a 15m strategy
+    from algo.strategies.library import OpeningRangeBreakout   # a 5m strategy
 
     (tmp_path / "syms.txt").write_text("RELIANCE\n")
     cfg = TradingConfig.from_dict({
@@ -275,7 +275,7 @@ def test_the_scheduler_owns_only_strategy_declared_timeframes(tmp_path):
         "store_dir": str(tmp_path / "store"), "state_dir": str(tmp_path / "s"),
         "dashboard_dir": str(tmp_path / "dash")})
     eng = ProductionEngine(cfg, strategies=[OpeningRangeBreakout()])
-    assert eng.marketdata.scheduler.timeframes == ["15m"]
+    assert eng.marketdata.scheduler.timeframes == ["5m"]
     assert "1h" not in eng.marketdata.scheduler.timeframes
 
 

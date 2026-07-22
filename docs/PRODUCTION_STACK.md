@@ -53,7 +53,7 @@ what guarantees live/paper fills track the backtest.
 
 ## 2. Test summary
 
-**517 passed, 1 skipped** overall (+28 new production tests). Production-stack
+**787 passed** overall after the STRAT-01 integration. Production-stack
 coverage:
 
 - `tests/test_trading_stack.py` (24): live-arming 3-key matrix; adapter
@@ -66,8 +66,8 @@ coverage:
   orphaned-internal, orphaned-broker adoption, partial-fill detection); clock
   bar boundaries.
 - `tests/test_trading_integration.py` (4): a crafted feed drives a **real
-  `orb_15m` signal** through the full engine → paper position (entry at
-  signal-bar close + slippage, stop = OR low); same-bar re-scan does not
+  `orb_5m` signal** through the full engine → confirmed paper fill and
+  position (collared limit entry, midpoint/ATR-capped stop); same-bar re-scan does not
   double-enter; honest gap-through stop books a loss; restart persistence +
   deterministic recovery; no-signal → no entry.
 
@@ -85,7 +85,7 @@ feed, and clock are injectable).
 | `symbols_file` | `nifty100.txt` | watchlist (one symbol/line) |
 | `store_dir` | `user_data/data/nse` | candle store (shared with the platform) |
 | `state_dir` | `user_data/trading` | portfolio state, event logs, summaries, holidays.txt, KILL |
-| `timeframes` | `["15m","1h"]` | scanned timeframes |
+| `timeframes` | `[]` | optional restriction; empty derives 5m/15m/1h from enabled strategies |
 | `history_bars` | `1600` | history handed to strategies (full-history for path-dependent indicators) |
 | `squareoff_hour/minute` | `15:15` | intraday square-off (IST) |
 | `entry_cutoff_hour/minute` | `15:00` | no new entries after (IST) |

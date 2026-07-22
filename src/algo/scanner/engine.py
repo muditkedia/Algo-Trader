@@ -34,13 +34,14 @@ from typing import Callable, Dict, List, Optional
 import pandas as pd
 
 from algo.core.costs import CostModel, NseEquityCostModel, Product
-from algo.core.enums import HoldingScope
+from algo.core.enums import Direction, HoldingScope
 from algo.core.logging import get_logger
 from algo.data.ohlcv import timeframe_minutes
 from algo.evidence.models import Disposition, Mode, Signal
 from algo.risk.engine import RiskParams, initial_stop_pct
 from algo.scanner.base import Opportunity, Scanner, rank_opportunities
 from algo.strategies.base import StrategyProfile
+from algo.trading.signals import build_signal
 
 logger = get_logger("scanner.engine")
 
@@ -137,24 +138,38 @@ class ScanEngine(Scanner):
         symbols_with_data = set()
 
         candidates: List[tuple] = []        # (opportunity, strategy, prepared)
-        for symbol in symbols:
-            for tf, strats in groups.items():
+        for tf, strats in groups.items():
+            need = max([self.lookback_bars]
+                       + [s.min_history() for s in strats])
+            raw = {}
+            for symbol in symbols:
                 bars = self.store.read(symbol, tf, end=as_of)
                 if bars.empty:
                     continue
                 symbols_with_data.add(symbol)
-                need = max([self.lookback_bars]
-                           + [s.min_history() for s in strats])
-                window = self.prepare_fn(
+                raw[symbol] = self.prepare_fn(
                     bars.tail(need).reset_index(drop=True))
-                for strat in strats:
-                    prepared = strat.prepare(window)
-                    signal = strat.entry_signal(prepared)
-                    if signal is None or len(signal) == 0:
-                        continue
-                    if bool(signal.iloc[-1]):
+            for strat in strats:
+                prepared_frames = {
+                    symbol: strat.prepare(frame) for symbol, frame in raw.items()}
+                context = {
+                    context_symbol: self.store.read(
+                        context_symbol, tf, end=as_of).tail(need).reset_index(drop=True)
+                    for context_symbol in strat.context_symbols}
+                prepared_frames = strat.prepare_context(prepared_frames, context)
+                if strat.cross_sectional:
+                    prepared_frames = strat.prepare_cross_section(prepared_frames)
+                for symbol, prepared in prepared_frames.items():
+                    signals = strat.entry_signals(prepared)
+                    for direction, signal in signals.items():
+                        if signal is None or len(signal) == 0 \
+                                or not bool(signal.iloc[-1]):
+                            continue
+                        opp = self._make_opportunity(
+                            symbol, strat, prepared, tf, direction)
+                        if opp is None:
+                            continue
                         result.n_candidates += 1
-                        opp = self._make_opportunity(symbol, strat, prepared, tf)
                         candidates.append((opp, strat, prepared))
 
         # ---- rank (configurable weighted engine, else confidence fallback)
@@ -180,20 +195,42 @@ class ScanEngine(Scanner):
     # ------------------------------------------------------ opportunity build
 
     def _make_opportunity(self, symbol: str, strat: StrategyProfile,
-                          bars: pd.DataFrame, timeframe: str) -> Opportunity:
-        confidence, extras = self.score_fn(symbol, strat, bars)
+                          bars: pd.DataFrame, timeframe: str,
+                          direction: Direction = Direction.LONG
+                          ) -> Optional[Opportunity]:
+        if self.score_fn is _default_score:
+            scored = strat.confidence_for(bars, direction)
+            confidence = scored.score
+            extras = {"components": scored.components,
+                      "reason": scored.reason}
+        else:
+            confidence, extras = self.score_fn(symbol, strat, bars)
         last = bars.iloc[-1]
         entry = float(last["close"])
 
-        # risk geometry from the promoted risk engine
         atr = (float(last["atr"]) if "atr" in bars.columns
                and pd.notna(last.get("atr")) else None)
         swing_low = float(bars["low"].tail(10).min()) if len(bars) else None
-        stop_pct = initial_stop_pct(entry, atr, swing_low, self.risk_params)
-        if stop_pct is not None:
-            stop_pct = min(stop_pct, self.risk_params.hard_stop_pct)
-        reward_pct = (self.risk_params.reward_atr_multiple * atr / entry
-                      if atr else None)
+        swing_high = float(bars["high"].tail(10).max()) if len(bars) else None
+        if strat.execution is None:  # lightweight research/test profiles
+            stop_pct = initial_stop_pct(
+                entry, atr, swing_low, self.risk_params)
+            if stop_pct is not None:
+                stop_pct = min(stop_pct, self.risk_params.hard_stop_pct)
+            stop_price = (entry * (1 - stop_pct)) if stop_pct else None
+            reward_pct = (self.risk_params.reward_atr_multiple * atr / entry
+                          if atr else None)
+        else:
+            normalized = build_signal(
+                strat, bars, len(bars) - 1, timeframe, params=self.risk_params,
+                atr_value=atr, swing_low=swing_low, swing_high=swing_high,
+                direction=direction)
+            if normalized is None:
+                return None
+            stop_price = normalized.stop
+            stop_pct = abs(entry - normalized.stop) / entry
+            reward_pct = (abs(normalized.target - entry) / entry
+                          if normalized.target is not None else None)
         risk_reward = (reward_pct / stop_pct
                        if reward_pct and stop_pct else None)
 
@@ -215,12 +252,12 @@ class ScanEngine(Scanner):
 
         return Opportunity(
             symbol=symbol, strategy=strat.name,
-            direction=strat.meta.direction.value,
+            direction=direction.value,
             confidence=float(confidence),
             timeframe=timeframe,
             signal_ts=str(pd.Timestamp(last["date"])),
             entry_price=entry,
-            stop_price=(entry * (1 - stop_pct)) if stop_pct else None,
+            stop_price=stop_price,
             expected_risk=stop_pct,
             expected_reward=reward_pct,
             risk_reward=risk_reward,

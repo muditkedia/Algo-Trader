@@ -34,6 +34,18 @@ def ema(series: pd.Series, period: int) -> pd.Series:
     return series.ewm(span=period, adjust=False).mean()
 
 
+def roc(series: pd.Series, period: int = 20) -> pd.Series:
+    """Rate of change as a decimal fraction (``0.015`` = +1.5%)."""
+    return series.pct_change(periods=period, fill_method=None)
+
+
+def macd_histogram(close: pd.Series, fast: int = 12, slow: int = 26,
+                   signal: int = 9) -> pd.Series:
+    """Standard MACD histogram using the shared EMA implementation."""
+    line = ema(close, fast) - ema(close, slow)
+    return line - ema(line, signal)
+
+
 def wilder_ema(series: pd.Series, period: int) -> pd.Series:
     """Wilder's smoothing (alpha = 1/period) - basis of RSI/ATR/ADX."""
     return series.ewm(alpha=1.0 / period, adjust=False).mean()
@@ -100,6 +112,27 @@ def volume_ratio(volume: pd.Series, window: int = 20) -> pd.Series:
     current bar, full-window minimum periods)."""
     mean = volume.rolling(window, min_periods=window).mean()
     return volume / mean
+
+
+def slot_relative_volume(frame: pd.DataFrame, sessions: int = 10) -> pd.Series:
+    """Volume versus the same intraday candle slot in prior sessions.
+
+    The current session is excluded with ``shift(1)`` before the rolling mean,
+    making the result causal and suitable for both replay and live evaluation.
+    A full ``sessions``-day history is required for a value.
+    """
+    dates = pd.to_datetime(frame["date"])
+    local = dates.dt.tz_convert("Asia/Kolkata") if dates.dt.tz is not None \
+        else dates
+    slots = local.dt.hour * 60 + local.dt.minute
+    day = local.dt.normalize()
+    keyed = pd.DataFrame({"day": day, "slot": slots,
+                          "volume": frame["volume"].astype(float)},
+                         index=frame.index)
+    baseline = keyed.groupby("slot", sort=False)["volume"].transform(
+        lambda values: values.shift(1).rolling(
+            sessions, min_periods=sessions).mean())
+    return keyed["volume"] / baseline.replace(0.0, np.nan)
 
 
 # ------------------------------------------------------------ cross triggers

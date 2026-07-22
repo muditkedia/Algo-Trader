@@ -13,7 +13,7 @@ registers **12 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **12** | 11 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **12** | 1 × 5m, 10 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -49,11 +49,9 @@ the declaration lives in each strategy's own module.
 
 Rules common to every declaration currently in the library:
 
-- **Entry execution:** at the **close of the bar on which the signal fires**
-  (all entry conditions are close-confirmed crossovers; trigger-level resting
-  orders were measured in the Phase-17 fidelity audit to carry an information
-  advantage that bar data cannot honestly fill, so signal-close is the
-  implementable entry timing every strategy declares).
+- **Entry execution:** legacy strategies enter at the signal close. STRAT-01
+  declares a trigger-centered limit collar; production creates a position only
+  after broker-confirmed fill and deterministically expires an unfilled order.
 - **Session restrictions (intraday):** no entry on the session's last bar; a
   position never crosses a session boundary; square-off at the session's
   actual last bar close. **No overnight carry, ever** (no strategy declares
@@ -74,7 +72,7 @@ them; the other two declare their pre-reset profile as their own):
 
 | Strategy | Initial stop (own) | Target (own) | Trailing (own) |
 |---|---|---|---|
-| `orb_15m` | below the opening-range low | OR high + 1× range | none |
+| `orb_5m` | OR midpoint, capped at 1.5 ATR | 1.5R (50%), then runner | breakeven then post-partial 2 ATR chandelier |
 | `vwap_15m` | the dip's low (4-bar session low) | 2R | none |
 | `vwap_pullback_15m` | just below VWAP (level at entry) | 2R | none |
 | `cpr_breakout_15m` | below the CPR bottom | floor-pivot R1 (50% partial, stop→breakeven) then R2 | none |
@@ -111,7 +109,18 @@ no capital constraint, fractional share quantities).
 
 ## 2. Intraday strategies (12) — the current intraday library
 
-### 2.1 Opening Range Breakout — `orb_15m`
+### 2.1 Opening Range Breakout — `orb_5m`
+
+The sole canonical ORB is STRAT-01: bidirectional, 5-minute, same-slot-RVOL
+confirmed, index/stock aligned, and guarded by explicit regime, confidence,
+range-width, liquidity, NATR, and timing rules. Its collared entry becomes a
+position only after confirmed fill. It owns a midpoint/ATR-capped stop, 1.5R
+half exit, breakeven transition, post-partial 2 ATR chandelier, VWAP
+invalidation, six-bar no-progress exit, and session square-off. The full
+contract and documented market-data substitutions are in
+`docs/STRAT01_ORB_5M.md`.
+
+#### Retired `orb_15m` record (legacy evidence only)
 
 1. **Strategy name:** Opening Range Breakout (ORB), volume-confirmed.
 2. **Theory:** the first minutes of the NSE session establish the day's initial
@@ -138,7 +147,7 @@ no capital constraint, fractional share quantities).
     as production baseline #1 (Phase 15). Backtested on the full 15m store
     (Phase 7 D-026, Phase 15, Phase 17 fidelity). Evidence status `rejected`
     (does not clear the research cost gate); not paper-traded; no live path.
-11. **Files:** `src/algo/strategies/library/orb_15m.py`; opening-range helper in
+11. **Legacy files:** retired `orb_15m.py` in git history; opening-range helper in
     `src/algo/core/indicators.py`; tests in `tests/` (ORB window/boundary and
     gap-handling tests); spec `research/INTRADAY_PRODUCTION_BATCH1.md` §1;
     reports `user_data/backtest_results/reports/intraday_production_batch1.md`,
@@ -468,7 +477,7 @@ live order path exists in the repository at all (paper simulation only), so
 
 | # | Target strategy | Implemented? | Backtested? | Paper-tested? | Ready for Live? | Missing components |
 |---|---|---|---|---|---|---|
-| 1 | Opening Range Breakout (ORB) | **Yes** (`orb_15m`) | Yes | No | No | — (baseline complete) |
+| 1 | Opening Range Breakout (ORB) | **Yes** (`orb_5m`) | Yes | Yes | Yes | STRAT-01 complete; sector cap awaits metadata |
 | 2 | VWAP Trend | **Yes** (`vwap_15m`) | Yes | No | No | — |
 | 3 | VWAP Pullback | **Yes** (`vwap_pullback_15m`) | Yes | No | No | — (encoding over-fires vs discretionary use; selectivity filter absent) |
 | 4 | CPR Breakout | **Yes** (`cpr_breakout_15m`) | Yes | No | No | — |
@@ -476,7 +485,7 @@ live order path exists in the repository at all (paper simulation only), so
 | 6 | Opening Drive | **No** | No | No | No | Strategy module (strong directional move from the open, e.g. first-bar marubozu/momentum) |
 | 7 | Gap and Go | **Yes** (`gapgo_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 8 | First Pullback | **Yes** (`first_pullback_15m`) | Yes | No | No | — |
-| 9 | Initial Balance Breakout | **Partial** | No (as IB) | No | No | `orb_15m` with `range_minutes=60` IS an IB breakout, but no 60-min variant is registered/backtested; needs a registered config |
+| 9 | Initial Balance Breakout | **No** | No | No | No | Separate STRAT-06 implementation required; `orb_5m` is not parameterized as an IB substitute |
 | 10 | NR7 Intraday | **Yes** (`nr7_intraday_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 11 | Inside Bar Breakout | **Yes** (`insidebar_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 12 | Volume Breakout | **No** | No | No | No | Strategy module (price break of recent high on volume surge, intraday). `volume_ratio` + breakout helpers exist |

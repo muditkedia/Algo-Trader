@@ -87,7 +87,7 @@ order can be changed at review):
 
 | Batch | Strategy | Core practitioner items (guide ref) |
 |---|---|---|
-| 3.1 | `orb_15m` | RVOL gate, gap rules, OR-width rejection, index alignment, morning window, BE-at-1R |
+| 3.1 | `orb_5m` **complete** | STRAT-01: bidirectional 5m OR, same-slot RVOL, regime/confidence gates, collared fill, partial/BE/chandelier |
 | 3.2 | `vwap_pullback_15m` | first/second-test cap (F8), VWAP slope, volume signature, index alignment, window |
 | 3.3 | `cpr_breakout_15m` | narrow-CPR gate + two-day relation + gap context (F10/F3), RVOL, index alignment, morning window |
 | 3.4 | `vwap_15m` | slope requirement, reclaim cap, range-day rejection, index alignment, window |

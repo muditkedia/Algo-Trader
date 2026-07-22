@@ -38,6 +38,12 @@ class StrategyMeta:
     version: str
     direction: Direction
     holding_scope: HoldingScope
+    #: Stable identifier in the governing strategy specification. Historical
+    #: implementations without a specification retain the empty default.
+    spec_id: str = ""
+    #: Strategies in the same group may suppress later signals on a symbol for
+    #: the rest of the session after one executes.
+    exclusive_group: str = ""
     #: Indicator columns the entry_signal needs; the missing-column guard uses
     #: this, and the research engine records it as the strategy's contract.
     required_columns: tuple = ()
@@ -165,6 +171,51 @@ class StrategyProfile(ABC):
         Conditions should be edge-triggered (fire on the transition bar, not on
         every bar a state holds) so a signal is emitted once per setup.
         """
+
+    def entry_signals(self, dataframe: pd.DataFrame) -> dict:
+        """Direction -> signal series, backward-compatible for long-only code.
+
+        Bidirectional strategies override this method. Existing strategies keep
+        implementing ``entry_signal`` and therefore retain identical behavior.
+        """
+        if self.meta.direction == Direction.BOTH:
+            raise NotImplementedError(
+                f"{self.name} declares both directions but does not implement "
+                "entry_signals()")
+        return {self.meta.direction: self.entry_signal(dataframe)}
+
+    def confidence_for(self, dataframe: pd.DataFrame,
+                       direction: Direction) -> ConfidenceScore:
+        """Directional confidence hook; defaults to the existing score."""
+        return self.confidence(dataframe)
+
+    def regime_score(self, dataframe: pd.DataFrame,
+                     direction: Direction) -> float:
+        """Directional regime score normalized to [0, 1]."""
+        return 0.0
+
+    def entry_trigger(self, dataframe: pd.DataFrame, index: int,
+                      direction: Direction) -> float:
+        """Price used to construct a collared limit; default is signal close."""
+        return float(dataframe["close"].iloc[index])
+
+    def signal_diagnostics(self, dataframe: pd.DataFrame,
+                           symbol: str) -> list:
+        """Structured rejected-setup diagnostics; default emits nothing."""
+        return []
+
+    def prepare_context(self, frames: dict, context: dict) -> dict:
+        """Optional cross-symbol/index enrichment after per-symbol prepare.
+
+        ``frames`` contains only tradeable symbols. ``context`` contains any
+        market-context frames requested by ``context_symbols``. The default is
+        deliberately a no-op so legacy strategies remain isolated.
+        """
+        return frames
+
+    @property
+    def context_symbols(self) -> tuple:
+        return ()
 
     def confidence(self, dataframe: pd.DataFrame) -> ConfidenceScore:
         """Heuristic signal-quality score for the LAST bar of the prepared

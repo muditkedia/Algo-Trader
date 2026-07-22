@@ -11,8 +11,9 @@ Engines:
     trail / session rules, with the three confirmed bugs fixed (no last-bar
     overnight carry, no generic 8-bar cap, honest gap fills).
   * ``legacy``: the pre-reset research simulator path, kept verbatim so the
-    recorded baseline stays reproducible (--verify checks it against the
-    recorded Phase-15 run).
+    recorded non-ORB baselines stay reproducible. The retired ``orb_15m``
+    implementation is intentionally not aliased to the canonical ``orb_5m``;
+    its frozen reports remain the legacy evidence.
 
 --compare runs BOTH on identical signals and writes the correctness report:
 per-strategy metrics, per-fix trade-change attribution, and validation
@@ -20,7 +21,6 @@ assertions (zero overnight carries; every square-off on the session's actual
 last bar).
 
     .venv/Scripts/python scripts/backtest_50k.py --compare
-    .venv/Scripts/python scripts/backtest_50k.py --verify
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ from algo.research.engine import ResearchEngine
 from algo.research.simulator import simulate_trade
 from algo.research.validation import metrics
 from algo.strategies.library import (
-    CprBreakout, FirstPullbackAfterBreakout, OpeningRangeBreakout,
+    CprBreakout, FirstPullbackAfterBreakout,
     PullbackContinuation15m, VolatilityExpansionBreakout1h, VwapPullback,
     VwapTrendContinuation,
 )
@@ -55,7 +55,6 @@ STAKE = 50_000.0
 
 #: Every implemented intraday strategy in the library (holding_scope=INTRADAY).
 STRATEGIES = [
-    ("orb_15m", OpeningRangeBreakout),
     ("vwap_15m", VwapTrendContinuation),
     ("vwap_pullback_15m", VwapPullback),
     ("cpr_breakout_15m", CprBreakout),
@@ -240,22 +239,6 @@ def _metric_table(results: dict, order) -> list:
     return lines
 
 
-def verify(engine: ResearchEngine, symbols) -> int:
-    """Reproduce the recorded Phase-15 run (100k stake) for orb_15m."""
-    print("verification: orb_15m legacy engine at stake=100,000 vs the "
-          "recorded Phase-15 report")
-    legacy, _, _ = run_both(engine, OpeningRangeBreakout(), symbols,
-                            100_000.0, which="legacy")
-    r = analyse(legacy, 100_000.0)
-    print(f"  reproduced: trades={r['trades']} PF={r['profit_factor']:.4f} "
-          f"avg_win={r['avg_win_rs']:.2f} avg_loss={r['avg_loss_rs']:.2f}")
-    ok = (r["trades"] == 23705 and abs(r["profit_factor"] - 0.6637) < 5e-4
-          and abs(r["avg_win_rs"] - 671.68) < 0.01
-          and abs(r["avg_loss_rs"] - (-572.95)) < 0.01)
-    print("  MATCH" if ok else "  MISMATCH")
-    return 0 if ok else 1
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--symbols-file", default="nifty100.txt")
@@ -265,9 +248,6 @@ def main() -> int:
     parser.add_argument("--compare", action="store_true",
                         help="run BOTH engines and write the correctness "
                              "comparison report")
-    parser.add_argument("--verify", action="store_true",
-                        help="reproduce the recorded Phase-15 orb_15m run at "
-                             "100k stake and exit")
     args = parser.parse_args()
     configure(level=logging.WARNING)
 
@@ -276,12 +256,6 @@ def main() -> int:
               .splitlines() if s.strip() and not s.startswith("#")]
     db = EvidenceDB(MEMORY)
     engine = ResearchEngine(db, store=store, cost_model=NseEquityCostModel())
-
-    if args.verify:
-        have = set(store.symbols("15m"))
-        code = verify(engine, [s for s in listed if s in have])
-        db.close()
-        return code
 
     which = "both" if args.compare else args.engine
     legacy_res, owned_res, audits = {}, {}, {}

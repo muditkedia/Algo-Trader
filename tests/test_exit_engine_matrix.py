@@ -103,7 +103,9 @@ def probe(cls) -> dict:
         extra = {}
         if spec.trail == "column" and spec.trail_col:
             extra[spec.trail_col] = 104.0
-        d = tm.manage(_position(name, spec), _bar(106, 108, 105, 107, **extra),
+        d = tm.manage(_position(
+            name, spec, partial_done=spec.trail_after_partial),
+            _bar(106, 108, 105, 107, **extra),
                       spec=spec)
         out["trailing"] = d.action == "trail" and d.new_stop > STOP
 
@@ -236,7 +238,8 @@ def _history(symbol="RELIANCE", n=30, price=100.0):
                          "low": price - 1, "close": price, "volume": 1000})
 
 
-def _open_position(engine, symbol="RELIANCE", strategy="orb_15m", **kw):
+def _open_position(engine, symbol="RELIANCE",
+                   strategy="cpr_reversal_15m", **kw):
     spec = engine.specs[strategy]
     pos = _position(strategy, spec, **kw)
     pos.symbol = symbol
