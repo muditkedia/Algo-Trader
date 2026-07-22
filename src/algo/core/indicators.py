@@ -146,6 +146,52 @@ def slot_relative_volume(frame: pd.DataFrame, sessions: int = 10) -> pd.Series:
     return keyed["volume"] / baseline.replace(0.0, np.nan)
 
 
+def rolling_linear_channel(close: pd.Series, lookback: int = 20,
+                           std_mult: float = 2.0) -> pd.DataFrame:
+    """Prior-only rolling OLS line, normalized slope, R² and envelopes.
+
+    Row ``i`` fits rows ``[i-lookback, i)`` and projects that fit one bar to
+    ``i``.  The evaluation candle is therefore never part of the channel it
+    is testing.  Callers that require intraday-only geometry apply this helper
+    independently to each session.
+    """
+    values = close.astype(float).to_numpy()
+    n = len(values)
+    baseline = np.full(n, np.nan)
+    slope_pct = np.full(n, np.nan)
+    r2 = np.full(n, np.nan)
+    resid_std = np.full(n, np.nan)
+    x = np.arange(1.0, lookback + 1.0)
+    x_centered = x - x.mean()
+    x_ss = float(np.dot(x_centered, x_centered))
+    for i in range(lookback, n):
+        y = values[i - lookback:i]
+        if not np.isfinite(y).all():
+            continue
+        y_mean = float(y.mean())
+        beta = float(np.dot(x_centered, y - y_mean) / x_ss)
+        intercept = y_mean - beta * float(x.mean())
+        fitted = intercept + beta * x
+        residuals = y - fitted
+        ss_total = float(np.dot(y - y_mean, y - y_mean))
+        ss_resid = float(np.dot(residuals, residuals))
+        line = intercept + beta * (lookback + 1.0)
+        sigma = float(np.sqrt(ss_resid / lookback))
+        baseline[i] = line
+        slope_pct[i] = beta / line if line != 0.0 else np.nan
+        r2[i] = max(0.0, 1.0 - ss_resid / ss_total) \
+            if ss_total > 0.0 else 0.0
+        resid_std[i] = sigma
+    return pd.DataFrame({
+        "baseline": baseline,
+        "slope_pct": slope_pct,
+        "r2": r2,
+        "resid_std": resid_std,
+        "upper": baseline + std_mult * resid_std,
+        "lower": baseline - std_mult * resid_std,
+    }, index=close.index)
+
+
 # ------------------------------------------------------------ cross triggers
 # Verbatim from the archived crypto core's indicators.py (see git history).
 

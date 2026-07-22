@@ -5,7 +5,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from algo.core.indicators import adx, atr, ema, opening_range, session_vwap
+from algo.core.indicators import (
+    adx, atr, ema, opening_range, rolling_linear_channel, session_vwap,
+)
 from algo.strategies.cross_section import align_metric
 
 IST = "Asia/Kolkata"
@@ -14,6 +16,19 @@ IST = "Asia/Kolkata"
 def local_dates(frame: pd.DataFrame) -> pd.Series:
     dates = pd.to_datetime(frame["date"])
     return dates.dt.tz_convert(IST) if dates.dt.tz is not None else dates
+
+
+def session_linear_channel(frame: pd.DataFrame, lookback: int = 20,
+                           std_mult: float = 2.0) -> pd.DataFrame:
+    """Apply the shared prior-only OLS channel independently per session."""
+    columns = ["baseline", "slope_pct", "r2", "resid_std", "upper", "lower"]
+    out = pd.DataFrame(np.nan, index=frame.index, columns=columns)
+    day = local_dates(frame).dt.normalize()
+    for _, indices in day.groupby(day).groups.items():
+        channel = rolling_linear_channel(
+            frame.loc[indices, "close"], lookback, std_mult)
+        out.loc[indices, columns] = channel[columns].to_numpy()
+    return out
 
 
 def prior_session_metrics(frame: pd.DataFrame) -> tuple[pd.Series, pd.Series,
@@ -67,6 +82,17 @@ def completed_15m_adx(frame: pd.DataFrame) -> pd.DataFrame:
     return bars[["date", "adx15"]].sort_values("date")
 
 
+def completed_15m_channel_slope(frame: pd.DataFrame,
+                                lookback: int = 20) -> pd.DataFrame:
+    """Prior-only 15-minute regression slope, aligned at completed bars."""
+    bars = completed_15m_bars(frame)
+    if bars.empty:
+        return pd.DataFrame(columns=["date", "channel_slope_15m"])
+    bars["channel_slope_15m"] = rolling_linear_channel(
+        bars["close"], lookback, 2.0)["slope_pct"]
+    return bars[["date", "channel_slope_15m"]].sort_values("date")
+
+
 def add_opening_market_context(frames: dict, context: dict) -> dict:
     """Add NIFTY alignment and live-universe breadth to prepared frames."""
     if not frames:
@@ -85,6 +111,8 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
         nifty_exact["nifty_vwap"] = session_vwap(nifty)
         nifty_exact["nifty_close"] = nifty["close"].to_numpy()
         nifty_exact["nifty_ema20"] = ema(nifty["close"], 20).to_numpy()
+        nifty_exact["nifty_channel_slope_pct"] = session_linear_channel(
+            nifty, 20, 2.0)["slope_pct"].to_numpy()
         nifty_ib_high, nifty_ib_low, _ = opening_range(nifty, 30)
         nifty_exact["nifty_ib_high"] = nifty_ib_high.to_numpy()
         nifty_exact["nifty_ib_low"] = nifty_ib_low.to_numpy()
@@ -115,6 +143,7 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
             merged["nifty_vwap"] = np.nan
             merged["nifty_close"] = np.nan
             merged["nifty_ema20"] = np.nan
+            merged["nifty_channel_slope_pct"] = np.nan
             merged["nifty_open"] = np.nan
             merged["nifty_high"] = np.nan
             merged["nifty_low"] = np.nan

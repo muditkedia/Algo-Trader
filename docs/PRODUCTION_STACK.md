@@ -48,12 +48,12 @@ MarketDataFeed ─▶ Orchestrator ─▶ AccountRiskEngine ─▶ PortfolioEngi
 **Reused verbatim (not reimplemented):** `ExecutionSpec` + the engine's level
 helpers, `RiskParams` + `trailing_stop_price`, `SmartApiSession` /
 `SmartApiInstruments` / `SmartApiDataProvider`, `IngestionEngine` +
-`MarketDataStore`, the strategy registry + all 16 registered strategies. This is
+`MarketDataStore`, the strategy registry + all 17 registered strategies. This is
 what guarantees live/paper fills track the backtest.
 
 ## 2. Test summary
 
-**840 passed** overall after the STRAT-09 integration. Production-stack
+**854 passed** overall after the STRAT-10 integration. Production-stack
 coverage:
 
 - `tests/test_trading_stack.py` (24): live-arming 3-key matrix; adapter

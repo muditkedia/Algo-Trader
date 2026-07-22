@@ -80,6 +80,19 @@ class PortfolioEngine:
                    and o.pre_partial_block_group in wanted
                    for o in self.orders.values())
 
+    def active_group_blocked(self, symbol: str, groups: tuple) -> bool:
+        """One-way block while an emitting order or position remains active."""
+        from algo.trading.models import TERMINAL
+
+        wanted = set(groups)
+        if any(p.symbol == symbol and p.active_block_group in wanted
+               for p in self.open_positions()):
+            return True
+        return any(o.symbol == symbol and o.intent == "entry"
+                   and o.status not in TERMINAL
+                   and o.active_block_group in wanted
+                   for o in self.orders.values())
+
     def session_blocked(self, symbol: str, groups: tuple, session: str) -> bool:
         wanted = set(groups)
         if not wanted:
@@ -139,11 +152,15 @@ class PortfolioEngine:
             if px is not None and px == px:
                 p.last_price = float(px)
 
-    def book_partial(self, position: Position, qty: float, price: float) -> None:
+    def book_partial(self, position: Position, qty: float, price: float,
+                     stage: int = 1) -> None:
         pnl = position.sign * (price - position.entry_price) * qty
         position.realized_pnl += pnl
         position.open_quantity -= qty
-        position.partial_done = True
+        if stage == 2:
+            position.target2_done = True
+        else:
+            position.partial_done = True
         self.realized_pnl += pnl
         self.persist()
 

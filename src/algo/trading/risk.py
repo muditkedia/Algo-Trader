@@ -217,6 +217,12 @@ class AccountRiskEngine:
             return RiskDecision(
                 False, f"pre-TP1 blocker active: {signal.symbol}/"
                        f"{','.join(signal.blocked_by_pre_partial_groups)}")
+        if (signal.blocked_by_active_groups
+                and portfolio.active_group_blocked(
+                    signal.symbol, signal.blocked_by_active_groups)):
+            return RiskDecision(
+                False, f"active owner blocker: {signal.symbol}/"
+                       f"{','.join(signal.blocked_by_active_groups)}")
         if (signal.blocked_by_session_groups
                 and portfolio.session_blocked(
                     signal.symbol, signal.blocked_by_session_groups,

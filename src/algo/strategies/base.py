@@ -52,6 +52,11 @@ class StrategyMeta:
     #: ``active_conflict_group`` and models setup ownership through TP1.
     pre_partial_block_group: str = ""
     blocked_by_pre_partial_groups: tuple = ()
+    #: One-way ownership for consumers that must wait until an existing
+    #: position closes. Unlike active_conflict_group, emitters do not block
+    #: one another unless they explicitly consume the group.
+    active_block_group: str = ""
+    blocked_by_active_groups: tuple = ()
     #: A filled (or working) position with this group suppresses strategies
     #: that list it in ``blocked_by_session_groups`` for the session.
     session_block_group: str = ""

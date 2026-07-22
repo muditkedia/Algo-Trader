@@ -61,6 +61,7 @@ class EMACompressionBreakout(StrategyProfile):
     meta = StrategyMeta(
         name="ema_compression_5m", version="2.0.0", spec_id="STRAT-09",
         pre_partial_block_group="ema_compression",
+        active_block_group="primary_trend",
         direction=Direction.BOTH, holding_scope=HoldingScope.INTRADAY,
         timeframe="5m", min_bars=1501,
         required_columns=(

@@ -80,12 +80,14 @@ class Order:
     entry_target2: Optional[float] = None
     entry_timeout_target: Optional[float] = None
     partial_fraction: float = 0.0
+    target2_partial_fraction: float = 0.0
     trail_mode: str = "none"
     atr_at_entry: float = 0.0
     structural_stop: float = 0.0
     exclusive_group: str = ""
     active_conflict_group: str = ""
     pre_partial_block_group: str = ""
+    active_block_group: str = ""
     entry_target_r: float = 0.0
     session_block_group: str = ""
     timed_block_group: str = ""
@@ -133,7 +135,9 @@ class Position:
     target2: Optional[float] = None
     timeout_target: Optional[float] = None
     partial_fraction: float = 0.0
+    target2_partial_fraction: float = 0.0
     partial_done: bool = False
+    target2_done: bool = False
     trail_mode: str = "none"          # none | chandelier | column
     atr_at_entry: float = 0.0
     open_quantity: float = 0.0
@@ -149,6 +153,7 @@ class Position:
     exclusive_group: str = ""
     active_conflict_group: str = ""
     pre_partial_block_group: str = ""
+    active_block_group: str = ""
     session_block_group: str = ""
     timed_block_group: str = ""
     timed_block_until: str = ""

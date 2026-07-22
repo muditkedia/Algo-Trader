@@ -38,6 +38,7 @@ class ManageDecision:
     reason: str = ""
     new_stop: Optional[float] = None
     partial_qty: float = 0.0
+    partial_stage: int = 0
     gap_fill: bool = False
 
 
@@ -85,6 +86,19 @@ class TradeManager:
 
         # 2) target (honest gap fill), optional partial at the first target
         target = position.target
+        target2_col = ((spec.target2_long_col if is_long
+                        else spec.target2_short_col) or spec.target2_col)
+        if (position.partial_done and not position.target2_done
+                and spec.dynamic_target2 and target2_col):
+            candidate = bar.get(target2_col)
+            valid = candidate is not None and np.isfinite(candidate) and (
+                float(candidate) > entry if is_long
+                else float(candidate) < entry)
+            target = float(candidate) if valid else None
+            position.target = target
+            position.target2 = target
+        if position.target2_done:
+            target = None
         target_hit = (target is not None and
                       ((h >= target or o >= target) if is_long
                        else (l <= target or o <= target)))
@@ -94,10 +108,20 @@ class TradeManager:
                 qty = position.open_quantity * spec.partial_fraction
                 return ManageDecision("partial", price=fill, reason="partial",
                                       partial_qty=qty,
+                                      partial_stage=1,
                                       new_stop=(max(stop, entry) if is_long
                                                 else min(stop, entry)),
                                       gap_fill=(o > target if is_long
                                                 else o < target))
+            if (spec.target2_partial_fraction > 0
+                    and position.partial_done
+                    and not position.target2_done):
+                qty = min(position.open_quantity,
+                          position.quantity * spec.target2_partial_fraction)
+                return ManageDecision(
+                    "partial", price=fill, reason="partial2",
+                    partial_qty=qty, partial_stage=2,
+                    gap_fill=(o > target if is_long else o < target))
             return ManageDecision("exit", price=fill, reason="target",
                                   gap_fill=(o > target if is_long
                                             else o < target))

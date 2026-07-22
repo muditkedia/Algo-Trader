@@ -3,7 +3,7 @@
 _Written 2026-07-19. Phase 1+2 of the practitioner-faithfulness pass.
 Documentation only — no strategy code was modified._
 
-**Scope:** the current intraday strategies, including (`orb_5m`, `vwap_trend_5m`, `ema_compression_5m`,
+**Scope:** the current intraday strategies, including (`orb_5m`, `vwap_trend_5m`, `ema_compression_5m`, `geometric_channel_5m`,
 `cpr_breakout_15m`, `orb_retest_5m`, `pullback_15m`,
 `volexp_1h`). For each: the canonical practitioner implementation — including
 the context and quality rules experienced traders apply that articles and
@@ -140,6 +140,16 @@ NIFTY-EMA20, and ADX/DI confirmations are active. The strategy owns a capped
 compression-range stop, 1.5R partial, breakeven, chandelier, EMA20 loss,
 stagnation, and square-off, and owns the symbol against secondary trend setups
 until TP1. See `docs/STRAT09_EMA_COMPRESSION_5M.md`.
+
+## 1C. Canonical Geometric Channel Continuation — `geometric_channel_5m`
+
+STRAT-10 fits a prior-only 20-bar OLS channel and trades a shallow projected-
+envelope test that reclaims the regression median and prior candle in the
+channel direction. It enforces R², normalized slope, asymmetric same-slot
+RVOL, VWAP, liquidity, completed 15-minute slope, channel width, NIFTY slope,
+and time gates. Execution books 50% at 1.5R, another 25% at the moving opposite
+channel, and trails the final runner. See
+`docs/STRAT10_GEOMETRIC_CHANNEL_5M.md`.
 
 ## 2. Retired VWAP reclaim — `vwap_15m` (legacy evidence only)
 

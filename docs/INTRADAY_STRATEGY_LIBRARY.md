@@ -9,11 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **16 intraday strategies** via auto-discovery:
+registers **17 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **16** | 9 × 5m, 6 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **17** | 10 × 5m, 6 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -75,6 +75,7 @@ them; the other two declare their pre-reset profile as their own):
 | `orb_5m` | OR midpoint, capped at 1.5 ATR | 1.5R (50%), then runner | breakeven then post-partial 2 ATR chandelier |
 | `vwap_trend_5m` | lower/wider of pullback pivot or VWAP ATR buffer | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `ema_compression_5m` | beyond compression range by 0.1 ATR, capped at 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
+| `geometric_channel_5m` | beyond channel/pivot by ATR buffers | 1.5R 50%, dynamic channel 25%, then runner | breakeven then post-partial 2 ATR chandelier |
 | `cpr_breakout_15m` | below the CPR bottom | floor-pivot R1 (50% partial, stop→breakeven) then R2 | none |
 | `orb_retest_5m` | beyond retest pivot by 0.2 ATR, capped at 1.25 ATR | 1.5R (1.0R Grade C), 50% | breakeven then post-partial 2 ATR chandelier |
 | `opening_drive_5m` | beyond drive candle by 0.1 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
@@ -111,7 +112,7 @@ no capital constraint, fractional share quantities).
 
 ---
 
-## 2. Intraday strategies (16) — the current intraday library
+## 2. Intraday strategies (17) — the current intraday library
 
 ### 2.1 Opening Range Breakout — `orb_5m`
 
@@ -505,6 +506,17 @@ EMA20, ADX/DI, and the entry window. It owns a collared fill, compression-
 range/ATR-capped stop, 1.5R partial, breakeven, chandelier, EMA20/stagnation
 invalidation, square-off, and pre-TP1 trend suppression. See
 `docs/STRAT09_EMA_COMPRESSION_5M.md`.
+
+### 2.18 Geometric Channel Continuation — `geometric_channel_5m`
+
+STRAT-10 trades a shallow boundary rebound from a prior-only projected
+20-bar OLS channel. R², normalized slope, envelope touch/breach, median and
+prior-bar reclaim, VWAP, asymmetric same-slot RVOL, liquidity, completed
+15-minute slope, channel width, NIFTY slope, and time gates are mandatory in
+the configured canonical profile. It owns a collared fill, channel/pivot stop,
+1.5R 50% partial, dynamic channel 25% partial, final chandelier runner,
+structural/stagnation exits, square-off, and STRAT-08/09 active-owner
+suppression. See `docs/STRAT10_GEOMETRIC_CHANNEL_5M.md`.
 
 ---
 

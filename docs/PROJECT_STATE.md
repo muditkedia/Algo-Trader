@@ -1,6 +1,25 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-09 EMA Compression Breakout)_
+_Last updated: 2026-07-23 (STRAT-10 Geometric Channel Continuation)_
+
+## STRAT-10 Geometric Channel Continuation complete (2026-07-23)
+
+`geometric_channel_5m` is the new sole STRAT-10 implementation. It is
+bidirectional and fits a prior-only projected 20-bar OLS channel, enforcing
+R², normalized slope, envelope touch/breach, median/prior-bar reclaim,
+asymmetric same-slot RVOL, VWAP, liquidity, completed 15-minute slope, channel
+width, NIFTY slope, and time gates. It owns the channel/pivot stop, 1.5R 50%
+partial, dynamic channel 25% partial, final chandelier runner, structural and
+stagnation exits, and square-off.
+
+Shared infrastructure now provides prior-only OLS channels, completed-15m and
+NIFTY regression slopes, dynamic target 2 with a persisted second partial, and
+one-way active-owner blocking for STRAT-08/09 interaction. Full details and
+deviations are in `docs/STRAT10_GEOMETRIC_CHANNEL_5M.md`.
+
+Validation: Python compilation succeeded and the clean complete suite passed
+with 854 tests. All 17 registered strategies passed the exit matrix and
+participated in scanning.
 
 ## STRAT-09 EMA Compression Breakout complete (2026-07-23)
 
@@ -181,8 +200,8 @@ forbid overnight holding. Historical research reports and the generic research
 framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
-STRAT-01 through STRAT-09 are complete. Sequential implementation continues
-with STRAT-10.
+STRAT-01 through STRAT-10 are complete. The master specification integration
+is complete.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

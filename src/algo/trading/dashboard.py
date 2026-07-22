@@ -47,6 +47,7 @@ STRATEGY_NAMES = {
     "orb_5m": "Opening Range Breakout (STRAT-01)",
     "vwap_trend_5m": "VWAP Trend Continuation (STRAT-08)",
     "ema_compression_5m": "EMA Compression Breakout (STRAT-09)",
+    "geometric_channel_5m": "Geometric Channel Continuation (STRAT-10)",
     "cpr_breakout_15m": "CPR Breakout",
     "orb_retest_5m": "ORB Retest Continuation (STRAT-02)",
     "opening_drive_5m": "Opening Drive Momentum (STRAT-03)",
@@ -72,6 +73,9 @@ ENTRY_RULES = {
     "ema_compression_5m": "A four-bar EMA8/20/50 coil released through its "
                           "buffered ribbon on high same-slot RVOL with "
                           "EMA200, VWAP, NIFTY and volatility confirmation",
+    "geometric_channel_5m": "A high-R² prior-only regression channel tested "
+                            "its projected boundary and resumed through the "
+                            "median and prior bar on renewed RVOL",
     "cpr_breakout_15m": "Close crossed above the prior day's CPR top with "
                         "volume >= 1.5x its 20-bar average",
     "orb_retest_5m": "A sufficiently extended opening break retested and "
@@ -768,12 +772,19 @@ class DashboardExporter:
                                  f"(target)",
                     "action": "Exit the full position",
                     "kind": "target", "level": round(pos.target, 2)})
-        if pos.partial_done and pos.target2:
+        if pos.partial_done and not pos.target2_done and pos.target2:
+            second_pct = int(spec.target2_partial_fraction * 100)
+            second_verb = "up" if pos.is_long else "down"
+            second_action = (f"Book another {second_pct}% of the original "
+                             "position and trail the runner"
+                             if spec.target2_partial_fraction > 0
+                             else "Exit the remainder")
             triggers.append({
-                "condition": f"price trades up to Rs {pos.target2:,.2f} "
+                "condition": f"price trades {second_verb} to Rs {pos.target2:,.2f} "
                              f"(target 2)",
-                "action": "Exit the remainder",
-                "kind": "target", "level": round(pos.target2, 2)})
+                "action": second_action,
+                "kind": ("partial" if spec.target2_partial_fraction > 0
+                         else "target"), "level": round(pos.target2, 2)})
 
         # 3) square-off - unconditional for intraday
         if spec.intraday:
@@ -804,7 +815,9 @@ class DashboardExporter:
             trailing = "None - this strategy does not trail"
 
         # state + the single most immediate action
-        if pos.partial_done:
+        if pos.target2_done:
+            state = "Managing final runner"
+        elif pos.partial_done:
             state = "Managing remainder (stop at breakeven)"
         elif pos.trailed:
             state = "Trailing stop active"
@@ -817,9 +830,16 @@ class DashboardExporter:
             nxt = (f"Book {int(spec.partial_fraction * 100)}% at "
                    f"Rs {pos.target:,.2f}, then move the stop to breakeven "
                    f"Rs {pos.entry_price:,.2f}.")
-        elif pos.partial_done and pos.target2:
-            nxt = (f"Run the remainder to Rs {pos.target2:,.2f}, stop at "
-                   f"breakeven Rs {pos.stop:,.2f}, square off at {squareoff}.")
+        elif pos.partial_done and not pos.target2_done and pos.target2:
+            if spec.target2_partial_fraction > 0:
+                nxt = (f"Book another {int(spec.target2_partial_fraction * 100)}% "
+                       f"at Rs {pos.target2:,.2f}, then trail the final runner.")
+            else:
+                nxt = (f"Run the remainder to Rs {pos.target2:,.2f}, stop at "
+                       f"breakeven Rs {pos.stop:,.2f}, square off at {squareoff}.")
+        elif pos.target2_done:
+            nxt = (f"Trail the final runner from Rs {pos.stop:,.2f}; square "
+                   f"off at {squareoff}.")
         elif pos.target:
             nxt = (f"Exit at Rs {pos.target:,.2f} or stop Rs {pos.stop:,.2f}; "
                    f"square off at {squareoff}.")
@@ -908,6 +928,7 @@ class DashboardExporter:
                 "target_1": round(pos.target, 2) if pos.target else None,
                 "target_2": round(pos.target2, 2) if pos.target2 else None,
                 "partial_done": pos.partial_done,
+                "target2_done": pos.target2_done,
                 "trailing": pos.trailed,
                 "entry_time": _ist(pos.entry_ts),
                 "state": state,

@@ -77,6 +77,7 @@ class RecoveryManager:
 
         self._reconcile_positions(broker_positions, report)
         self._reconcile_orders(broker_open, report)
+        self.portfolio.persist()
 
         self.events.emit("recovery", **report.to_dict())
         logger.info("recovery complete: %s", report.to_dict())
@@ -102,6 +103,19 @@ class RecoveryManager:
             pos.direction = "long" if bp["quantity"] > 0 else "short"
             if abs(bp["quantity"]) < pos.open_quantity - 1e-6:
                 pos.open_quantity = abs(bp["quantity"])
+                closed_fraction = (1.0 - pos.open_quantity / pos.quantity
+                                   if pos.quantity > 0 else 0.0)
+                if (pos.partial_fraction > 0
+                        and closed_fraction + 1e-6 >= pos.partial_fraction):
+                    pos.partial_done = True
+                    pos.stop = (max(pos.stop, pos.entry_price) if pos.is_long
+                                else min(pos.stop, pos.entry_price))
+                if (pos.target2_partial_fraction > 0
+                        and closed_fraction + 1e-6 >= pos.partial_fraction
+                        + pos.target2_partial_fraction):
+                    pos.target2_done = True
+                    pos.target = None
+                    pos.target2 = None
                 report.partial_fills.append(pos.position_id)
                 self.events.emit("recovery", action="partial_fill",
                                  symbol=pos.symbol, qty=bp["quantity"])

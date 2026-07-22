@@ -681,12 +681,18 @@ class ProductionEngine:
         order = self.orders.market_exit(pos, decision.partial_qty, "partial",
                                         seq=self._seq)
         fill = order.avg_fill_price or decision.price
-        self.portfolio.book_partial(pos, decision.partial_qty, fill)
-        pos.stop = decision.new_stop      # breakeven on remainder
-        pos.target = pos.target2
+        self.portfolio.book_partial(
+            pos, decision.partial_qty, fill, stage=decision.partial_stage or 1)
+        if decision.partial_stage == 2:
+            pos.target = None
+            pos.target2 = None
+        else:
+            pos.stop = decision.new_stop      # breakeven on remainder
+            pos.target = pos.target2
         self.portfolio.persist()
         self.events.emit("position", action="partial", symbol=pos.symbol,
-                         price=fill, qty=decision.partial_qty)
+                         price=fill, qty=decision.partial_qty,
+                         stage=decision.partial_stage or 1)
 
     def _execute_exit(self, pos: Position, price: float, reason: str) -> None:
         if isinstance(self.adapter, PaperBroker):
@@ -808,12 +814,14 @@ class ProductionEngine:
             target2=order.entry_target2,
             timeout_target=order.entry_timeout_target,
             partial_fraction=order.partial_fraction,
+            target2_partial_fraction=order.target2_partial_fraction,
             trail_mode=order.trail_mode, open_quantity=filled,
             session=order.session, last_price=fill,
             atr_at_entry=atr_value, direction=order.direction,
             exclusive_group=order.exclusive_group,
             active_conflict_group=order.active_conflict_group,
             pre_partial_block_group=order.pre_partial_block_group,
+            active_block_group=order.active_block_group,
             session_block_group=order.session_block_group,
             timed_block_group=order.timed_block_group,
             timed_block_until=order.timed_block_until,

@@ -58,12 +58,19 @@ class ExecutionSpec:
     target_r_long_col: Optional[str] = None
     target_r_short_col: Optional[str] = None
     #: Optional partial at the first target: fraction booked there, stop moves
-    #: to breakeven, remainder runs to ``target2_col`` (if any) else to
-    #: stop / square-off.
+    #: to breakeven. The remainder runs to ``target2_col`` (if any), where it
+    #: either exits or books ``target2_partial_fraction`` and leaves a runner.
     partial_fraction: float = 0.0
     target2_col: Optional[str] = None
     target2_long_col: Optional[str] = None
     target2_short_col: Optional[str] = None
+    #: When positive, target 2 books this additional fraction of the original
+    #: quantity and leaves the rest to the declared trail/square-off.  Zero
+    #: preserves the existing full-exit-at-target-2 behaviour.
+    target2_partial_fraction: float = 0.0
+    #: Re-read the target-2 directional column from every managed bar rather
+    #: than freezing it at entry (for a moving channel boundary).
+    dynamic_target2: bool = False
 
     # ------------------------------------------------------------ trailing
     #: ``none`` | ``chandelier`` (ATR trail + profit-lock ladder from the
@@ -131,6 +138,18 @@ class ExecutionSpec:
             raise ValueError("a partial exit needs a first target")
         if not 0.0 <= self.partial_fraction < 1.0:
             raise ValueError("partial_fraction must be in [0, 1)")
+        if not 0.0 <= self.target2_partial_fraction < 1.0:
+            raise ValueError("target2_partial_fraction must be in [0, 1)")
+        if self.partial_fraction + self.target2_partial_fraction >= 1.0:
+            raise ValueError("partial exits must leave a positive runner")
+        if self.target2_partial_fraction and not (
+                self.target2_col
+                or (self.target2_long_col and self.target2_short_col)):
+            raise ValueError("a target-2 partial needs target-2 columns")
+        if self.dynamic_target2 and not (
+                self.target2_col
+                or (self.target2_long_col and self.target2_short_col)):
+            raise ValueError("dynamic_target2 needs target-2 columns")
         if self.trail not in ("none", "chandelier", "column"):
             raise ValueError(f"unknown trail {self.trail!r}")
         if self.trail == "column" and not self.trail_col:

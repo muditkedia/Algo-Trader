@@ -48,6 +48,8 @@ class TradingSignal:
     active_conflict_group: str = ""
     pre_partial_block_group: str = ""
     blocked_by_pre_partial_groups: tuple = ()
+    active_block_group: str = ""
+    blocked_by_active_groups: tuple = ()
     session_block_group: str = ""
     blocked_by_session_groups: tuple = ()
     timed_block_group: str = ""
@@ -132,6 +134,8 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
         pre_partial_block_group=strategy.meta.pre_partial_block_group,
         blocked_by_pre_partial_groups=(
             strategy.meta.blocked_by_pre_partial_groups),
+        active_block_group=strategy.meta.active_block_group,
+        blocked_by_active_groups=strategy.meta.blocked_by_active_groups,
         session_block_group=strategy.meta.session_block_group,
         blocked_by_session_groups=strategy.meta.blocked_by_session_groups,
         timed_block_group=strategy.meta.timed_block_group,

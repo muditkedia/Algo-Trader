@@ -176,7 +176,9 @@ def execute_signal(bars: pd.DataFrame, signal_index: int, *,
     open_frac = 1.0
     realized = 0.0                                 # gross P&L of booked partial
     partial_done = False
+    target2_done = False
     partial_price: Optional[float] = None
+    target2_partial_price: Optional[float] = None
     trailed = False
     gap_fill = False
     mfe = mae = 0.0
@@ -215,7 +217,14 @@ def execute_signal(bars: pd.DataFrame, signal_index: int, *,
             mae = min(mae, sign * (exit_price / entry - 1.0))
             break
 
-        # 2) target (honest gap fill), optional partial at the first target
+        # 2) target (honest gap fill), optional partials at targets 1 and 2
+        if (partial_done and not target2_done and spec.dynamic_target2
+                and target2_col):
+            candidate = float(row.get(target2_col, np.nan))
+            valid = candidate > entry if is_long else candidate < entry
+            target = candidate if np.isfinite(candidate) and valid else None
+        if target2_done:
+            target = None
         target_hit = (target is not None and
                       ((h >= target or o >= target) if is_long
                        else (l <= target or o <= target)))
@@ -228,6 +237,14 @@ def execute_signal(bars: pd.DataFrame, signal_index: int, *,
                 stop = (max(stop, entry) if is_long
                         else min(stop, entry))      # breakeven on remainder
                 target = target2
+            elif (spec.target2_partial_fraction > 0 and partial_done
+                  and not target2_done):
+                realized += (sign * (t_fill - entry) * qty
+                             * spec.target2_partial_fraction)
+                open_frac -= spec.target2_partial_fraction
+                target2_done = True
+                target2_partial_price = t_fill
+                target = None
             else:
                 gap_fill = gap_fill or (o > target if is_long else o < target)
                 exit_price, exit_reason = t_fill, "target"
@@ -307,6 +324,8 @@ def execute_signal(bars: pd.DataFrame, signal_index: int, *,
 
     gross_abs = realized + sign * (exit_price - entry) * qty * open_frac
     legs = ([(partial_price, spec.partial_fraction)] if partial_done else [])
+    if target2_done:
+        legs.append((target2_partial_price, spec.target2_partial_fraction))
     legs.append((exit_price, open_frac))
     entry_cost = cost_model.side_cost(price=entry, quantity=qty,
                                       is_buy=is_long, product=product)

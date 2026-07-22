@@ -14,6 +14,7 @@ from algo.strategies.library import ALL_STRATEGIES
 
 from tests.test_strategy_library import _vwap_frame
 from tests.strat09_fixtures import strat09_frames
+from tests.strat10_fixtures import strat10_frames
 from strat01_fixtures import strat01_frames
 
 
@@ -28,13 +29,15 @@ def scan_setup(store, synthetic):
     store.write("CRAFT_VWAP", "5m", _vwap_frame())
     emacb = strat09_frames(symbol="CRAFT_EMACB")
     store.write("CRAFT_EMACB", "5m", emacb["CRAFT_EMACB"])
+    gcc = strat10_frames(symbol="CRAFT_GCC")
+    store.write("CRAFT_GCC", "5m", gcc["CRAFT_GCC"])
     nifty = (pd.concat([orb["NIFTY50"], emacb["NIFTY50"]])
              .sort_values("date").drop_duplicates("date", keep="first"))
     store.write("NIFTY50", "5m", nifty)
     for sym in ("PLAIN_A", "PLAIN_B"):     # synthetic, may or may not fire
         store.write(sym, "15m", synthetic.fetch_ohlcv(
             sym, "15m", "2023-06-01", "2024-03-05"))
-    symbols = ["CRAFT_ORB", "CRAFT_VWAP", "CRAFT_EMACB",
+    symbols = ["CRAFT_ORB", "CRAFT_VWAP", "CRAFT_EMACB", "CRAFT_GCC",
                "PLAIN_A", "PLAIN_B"]
 
     db = EvidenceDB(MEMORY)
@@ -53,7 +56,7 @@ def test_registry_discovers_the_whole_library():
     # the existing intraday strategies are always present; the library grows by discovery,
     # so assert membership + consistency rather than a hardcoded roster
     assert {"orb_5m",
-            "ema_compression_5m", "pullback_15m", "volexp_1h",
+            "ema_compression_5m", "geometric_channel_5m", "pullback_15m", "volexp_1h",
             "vwap_trend_5m"} <= set(found)
     assert sorted(found) == [cls.meta.name for cls in ALL_STRATEGIES]
     assert reg.enabled_names() == sorted(found)
@@ -69,6 +72,7 @@ def test_unified_scan_returns_one_ranked_list(scan_setup):
     assert ("CRAFT_ORB", "orb_5m") in fired
     assert ("CRAFT_VWAP", "vwap_trend_5m") in fired
     assert ("CRAFT_EMACB", "ema_compression_5m") in fired
+    assert ("CRAFT_GCC", "geometric_channel_5m") in fired
 
     # ONE list, strictly ranked 1..N, ordered by confidence descending
     ranks = [o.rank for o in result.opportunities]
@@ -77,7 +81,8 @@ def test_unified_scan_returns_one_ranked_list(scan_setup):
     assert confidences == sorted(confidences, reverse=True)
     assert all(0.0 <= c <= 1.0 for c in confidences)
     assert {o.strategy for o in result.opportunities} >= {
-        "ema_compression_5m", "orb_5m", "vwap_trend_5m"}
+        "ema_compression_5m", "geometric_channel_5m", "orb_5m",
+        "vwap_trend_5m"}
 
 
 def test_every_opportunity_written_to_evidence(scan_setup):
