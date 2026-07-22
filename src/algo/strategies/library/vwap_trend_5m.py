@@ -49,6 +49,7 @@ class VwapTrendContinuation(StrategyProfile):
 
     meta = StrategyMeta(
         name="vwap_trend_5m", version="2.0.0", spec_id="STRAT-08",
+        blocked_by_pre_partial_groups=("ema_compression",),
         direction=Direction.BOTH, holding_scope=HoldingScope.INTRADAY,
         timeframe="5m", min_bars=1505,
         required_columns=(

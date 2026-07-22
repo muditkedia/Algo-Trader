@@ -211,6 +211,12 @@ class AccountRiskEngine:
             return RiskDecision(
                 False, f"active conflict: {signal.symbol}/"
                        f"{signal.active_conflict_group} already held")
+        if (signal.blocked_by_pre_partial_groups
+                and portfolio.pre_partial_blocked(
+                    signal.symbol, signal.blocked_by_pre_partial_groups)):
+            return RiskDecision(
+                False, f"pre-TP1 blocker active: {signal.symbol}/"
+                       f"{','.join(signal.blocked_by_pre_partial_groups)}")
         if (signal.blocked_by_session_groups
                 and portfolio.session_blocked(
                     signal.symbol, signal.blocked_by_session_groups,

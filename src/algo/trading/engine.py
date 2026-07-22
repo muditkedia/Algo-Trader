@@ -813,6 +813,7 @@ class ProductionEngine:
             atr_at_entry=atr_value, direction=order.direction,
             exclusive_group=order.exclusive_group,
             active_conflict_group=order.active_conflict_group,
+            pre_partial_block_group=order.pre_partial_block_group,
             session_block_group=order.session_block_group,
             timed_block_group=order.timed_block_group,
             timed_block_until=order.timed_block_until,

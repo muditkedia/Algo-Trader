@@ -3,7 +3,7 @@
 _Written 2026-07-19. Phase 1+2 of the practitioner-faithfulness pass.
 Documentation only — no strategy code was modified._
 
-**Scope:** the current intraday strategies, including (`orb_5m`, `vwap_trend_5m`,
+**Scope:** the current intraday strategies, including (`orb_5m`, `vwap_trend_5m`, `ema_compression_5m`,
 `cpr_breakout_15m`, `orb_retest_5m`, `pullback_15m`,
 `volexp_1h`). For each: the canonical practitioner implementation — including
 the context and quality rules experienced traders apply that articles and
@@ -130,6 +130,16 @@ asymmetric same-slot RVOL, liquidity, completed 15-minute ADX, rejection wick,
 and time gates. It owns a pivot/VWAP stop, 1.5R partial, breakeven, chandelier,
 VWAP invalidation, stagnation, and square-off. See
 `docs/STRAT08_VWAP_TREND_5M.md`.
+
+## 1B. Canonical EMA Compression Breakout — `ema_compression_5m`
+
+STRAT-09 implements the bidirectional 5-minute EMA8/20/50 coil and expansion
+design. Four prior compressed bars precede a buffered, high-body, asymmetric-
+RVOL release aligned with EMA200 and VWAP. Available optional Bollinger,
+NIFTY-EMA20, and ADX/DI confirmations are active. The strategy owns a capped
+compression-range stop, 1.5R partial, breakeven, chandelier, EMA20 loss,
+stagnation, and square-off, and owns the symbol against secondary trend setups
+until TP1. See `docs/STRAT09_EMA_COMPRESSION_5M.md`.
 
 ## 2. Retired VWAP reclaim — `vwap_15m` (legacy evidence only)
 

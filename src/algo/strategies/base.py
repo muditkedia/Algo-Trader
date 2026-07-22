@@ -47,6 +47,11 @@ class StrategyMeta:
     #: Signals sharing this group cannot coexist on the same symbol, but a
     #: later setup may trade after the earlier position has closed.
     active_conflict_group: str = ""
+    #: A working entry or open position with this group suppresses consumers
+    #: only until its first partial target is booked.  This is narrower than
+    #: ``active_conflict_group`` and models setup ownership through TP1.
+    pre_partial_block_group: str = ""
+    blocked_by_pre_partial_groups: tuple = ()
     #: A filled (or working) position with this group suppresses strategies
     #: that list it in ``blocked_by_session_groups`` for the session.
     session_block_group: str = ""

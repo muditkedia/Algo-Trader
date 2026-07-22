@@ -1,6 +1,25 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-08 VWAP Trend Continuation)_
+_Last updated: 2026-07-23 (STRAT-09 EMA Compression Breakout)_
+
+## STRAT-09 EMA Compression Breakout complete (2026-07-23)
+
+`ema_compression_5m` is the new sole STRAT-09 implementation. It is
+bidirectional and enforces a causal four-bar EMA8/20/50 coil, EMA200 and VWAP
+bias, a buffered ribbon break, asymmetric same-slot RVOL, candle-body quality,
+liquidity, Bollinger contraction, NIFTY EMA20 alignment, ADX expansion, and the
+09:30–14:45 window. It owns the compression-range/ATR-capped stop, 1.5R
+partial, breakeven, chandelier, EMA20 invalidation, stagnation exit, and
+square-off.
+
+Shared directional movement now exposes +DI/−DI/ADX without duplicated math;
+NIFTY context exposes EMA20; and persisted pre-TP1 blocking suppresses
+secondary trend entries on the same symbol until the partial is booked. Full
+details and deviations are in `docs/STRAT09_EMA_COMPRESSION_5M.md`.
+
+Validation: Python compilation succeeded and the complete suite passed with
+840 tests. All 16 registered strategies passed the exit matrix and participated
+in scanning.
 
 ## STRAT-08 VWAP canonical consolidation complete (2026-07-23)
 
@@ -162,8 +181,8 @@ forbid overnight holding. Historical research reports and the generic research
 framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
-STRAT-01 through STRAT-03 are complete. Sequential implementation continues
-with STRAT-09.
+STRAT-01 through STRAT-09 are complete. Sequential implementation continues
+with STRAT-10.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

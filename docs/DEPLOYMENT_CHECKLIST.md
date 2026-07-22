@@ -2,15 +2,15 @@
 
 _Deployment phase, 2026-07-19. Operator-facing go/no-go checklist for the
 production trading system. Paper mode: ready now. Live mode: fully implemented,
-disarmed, one supervised smoke test outstanding (see §D). Full suite: 528
-passed, 1 skipped._
+disarmed, one supervised smoke test outstanding (see §D). Full suite: 840
+passed._
 
 ## A. Engineering completeness (all ✅)
 
 - [x] One pipeline; paper/live differ only in the execution adapter — proven by
       `test_paper_and_live_open_identical_positions_only_adapter_differs`.
 - [x] No duplicate paper/live logic; strategy-agnostic scanner/orchestrator.
-- [x] 15 intraday strategies discovered from the registry; auto-discovered.
+- [x] 16 intraday strategies discovered from the registry; auto-discovered.
 - [x] Execution specs, backtest engine, risk rules, trading rules — unchanged.
 - [x] Idempotent orders (deterministic client-order-id + `ordertag`).
 - [x] Bounded retries + circuit breaker + kill switch + daily-loss latch.
@@ -21,7 +21,7 @@ passed, 1 skipped._
 - [x] Scheduler: bar-close cadence per timeframe + grace.
 - [x] Atomic state persistence; JSONL event log; daily summary; dashboard.
 - [x] Preflight gate blocks startup on any critical failure.
-- [x] 528 tests pass.
+- [x] 840 tests pass.
 
 ## B. Pre-session operator checklist (run every trading day)
 

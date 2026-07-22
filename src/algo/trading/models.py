@@ -85,6 +85,7 @@ class Order:
     structural_stop: float = 0.0
     exclusive_group: str = ""
     active_conflict_group: str = ""
+    pre_partial_block_group: str = ""
     entry_target_r: float = 0.0
     session_block_group: str = ""
     timed_block_group: str = ""
@@ -147,6 +148,7 @@ class Position:
     lowest_since_entry: float = 0.0
     exclusive_group: str = ""
     active_conflict_group: str = ""
+    pre_partial_block_group: str = ""
     session_block_group: str = ""
     timed_block_group: str = ""
     timed_block_until: str = ""

@@ -60,6 +60,26 @@ class PortfolioEngine:
         return any(p.symbol == symbol and p.active_conflict_group == group
                    for p in self.open_positions())
 
+    def pre_partial_blocked(self, symbol: str, groups: tuple) -> bool:
+        """Whether a setup owns ``symbol`` until its first target is booked.
+
+        Working entries are included to prevent two strategies from being
+        accepted in the same decision cycle.  Once an open position records
+        its first partial, the block is released immediately and is not kept
+        in closed-session history.
+        """
+        from algo.trading.models import TERMINAL
+
+        wanted = set(groups)
+        if any(p.symbol == symbol and not p.partial_done
+               and p.pre_partial_block_group in wanted
+               for p in self.open_positions()):
+            return True
+        return any(o.symbol == symbol and o.intent == "entry"
+                   and o.status not in TERMINAL
+                   and o.pre_partial_block_group in wanted
+                   for o in self.orders.values())
+
     def session_blocked(self, symbol: str, groups: tuple, session: str) -> bool:
         wanted = set(groups)
         if not wanted:

@@ -45,6 +45,7 @@ class PullbackContinuation15m(StrategyProfile):
 
     meta = StrategyMeta(
         name="pullback_15m", version="1.0",
+        blocked_by_pre_partial_groups=("ema_compression",),
         direction=Direction.LONG, holding_scope=HoldingScope.INTRADAY,
         timeframe="15m", min_bars=70,
         required_columns=("close", "low", "ema_fast", "ema_slow", "rsi",

@@ -84,6 +84,7 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
             nifty_session_open / nifty_prior - 1.0).to_numpy()
         nifty_exact["nifty_vwap"] = session_vwap(nifty)
         nifty_exact["nifty_close"] = nifty["close"].to_numpy()
+        nifty_exact["nifty_ema20"] = ema(nifty["close"], 20).to_numpy()
         nifty_ib_high, nifty_ib_low, _ = opening_range(nifty, 30)
         nifty_exact["nifty_ib_high"] = nifty_ib_high.to_numpy()
         nifty_exact["nifty_ib_low"] = nifty_ib_low.to_numpy()
@@ -113,6 +114,7 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
         else:
             merged["nifty_vwap"] = np.nan
             merged["nifty_close"] = np.nan
+            merged["nifty_ema20"] = np.nan
             merged["nifty_open"] = np.nan
             merged["nifty_high"] = np.nan
             merged["nifty_low"] = np.nan

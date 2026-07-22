@@ -46,6 +46,7 @@ SCHEMA_VERSION = 2
 STRATEGY_NAMES = {
     "orb_5m": "Opening Range Breakout (STRAT-01)",
     "vwap_trend_5m": "VWAP Trend Continuation (STRAT-08)",
+    "ema_compression_5m": "EMA Compression Breakout (STRAT-09)",
     "cpr_breakout_15m": "CPR Breakout",
     "orb_retest_5m": "ORB Retest Continuation (STRAT-02)",
     "opening_drive_5m": "Opening Drive Momentum (STRAT-03)",
@@ -68,6 +69,9 @@ ENTRY_RULES = {
               "VWAP, EMA, regime and confidence confirmation",
     "vwap_trend_5m": "A strict EMA trend pulled shallowly into a steep VWAP "
                      "and resumed through the prior candle on same-slot RVOL",
+    "ema_compression_5m": "A four-bar EMA8/20/50 coil released through its "
+                          "buffered ribbon on high same-slot RVOL with "
+                          "EMA200, VWAP, NIFTY and volatility confirmation",
     "cpr_breakout_15m": "Close crossed above the prior day's CPR top with "
                         "volume >= 1.5x its 20-bar average",
     "orb_retest_5m": "A sufficiently extended opening break retested and "

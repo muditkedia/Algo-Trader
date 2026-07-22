@@ -95,6 +95,7 @@ order can be changed at review):
 | 3.2d | `initial_balance_5m` **complete** | STRAT-06: immutable 30-minute IB, width/RVOL acceptance, NIFTY IB and CPR clearance |
 | 3.2e | `liquidity_sweep_5m` **complete** | STRAT-07: wick/depth reclaim, directional targets, VWAP timeout, 60-minute persisted suppression |
 | 3.2f | `vwap_trend_5m` **complete** | STRAT-08: canonical consolidation of both legacy VWAP modules into bidirectional 5m continuation |
+| 3.2g | `ema_compression_5m` **complete** | STRAT-09: four-bar EMA coil, buffered bidirectional release, optional BBW/NIFTY/ADX confirmation, pre-TP1 trend suppression |
 | 3.3 | `cpr_breakout_15m` | narrow-CPR gate + two-day relation + gap context (F10/F3), RVOL, index alignment, morning window |
 | 3.4 | retired `vwap_15m` / `vwap_pullback_15m` | Superseded by completed STRAT-08 `vwap_trend_5m`; no duplicate implementation retained |
 | 3.5 | retired `first_pullback_15m` | Superseded by completed STRAT-02 `orb_retest_5m`; no duplicate implementation retained |

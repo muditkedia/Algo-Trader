@@ -46,6 +46,8 @@ class TradingSignal:
     reason: str = ""
     exclusive_group: str = ""
     active_conflict_group: str = ""
+    pre_partial_block_group: str = ""
+    blocked_by_pre_partial_groups: tuple = ()
     session_block_group: str = ""
     blocked_by_session_groups: tuple = ()
     timed_block_group: str = ""
@@ -127,6 +129,9 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
         reason=(scored.reason if scored else ""),
         exclusive_group=strategy.meta.exclusive_group,
         active_conflict_group=strategy.meta.active_conflict_group,
+        pre_partial_block_group=strategy.meta.pre_partial_block_group,
+        blocked_by_pre_partial_groups=(
+            strategy.meta.blocked_by_pre_partial_groups),
         session_block_group=strategy.meta.session_block_group,
         blocked_by_session_groups=strategy.meta.blocked_by_session_groups,
         timed_block_group=strategy.meta.timed_block_group,

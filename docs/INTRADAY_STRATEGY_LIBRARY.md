@@ -9,11 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **15 intraday strategies** via auto-discovery:
+registers **16 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **15** | 8 × 5m, 6 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **16** | 9 × 5m, 6 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -74,6 +74,7 @@ them; the other two declare their pre-reset profile as their own):
 |---|---|---|---|
 | `orb_5m` | OR midpoint, capped at 1.5 ATR | 1.5R (50%), then runner | breakeven then post-partial 2 ATR chandelier |
 | `vwap_trend_5m` | lower/wider of pullback pivot or VWAP ATR buffer | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
+| `ema_compression_5m` | beyond compression range by 0.1 ATR, capped at 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `cpr_breakout_15m` | below the CPR bottom | floor-pivot R1 (50% partial, stop→breakeven) then R2 | none |
 | `orb_retest_5m` | beyond retest pivot by 0.2 ATR, capped at 1.25 ATR | 1.5R (1.0R Grade C), 50% | breakeven then post-partial 2 ATR chandelier |
 | `opening_drive_5m` | beyond drive candle by 0.1 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
@@ -110,7 +111,7 @@ no capital constraint, fractional share quantities).
 
 ---
 
-## 2. Intraday strategies (15) — the current intraday library
+## 2. Intraday strategies (16) — the current intraday library
 
 ### 2.1 Opening Range Breakout — `orb_5m`
 
@@ -494,6 +495,16 @@ filter the setup. Execution uses a wick/ATR stop, VWAP-or-1.5R partial,
 breakeven, opposite opening boundary, chandelier, VWAP timeout, square-off,
 and persisted 60-minute ORB/IBB suppression. See
 `docs/STRAT07_LIQUIDITY_SWEEP_5M.md`.
+
+### 2.17 EMA Compression Breakout — `ema_compression_5m`
+
+STRAT-09 trades the bidirectional release from four prior EMA8/20/50-
+compressed 5-minute bars. A buffered, high-body break must align with EMA200,
+VWAP, asymmetric same-slot RVOL, liquidity, Bollinger contraction, NIFTY
+EMA20, ADX/DI, and the entry window. It owns a collared fill, compression-
+range/ATR-capped stop, 1.5R partial, breakeven, chandelier, EMA20/stagnation
+invalidation, square-off, and pre-TP1 trend suppression. See
+`docs/STRAT09_EMA_COMPRESSION_5M.md`.
 
 ---
 

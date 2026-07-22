@@ -77,8 +77,14 @@ def atr(frame: pd.DataFrame, period: int = 14) -> pd.Series:
     return wilder_ema(true_range(frame), period)
 
 
-def adx(frame: pd.DataFrame, period: int = 14) -> pd.Series:
-    """Wilder ADX - same formulas as the validation regime labeler."""
+def directional_movement(frame: pd.DataFrame, period: int = 14
+                         ) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """Wilder ``(+DI, -DI, ADX)`` from one shared calculation.
+
+    ``adx`` remains the stable public convenience wrapper.  Strategies that
+    genuinely need directional confirmation use this richer result instead of
+    reimplementing the same true-range and Wilder smoothing arithmetic.
+    """
     high, low = frame["high"], frame["low"]
     up = high.diff()
     down = -low.diff()
@@ -90,7 +96,12 @@ def adx(frame: pd.DataFrame, period: int = 14) -> pd.Series:
     plus_di = 100 * wilder_ema(plus_dm, period) / smoothed_tr
     minus_di = 100 * wilder_ema(minus_dm, period) / smoothed_tr
     dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di)
-    return wilder_ema(dx.fillna(0.0), period)
+    return plus_di, minus_di, wilder_ema(dx.fillna(0.0), period)
+
+
+def adx(frame: pd.DataFrame, period: int = 14) -> pd.Series:
+    """Wilder ADX - same formulas as the validation regime labeler."""
+    return directional_movement(frame, period)[2]
 
 
 def bollinger(close: pd.Series, period: int = 20, num_std: float = 2.0):

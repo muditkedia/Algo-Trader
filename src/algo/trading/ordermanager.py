@@ -119,6 +119,7 @@ class OrderManager:
             structural_stop=getattr(signal, "structural_stop", signal.stop),
             exclusive_group=signal.exclusive_group,
             active_conflict_group=signal.active_conflict_group,
+            pre_partial_block_group=signal.pre_partial_block_group,
             session_block_group=signal.session_block_group,
             timed_block_group=signal.timed_block_group,
             timed_block_until=signal.timed_block_until,

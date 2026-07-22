@@ -11,6 +11,7 @@ documented in `IMPLEMENTATION_GUIDE.md`:_
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `orb_5m` | **R** | **R** | **R** | Rec | **R** | — | — | **R** | — | **R** | — | **R** | Rec | **R** | Rec |
 | `vwap_trend_5m` | **R** | **R** | O | **R** | O | **R** | **R** | — | — | **R** | — | Rec | O | **R** | Rec |
+| `ema_compression_5m` | **R** | **R** | O | Rec | O | — | — | — | — | **R** | O | **R** | O | **R** | Rec |
 | `cpr_breakout_15m` | **R** | **R** | **R** | Rec | **R** | — | — | O | **R** | Rec | — | — | Rec | O | Rec |
 | `orb_retest_5m` | **R** | **R** | **R** | Rec | **R** | — | — | **R** | — | **R** | — | **R** | O | **R** | Rec |
 | `opening_drive_5m` | **R** | **R** | **R** | Rec | **R** | — | — | — | — | **R** | — | — | O | **R** | Rec |

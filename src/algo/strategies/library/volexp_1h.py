@@ -44,6 +44,7 @@ class VolatilityExpansionBreakout1h(StrategyProfile):
 
     meta = StrategyMeta(
         name="volexp_1h", version="1.0",
+        blocked_by_pre_partial_groups=("ema_compression",),
         direction=Direction.LONG, holding_scope=HoldingScope.INTRADAY,
         timeframe="1h", min_bars=40,
         required_columns=("close", "high", "low", "bb_upper", "bb_width",

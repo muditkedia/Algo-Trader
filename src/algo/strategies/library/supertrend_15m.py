@@ -48,6 +48,7 @@ class SupertrendContinuation(StrategyProfile):
 
     meta = StrategyMeta(
         name="supertrend_15m", version="1.0",
+        blocked_by_pre_partial_groups=("ema_compression",),
         direction=Direction.LONG, holding_scope=HoldingScope.INTRADAY,
         timeframe="15m", min_bars=40,
         required_columns=("close", "st_line", "st_dir", "atr",
