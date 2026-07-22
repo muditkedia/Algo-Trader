@@ -355,6 +355,15 @@ It owns its collared fill, pivot/ATR stop, 1.5R partial, breakeven, chandelier,
 full-gap invalidation, stagnation, and square-off. A stopped STRAT-04 trade
 does not suppress it. See `docs/STRAT05_GAP_FILL_FAILURE_5M.md`.
 
+## 5D. Initial Balance Breakout — `initial_balance_5m`
+
+STRAT-06 is a distinct bidirectional 5-minute implementation that locks the
+first six candles as a 30-minute balance. It gates buffered acceptance on
+ATR-normalized IB width, asymmetric same-slot RVOL, VWAP, EMA, liquidity,
+NIFTY’s own IB, CPR clearance, and time. It owns the midpoint/ATR-capped stop,
+1.5R partial, breakeven, chandelier, VWAP invalidation, stagnation, and
+square-off. See `docs/STRAT06_INITIAL_BALANCE_5M.md`.
+
 ## 6. EMA Pullback Continuation — `pullback_15m`
 
 1. **Original strategy name:** intraday EMA pullback (trend-pullback

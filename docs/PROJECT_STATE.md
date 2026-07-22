@@ -1,6 +1,24 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-05 Gap Fill Failure Reversal)_
+_Last updated: 2026-07-23 (STRAT-06 Initial Balance Breakout)_
+
+## STRAT-06 Initial Balance Breakout complete (2026-07-23)
+
+`initial_balance_5m` is the new sole STRAT-06 implementation. It locks the
+first six completed 5-minute candles as an immutable 30-minute balance and
+enforces buffered boundary acceptance, ATR-normalized width, asymmetric
+same-slot RVOL, VWAP, EMA, liquidity, NIFTY’s own IB, CPR clearance, and the
+09:45–14:45 window. It owns the midpoint/1.5ATR-capped stop, 1.5R partial,
+breakeven, chandelier, VWAP invalidation, stagnation exit, and square-off.
+
+Shared opening context now exposes NIFTY’s causal 30-minute IB. Existing
+symbol-level risk suppression blocks STRAT-06 while an earlier opening
+position is open but permits it after that position stops out. Full details
+and deviations are in `docs/STRAT06_INITIAL_BALANCE_5M.md`.
+
+Validation: Python compilation succeeded and the complete suite passed with
+822 tests. All 15 registered strategies passed the exit matrix and participated
+in scanning.
 
 ## STRAT-05 Gap Fill Failure Reversal complete (2026-07-23)
 
@@ -108,7 +126,7 @@ framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
 STRAT-01 through STRAT-03 are complete. Sequential implementation continues
-with STRAT-06.
+with STRAT-07.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

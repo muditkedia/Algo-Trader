@@ -17,6 +17,7 @@ documented in `IMPLEMENTATION_GUIDE.md`:_
 | `opening_drive_5m` | **R** | **R** | **R** | Rec | **R** | — | — | — | — | **R** | — | — | O | **R** | Rec |
 | `gapgo_5m` | **R** | **R** | **R** | Rec | Rec | — | — | **R** | — | **R** | — | O | O | **R** | Rec |
 | `gap_fill_failure_5m` | **R** | **R** | **R** | Rec | Rec | Rec | **R** | — | — | **R** | — | — | O | **R** | Rec |
+| `initial_balance_5m` | **R** | **R** | O | Rec | Rec | — | — | **R** | Rec | **R** | — | — | O | **R** | Rec |
 | `pullback_15m` | **R** | Rec | O | Rec | **R** | — | — | — | — | O | — | **R** | O | O | Rec |
 | `volexp_1h` | **R** | Rec | O | Rec | Rec | — | — | — | — | Rec | **R** | Rec | Rec | O | Rec |
 

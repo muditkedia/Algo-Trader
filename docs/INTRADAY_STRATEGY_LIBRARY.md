@@ -9,11 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **14 intraday strategies** via auto-discovery:
+registers **15 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **14** | 5 × 5m, 8 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **15** | 6 × 5m, 8 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -82,6 +82,7 @@ them; the other two declare their pre-reset profile as their own):
 | `volexp_1h` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
 | `gapgo_5m` | wider of opening extreme / 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `gap_fill_failure_5m` | beyond failure pivot by 0.15 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
+| `initial_balance_5m` | IB midpoint, capped at 1.5 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `insidebar_15m` | below the inside bar's low | 2R | none |
 | `supertrend_15m` | at the Supertrend line | none (ride the state) | the Supertrend line itself (`column` trail) |
 | `cpr_reversal_15m` | below the rejection bar's low | the central floor pivot | none |
@@ -109,7 +110,7 @@ no capital constraint, fractional share quantities).
 
 ---
 
-## 2. Intraday strategies (14) — the current intraday library
+## 2. Intraday strategies (15) — the current intraday library
 
 ### 2.1 Opening Range Breakout — `orb_5m`
 
@@ -466,6 +467,15 @@ chandelier, full-fill/stagnation invalidation, and square-off. A stopped
 STRAT-04 trade may be followed by STRAT-05. See
 `docs/STRAT05_GAP_FILL_FAILURE_5M.md`.
 
+### 2.15 Initial Balance Breakout — `initial_balance_5m`
+
+STRAT-06 locks the first six 5-minute candles as an immutable 30-minute
+balance. A buffered break must pass ATR-width, asymmetric same-slot RVOL, VWAP,
+EMA, liquidity, NIFTY-IB, CPR, and time gates. It owns a collared fill,
+midpoint/ATR-capped stop, 1.5R half exit, breakeven, chandelier, VWAP and
+stagnation invalidation, and square-off. See
+`docs/STRAT06_INITIAL_BALANCE_5M.md`.
+
 ---
 
 ## 3. Removed non-intraday strategies
@@ -517,7 +527,7 @@ live order path exists in the repository at all (paper simulation only), so
 | 6 | Opening Drive | **Yes** (`opening_drive_5m`) | Not yet | Yes | Yes | STRAT-03 complete; sector cap awaits metadata |
 | 7 | Gap and Go | **Yes** (`gapgo_5m`) | Not yet | Yes | Yes | STRAT-04 complete; catalyst feed and sector cap unavailable |
 | 8 | First Pullback | **No** | No | No | No | Retired approximation; superseded by canonical STRAT-02 OR-boundary retest |
-| 9 | Initial Balance Breakout | **No** | No | No | No | Separate STRAT-06 implementation required; `orb_5m` is not parameterized as an IB substitute |
+| 9 | Initial Balance Breakout | **Yes** (`initial_balance_5m`) | Not yet | Yes | Yes | STRAT-06 complete; sector cap awaits metadata |
 | 10 | NR7 Intraday | **Yes** (`nr7_intraday_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 11 | Inside Bar Breakout | **Yes** (`insidebar_15m`, added 2026-07-19) | Not yet | No | No | — |
 | 12 | Volume Breakout | **No** | No | No | No | Strategy module (price break of recent high on volume surge, intraday). `volume_ratio` + breakout helpers exist |

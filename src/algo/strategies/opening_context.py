@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from algo.core.indicators import adx, atr, ema, session_vwap
+from algo.core.indicators import adx, atr, ema, opening_range, session_vwap
 from algo.strategies.cross_section import align_metric
 
 IST = "Asia/Kolkata"
@@ -83,6 +83,9 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
             nifty_session_open / nifty_prior - 1.0).to_numpy()
         nifty_exact["nifty_vwap"] = session_vwap(nifty)
         nifty_exact["nifty_close"] = nifty["close"].to_numpy()
+        nifty_ib_high, nifty_ib_low, _ = opening_range(nifty, 30)
+        nifty_exact["nifty_ib_high"] = nifty_ib_high.to_numpy()
+        nifty_exact["nifty_ib_low"] = nifty_ib_low.to_numpy()
         nifty_exact = nifty_exact.sort_values("date")
     trend = completed_15m_trend(nifty)
 
@@ -108,6 +111,8 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
             merged["nifty_close"] = np.nan
             merged["nifty_open"] = np.nan
             merged["nifty_gap_pct"] = np.nan
+            merged["nifty_ib_high"] = np.nan
+            merged["nifty_ib_low"] = np.nan
         if not trend.empty:
             merged = pd.merge_asof(merged.sort_values("date"), trend,
                                    on="date", direction="backward")
