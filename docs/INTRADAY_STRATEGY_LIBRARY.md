@@ -9,11 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **13 intraday strategies** via auto-discovery:
+registers **14 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **13** | 4 × 5m, 8 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **14** | 5 × 5m, 8 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -81,6 +81,7 @@ them; the other two declare their pre-reset profile as their own):
 | `pullback_15m` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
 | `volexp_1h` | wider of 2×ATR(14) / 10-bar swing low, 6% cap | none | chandelier 2×ATR + profit-lock ladder |
 | `gapgo_5m` | wider of opening extreme / 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
+| `gap_fill_failure_5m` | beyond failure pivot by 0.15 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `insidebar_15m` | below the inside bar's low | 2R | none |
 | `supertrend_15m` | at the Supertrend line | none (ride the state) | the Supertrend line itself (`column` trail) |
 | `cpr_reversal_15m` | below the rejection bar's low | the central floor pivot | none |
@@ -108,7 +109,7 @@ no capital constraint, fractional share quantities).
 
 ---
 
-## 2. Intraday strategies (13) — the current intraday library
+## 2. Intraday strategies (14) — the current intraday library
 
 ### 2.1 Opening Range Breakout — `orb_5m`
 
@@ -453,6 +454,17 @@ full-risk sizing. Execution is a collared confirmed fill with a directional
 drive stop, 1.5R partial, breakeven, chandelier, VWAP/no-progress invalidation,
 and square-off. A filled drive suppresses STRAT-01/02 for the session. See
 `docs/STRAT03_OPENING_DRIVE_5M.md`.
+
+### 2.14 Gap Fill Failure Reversal — `gap_fill_failure_5m`
+
+STRAT-05 is bidirectional on completed 5-minute bars. It requires a bounded
+opening gap, 25%–75% partial fill, preservation of the final 10% above/below
+the prior close, a directional reversal beyond the prior candle, same-slot
+RVOL, VWAP, liquidity, NIFTY trend, pivot-VWAP confluence, and the 09:25–11:00
+window. It owns a collared fill, pivot/ATR stop, 1.5R half exit, breakeven,
+chandelier, full-fill/stagnation invalidation, and square-off. A stopped
+STRAT-04 trade may be followed by STRAT-05. See
+`docs/STRAT05_GAP_FILL_FAILURE_5M.md`.
 
 ---
 

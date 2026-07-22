@@ -10,7 +10,7 @@ passed, 1 skipped._
 - [x] One pipeline; paper/live differ only in the execution adapter — proven by
       `test_paper_and_live_open_identical_positions_only_adapter_differs`.
 - [x] No duplicate paper/live logic; strategy-agnostic scanner/orchestrator.
-- [x] 13 intraday strategies discovered from the registry; auto-discovered.
+- [x] 14 intraday strategies discovered from the registry; auto-discovered.
 - [x] Execution specs, backtest engine, risk rules, trading rules — unchanged.
 - [x] Idempotent orders (deterministic client-order-id + `ordertag`).
 - [x] Bounded retries + circuit breaker + kill switch + daily-loss latch.

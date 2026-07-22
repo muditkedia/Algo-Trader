@@ -53,6 +53,7 @@ STRATEGY_NAMES = {
     "pullback_15m": "EMA Pullback Continuation",
     "volexp_1h": "Bollinger Squeeze Breakout (1h)",
     "gapgo_5m": "Gap & Go Acceleration (STRAT-04)",
+    "gap_fill_failure_5m": "Gap Fill Failure Reversal (STRAT-05)",
     "insidebar_15m": "Inside Bar Breakout",
     "supertrend_15m": "Supertrend Continuation",
     "cpr_reversal_15m": "CPR Reversal",
@@ -82,6 +83,9 @@ ENTRY_RULES = {
     "gapgo_5m": "A 1.0%-3.5% retained opening gap broke its first 5-minute "
                 "candle on exceptional opening RVOL with VWAP, EMA and "
                 "NIFTY-gap alignment",
+    "gap_fill_failure_5m": "A 25%-75% attempted gap fill held above the "
+                           "prior close and reversed on renewed RVOL with "
+                           "VWAP and NIFTY-trend alignment",
     "insidebar_15m": "An inside bar formed inside its mother bar and price "
                      "closed above the mother bar's high",
     "supertrend_15m": "Supertrend(10,3) state flipped bullish",

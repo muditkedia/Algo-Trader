@@ -1,6 +1,24 @@
 # Project State
 
-_Last updated: 2026-07-23 (STRAT-04 Gap & Go Acceleration)_
+_Last updated: 2026-07-23 (STRAT-05 Gap Fill Failure Reversal)_
+
+## STRAT-05 Gap Fill Failure Reversal complete (2026-07-23)
+
+`gap_fill_failure_5m` is the new sole STRAT-05 implementation. It is
+bidirectional and reconstructs the partial morning gap-fill pivot causally,
+enforcing gap size, 25%–75% penetration, the 10% no-full-fill boundary,
+reversal candle structure, same-slot RVOL, VWAP, liquidity, NIFTY trend, pivot
+VWAP confluence, and the 09:25–11:00 window. It owns its pivot/ATR stop, 1.5R
+partial, breakeven, chandelier, full-fill invalidation, stagnation exit, and
+square-off.
+
+No shared infrastructure was required. The strategy deliberately remains
+eligible after a stopped STRAT-04 trade. Full details and deviations are in
+`docs/STRAT05_GAP_FILL_FAILURE_5M.md`.
+
+Validation: Python compilation succeeded and the complete suite passed with
+812 tests. All 14 registered strategies passed the exit matrix and participated
+in scanning.
 
 ## STRAT-04 Gap & Go canonical replacement complete (2026-07-23)
 
@@ -90,7 +108,7 @@ framework remain intact for reproducibility, but no removed daily strategy is
 registered or executable.
 
 STRAT-01 through STRAT-03 are complete. Sequential implementation continues
-with STRAT-05.
+with STRAT-06.
 
 ## WebSocket market data - locally built candles are PRIMARY (2026-07-22)
 

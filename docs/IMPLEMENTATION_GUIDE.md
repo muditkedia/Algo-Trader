@@ -345,6 +345,16 @@ directional structural/ATR stop, 1.5R partial, breakeven, post-partial
 chandelier, VWAP invalidation, stagnation, and square-off. See
 `docs/STRAT04_GAP_GO_5M.md`.
 
+## 5C. Gap Fill Failure Reversal — `gap_fill_failure_5m`
+
+STRAT-05 is a new bidirectional 5-minute implementation. It tracks a 25%–75%
+attempted fill of a bounded opening gap, requires the pivot to preserve the
+last 10% of the gap, and enters only on a directional prior-bar break with
+same-slot RVOL, VWAP, NIFTY trend, liquidity, pivot-VWAP, and time alignment.
+It owns its collared fill, pivot/ATR stop, 1.5R partial, breakeven, chandelier,
+full-gap invalidation, stagnation, and square-off. A stopped STRAT-04 trade
+does not suppress it. See `docs/STRAT05_GAP_FILL_FAILURE_5M.md`.
+
 ## 6. EMA Pullback Continuation — `pullback_15m`
 
 1. **Original strategy name:** intraday EMA pullback (trend-pullback
