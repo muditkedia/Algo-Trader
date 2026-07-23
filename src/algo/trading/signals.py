@@ -55,6 +55,7 @@ class TradingSignal:
     timed_block_group: str = ""
     timed_block_until: str = ""
     blocked_by_timed_groups: tuple = ()
+    simultaneous_priority_over: tuple = ()
     atr_at_entry: float = 0.0
     structural_stop: float = 0.0
 
@@ -143,6 +144,7 @@ def build_signal(strategy, prepared: pd.DataFrame, index: int,
             minutes=strategy.meta.timed_block_minutes))
             if strategy.meta.timed_block_group else ""),
         blocked_by_timed_groups=strategy.meta.blocked_by_timed_groups,
+        simultaneous_priority_over=strategy.meta.simultaneous_priority_over,
         atr_at_entry=float(atr_value),
         structural_stop=float(row[(spec.stop_long_col
                                    if direction == Direction.LONG

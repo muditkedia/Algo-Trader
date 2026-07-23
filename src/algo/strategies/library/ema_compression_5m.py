@@ -17,7 +17,7 @@ from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
-    add_opening_market_context, local_dates, prior_session_metrics,
+    add_opening_market_context, local_dates, shared_5m_features,
 )
 
 
@@ -104,7 +104,7 @@ class EMACompressionBreakout(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         local = local_dates(df)
         day = local.dt.normalize()
         df["ema8"] = ema(df["close"], p.ema_fast)
@@ -128,9 +128,6 @@ class EMACompressionBreakout(StrategyProfile):
             lambda values: values.shift(1).rolling(
                 p.min_compression_bars,
                 min_periods=p.min_compression_bars).max())
-        df["vwap"] = session_vwap(df)
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
-        df["atr"] = atr(df, p.atr_period)
         candle_range = (df["high"] - df["low"]).replace(0.0, np.nan)
         df["body_range_ratio"] = (
             (df["close"] - df["open"]).abs() / candle_range)
@@ -144,9 +141,6 @@ class EMACompressionBreakout(StrategyProfile):
         df["bbw_at_low"] = prior_bbw <= prior_low
         df["plus_di"], df["minus_di"], df["adx14"] = directional_movement(
             df, p.atr_period)
-        prior_close, adt20, _, _ = prior_session_metrics(df)
-        df["prior_close"], df["adt20"] = prior_close, adt20
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         structural_long = (df["compression_low"]
                            - p.stop_buffer_atr * df["atr"])
         structural_short = (df["compression_high"]

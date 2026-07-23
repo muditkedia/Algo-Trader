@@ -7,7 +7,7 @@ Two optional source inputs cannot be reproduced consistently from the stored
 market data: historical bid/ask spread and point-in-time NIFTY50 constituent
 membership. Liquidity therefore receives the conservative five-point ADT score
 when the turnover floor is met (never the spread-dependent ten), and the live
-top-300 scan universe is the documented breadth proxy. No missing component is
+top-500 scan universe is the documented breadth proxy. No missing component is
 fabricated or rescaled.
 """
 
@@ -28,7 +28,7 @@ from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
-    add_opening_market_context, local_dates, prior_session_metrics,
+    add_opening_market_context, local_dates, shared_5m_features,
 )
 
 
@@ -67,6 +67,7 @@ class OpeningRangeBreakout(StrategyProfile):
         name="orb_5m", version="2.0.0", spec_id="STRAT-01",
         exclusive_group="opening_breakout", direction=Direction.BOTH,
         active_conflict_group="opening_or_retest",
+        blocked_by_pre_partial_groups=("dve_breakout",),
         blocked_by_session_groups=("opening_drive", "gap_go"),
         blocked_by_timed_groups=("liquidity_sweep",),
         holding_scope=HoldingScope.INTRADAY, timeframe="5m", min_bars=1502,
@@ -112,28 +113,20 @@ class OpeningRangeBreakout(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy()
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         or_high, or_low, after = opening_range(df, p.range_minutes)
         df["or_high"], df["or_low"], df["after_range"] = or_high, or_low, after
         df["or_mid"] = (or_high + or_low) / 2.0
         df["or_width"] = or_high - or_low
-        df["atr"] = atr(df, p.atr_period)
         df["atr_mean20"] = df["atr"].rolling(20, min_periods=20).mean()
         df["adx"] = adx(df, 14)
         df["roc20"] = roc(df["close"], 20)
         df["macd_hist"] = macd_histogram(df["close"])
-        df["ema9"], df["ema20"], df["ema50"] = (
-            ema(df["close"], 9), ema(df["close"], 20), ema(df["close"], 50))
-        df["vwap"] = session_vwap(df)
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
-        prior_close, adt20, gap_ratio, natr20 = prior_session_metrics(df)
-        df["prior_close"], df["adt20"], df["gap_ratio"], df["natr20"] = (
-            prior_close, adt20, gap_ratio, natr20)
+        df["ema50"] = ema(df["close"], 50)
         local = local_dates(df)
         day = local.dt.normalize()
         first_rvol = df["rvol"].where(~after).groupby(day).transform("first")
         df["opening_rvol"] = first_rvol
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         df["invalidate_long"] = df["close"] < df["vwap"]
         df["invalidate_short"] = df["close"] > df["vwap"]
         return df

@@ -194,6 +194,8 @@ class MarketState:
         self.mapping = None
         #: universe selection report, when the watchlist came from a spec
         self.universe_report = None
+        #: current constituent industry, used only by portfolio risk caps
+        self.sector_by_symbol: Dict[str, str] = {}
 
         self.cache_hits = 0
         self.cache_misses = 0

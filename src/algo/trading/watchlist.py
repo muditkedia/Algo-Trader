@@ -62,7 +62,7 @@ def build_watchlist(config, store: Optional[MarketDataStore] = None,
         return Watchlist(symbols=list(report.selected), report=report,
                          source="universe")
     if dynamic:
-            # daily data-driven universe: top-500 by market cap, ranked by
+            # daily data-driven universe: NIFTY500 pool ranked by
             # the previous session's liquidity (algo.universe.dynamic).
             # NEVER a silent fallback: failure or an empty selection is
             # stated loudly, with the static file named as the substitute.

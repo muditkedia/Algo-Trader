@@ -17,7 +17,7 @@ from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
-    add_opening_market_context, local_dates, prior_session_metrics,
+    add_opening_market_context, local_dates, shared_5m_features,
 )
 
 
@@ -92,7 +92,7 @@ class OpeningLiquiditySweep(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         df["or_high"], df["or_low"], df["after_or"] = opening_range(df, 5)
         _, prior_high, prior_low, prior_close = prior_session_ohlc(df)
         df["prior_high"], df["prior_low"] = prior_high, prior_low
@@ -101,9 +101,6 @@ class OpeningLiquiditySweep(StrategyProfile):
             [df["or_low"], prior_low], axis=1).max(axis=1)
         df["boundary_short"] = pd.concat(
             [df["or_high"], prior_high], axis=1).min(axis=1)
-        df["atr"] = atr(df, p.atr_period)
-        df["vwap"] = session_vwap(df)
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
         df["rsi"] = rsi(df["close"], 14)
         candle_range = (df["high"] - df["low"]).where(
             df["high"] != df["low"])
@@ -115,10 +112,6 @@ class OpeningLiquiditySweep(StrategyProfile):
         df["sweep_depth_short"] = df["high"] - df["boundary_short"]
         _, cpr_top, cpr_bottom = central_pivot_range(df)
         df["cpr_top"], df["cpr_bottom"] = cpr_top, cpr_bottom
-        _, adt20, _, _ = prior_session_metrics(df)
-        df["adt20"] = adt20
-        local = local_dates(df)
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         df["stop_long"] = df["low"] - p.stop_buffer_atr * df["atr"]
         df["stop_short"] = df["high"] + p.stop_buffer_atr * df["atr"]
         risk_long = df["close"] - df["stop_long"]

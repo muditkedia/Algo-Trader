@@ -59,6 +59,43 @@ def _entry_order(cid="c1", qty=100.0, risk_per_share=2.0,
                  risk_per_share=risk_per_share)
 
 
+def _sector_risk(mapping, deploy=300_000, **kw):
+    kw.setdefault("min_trade_allocation", 0.0)
+    kw.setdefault("max_daily_loss", 1_000_000.0)
+    limits = RiskLimits(deploy_today=deploy, **kw)
+    return AccountRiskEngine(limits, sector_by_symbol=mapping)
+
+
+def test_sector_cap_limits_combined_open_position_notional(tmp_path):
+    portfolio = _pf(tmp_path)
+    portfolio.add_position(_position(symbol="AAA", entry=100, stop=99,
+                                     qty=600))  # Rs 60k in BANK
+    risk = _sector_risk({"AAA": "BANK", "BBB": "BANK", "CCC": "IT"})
+    same_sector = risk.size_for(_signal(symbol="BBB", entry=100, stop=99),
+                                portfolio)
+    other_sector = risk.size_for(_signal(symbol="CCC", entry=100, stop=99),
+                                 portfolio)
+    assert same_sector == 150.0                 # Rs 15k left under 25% cap
+    assert other_sector == 750.0                # fresh sector's 25% cap
+
+
+def test_sector_cap_includes_working_entry_orders(tmp_path):
+    portfolio = _pf(tmp_path)
+    order = _entry_order(symbol="AAA", qty=700)
+    order.limit_price = 100.0                    # Rs 70k reserved in BANK
+    portfolio.record_order(order)
+    risk = _sector_risk({"AAA": "BANK", "BBB": "BANK"})
+    assert risk.size_for(_signal(symbol="BBB", entry=100, stop=99),
+                         portfolio) == 50.0
+
+
+def test_unknown_sector_preserves_existing_sizing(tmp_path):
+    portfolio = _pf(tmp_path)
+    risk = _sector_risk({"AAA": "BANK"})
+    assert risk.size_for(_signal(symbol="UNMAPPED", entry=100, stop=99),
+                         portfolio) == 1500.0
+
+
 # ============================================================== open risk
 
 def test_open_risk_is_quantity_times_distance_to_current_stop():

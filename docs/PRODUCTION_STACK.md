@@ -48,7 +48,7 @@ MarketDataFeed ─▶ Orchestrator ─▶ AccountRiskEngine ─▶ PortfolioEngi
 **Reused verbatim (not reimplemented):** `ExecutionSpec` + the engine's level
 helpers, `RiskParams` + `trailing_stop_price`, `SmartApiSession` /
 `SmartApiInstruments` / `SmartApiDataProvider`, `IngestionEngine` +
-`MarketDataStore`, the strategy registry + all 17 registered strategies. This is
+`MarketDataStore`, the strategy registry + all 20 registered strategies. This is
 what guarantees live/paper fills track the backtest.
 
 ## 2. Test summary

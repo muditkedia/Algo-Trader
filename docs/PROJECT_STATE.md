@@ -1,6 +1,26 @@
 # Project State
 
-_Last updated: 2026-07-23 (production engineering audit and dashboard pass)_
+_Last updated: 2026-07-23 (STRAT-11 to STRAT-13 and Top 500 phase)_
+
+## STRAT-11 to STRAT-13 and Top 500 complete (2026-07-23)
+
+The production library now contains 20 enabled intraday strategies: 13 on 5m,
+six on 15m, and one on 1h. Canonical bidirectional implementations were added
+for Donchian Volatility Expansion, Swing Structure Trend Continuation, and the
+Volatility Contraction Pattern. The dynamic universe target is now Top 500 by
+the unchanged existing selection and ranking methodology.
+
+Shared causal Donchian, confirmed-fractal, swing-structure, completed-15m
+structure, common 5m feature/context reuse, simultaneous priority, and
+sector-cap infrastructure were added. The SmartAPI QUOTE/local-candle path was
+verified and profiled before optimization; no acquisition or backfill ran.
+Architecture, deviations, timings, scalability, and validation are recorded in
+`docs/PHASE2_STRAT11_13_TOP500.md`.
+
+Validation: Python compilation succeeded and the complete suite passed with
+895 tests. All 20 registered strategies participated in scanning and passed
+the exit-engine matrix; Top 500 selection, dashboard export, paper execution,
+risk, persistence, and recovery checks passed.
 
 ## Production engineering audit and dashboard pass (2026-07-23)
 

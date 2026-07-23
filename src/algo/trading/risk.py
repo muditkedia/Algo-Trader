@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Mapping, Optional
 
 from algo.core.logging import get_logger
 from algo.trading.config import MAX_PER_TRADE_FRACTION, RiskLimits
@@ -103,13 +103,43 @@ def order_reserved_risk(order) -> float:
 
 
 class AccountRiskEngine:
-    def __init__(self, limits: RiskLimits, kill_switch_file: Optional[str] = None
-                 ) -> None:
+    def __init__(
+        self,
+        limits: RiskLimits,
+        kill_switch_file: Optional[str] = None,
+        sector_by_symbol: Optional[
+            Callable[[str], Optional[str]] | Mapping[str, str]
+        ] = None,
+    ) -> None:
         self.limits = limits
         self.kill_switch_file = kill_switch_file
         self.error_streak = 0
         self.tripped = False           # circuit breaker / emergency latched
         self.trip_reason = ""
+        if callable(sector_by_symbol):
+            self._sector_for = sector_by_symbol
+        else:
+            mapping = sector_by_symbol or {}
+            self._sector_for = lambda symbol: mapping.get(symbol)
+
+    def _sector_cap_remaining(self, symbol: str, portfolio) -> Optional[float]:
+        """Capital left under the configured sector cap, including orders."""
+        sector = self._sector_for(symbol)
+        if not sector or not self.limits.max_sector_allocation:
+            return None
+        committed = sum(
+            float(p.entry_price) * float(p.open_quantity)
+            for p in portfolio.open_positions()
+            if self._sector_for(p.symbol) == sector)
+        from algo.trading.models import TERMINAL
+        committed += sum(
+            max(0.0, float(o.quantity) - float(o.filled_quantity))
+            * float(o.limit_price or o.trigger_price or 0.0)
+            for o in portfolio.orders.values()
+            if o.intent == "entry" and o.status not in TERMINAL
+            and self._sector_for(o.symbol) == sector)
+        cap = self.limits.deploy_today * self.limits.max_sector_allocation
+        return max(0.0, cap - committed)
 
     # ------------------------------------------------------ circuit state
 
@@ -257,13 +287,22 @@ class AccountRiskEngine:
                        f"{state.realized_loss:,.0f} of "
                        f"{L.max_daily_loss:,.0f}")
 
+        sector_remaining = self._sector_cap_remaining(signal.symbol, portfolio)
+        if sector_remaining is not None and sector_remaining <= 0:
+            sector = self._sector_for(signal.symbol) or "UNKNOWN"
+            return RiskDecision(
+                False, f"sector allocation cap reached: {sector} is at "
+                       f"{L.max_sector_allocation:.0%} of deploy_today")
+
         qty = self.size_for(signal, portfolio)
         if qty < 1:
             # distinguish "too small to be worth taking" from "cannot afford
             # a single lot" - they call for opposite operator responses
             unconstrained = self.position_size(
                 signal, available=state.available_capital,
-                risk_budget=state.remaining, apply_minimum=False)
+                risk_budget=state.remaining, apply_minimum=False,
+                capital_limit=self._sector_cap_remaining(
+                    signal.symbol, portfolio))
             if unconstrained >= 1 and L.min_per_trade > 0:
                 return RiskDecision(
                     False,
@@ -297,11 +336,14 @@ class AccountRiskEngine:
         """
         state = self.risk_state(portfolio)
         return self.position_size(signal, available=state.available_capital,
-                                  risk_budget=state.remaining)
+                                  risk_budget=state.remaining,
+                                  capital_limit=self._sector_cap_remaining(
+                                      signal.symbol, portfolio))
 
     def position_size(self, signal, available: Optional[float] = None,
                       risk_budget: Optional[float] = None,
-                      apply_minimum: bool = True) -> float:
+                      apply_minimum: bool = True,
+                      capital_limit: Optional[float] = None) -> float:
         """Final quantity for an entry, satisfying EVERY constraint at once.
 
         The strategy's own stop (from its frozen ExecutionSpec) drives the
@@ -332,7 +374,9 @@ class AccountRiskEngine:
             L.max_per_trade,
             L.deploy_today * strategy_cap if strategy_cap is not None
             else L.max_per_trade,
-            max(available, 0.0))
+            max(available, 0.0),
+            (max(0.0, float(capital_limit))
+             if capital_limit is not None else L.deploy_today))
         qty = capital_allowed / entry
 
         # portfolio risk constraint: (entry - stop) x qty <= remaining budget

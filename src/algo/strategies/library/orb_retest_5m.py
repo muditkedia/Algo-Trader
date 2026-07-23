@@ -7,7 +7,7 @@ state or a second persistence store.
 
 Historical spread and point-in-time sector membership are unavailable. As in
 STRAT-01, liquidity receives at most the conservative five-point ADT score and
-the live top-300 scan universe supplies the documented breadth proxy.
+the live top-500 scan universe supplies the documented breadth proxy.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
     add_opening_market_context, completed_15m_adx, local_dates,
-    prior_session_metrics,
+    shared_5m_features,
 )
 
 
@@ -70,6 +70,8 @@ class OpeningRangeRetest(StrategyProfile):
     meta = StrategyMeta(
         name="orb_retest_5m", version="2.0.0", spec_id="STRAT-02",
         active_conflict_group="opening_or_retest", direction=Direction.BOTH,
+        active_block_group="orb_retest_owner",
+        simultaneous_priority_over=("swing_structure_trend_5m",),
         blocked_by_session_groups=("opening_drive", "gap_go"),
         holding_scope=HoldingScope.INTRADAY, timeframe="5m", min_bars=1505,
         required_columns=(
@@ -119,21 +121,12 @@ class OpeningRangeRetest(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         or_high, or_low, after = opening_range(df, p.range_minutes)
         df["or_high"], df["or_low"], df["after_range"] = or_high, or_low, after
-        df["atr"] = atr(df, p.atr_period)
         df["atr_mean20"] = df["atr"].rolling(20, min_periods=20).mean()
         df["roc20"] = roc(df["close"], 20)
         df["macd_hist"] = macd_histogram(df["close"])
-        df["ema9"], df["ema20"] = ema(df["close"], 9), ema(df["close"], 20)
-        df["vwap"] = session_vwap(df)
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
-        prior_close, adt20, gap_ratio, natr20 = prior_session_metrics(df)
-        df["prior_close"], df["adt20"], df["gap_ratio"], df["natr20"] = (
-            prior_close, adt20, gap_ratio, natr20)
-        local = local_dates(df)
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
 
         adx15 = completed_15m_adx(df)
         if not adx15.empty:
@@ -151,7 +144,13 @@ class OpeningRangeRetest(StrategyProfile):
         return df
 
     def _track_states(self, df: pd.DataFrame) -> None:
-        """Reconstruct both deterministic breakout/retest state machines."""
+        """Reconstruct both deterministic breakout/retest state machines.
+
+        The state transitions are intentionally identical to the original
+        implementation.  NumPy buffers replace thousands of ``df.loc`` /
+        ``df.at`` scalar operations and are assigned once at the end; this was
+        the largest strategy-local cost in the measured 5-minute scan.
+        """
         p = self.settings
         n = len(df)
         float_cols = [
@@ -160,101 +159,115 @@ class OpeningRangeRetest(StrategyProfile):
         bool_cols = ["breakout_state", "retest_touched", "level_hold",
                      "trigger_base", "trigger_attempt", "depth_failure",
                      "timeout_failure"]
-        for suffix in ("long", "short"):
-            for col in float_cols:
-                df[f"{col}_{suffix}"] = np.nan
-            for col in bool_cols:
-                df[f"{col}_{suffix}"] = False
+        values = {
+            suffix: {
+                **{col: np.full(n, np.nan, dtype=float)
+                   for col in float_cols},
+                **{col: np.zeros(n, dtype=bool) for col in bool_cols},
+            } for suffix in ("long", "short")
+        }
+        opened = df["open"].to_numpy(dtype=float)
+        high = df["high"].to_numpy(dtype=float)
+        low = df["low"].to_numpy(dtype=float)
+        close = df["close"].to_numpy(dtype=float)
+        volume = df["volume"].to_numpy(dtype=float)
+        atr_values = df["atr"].to_numpy(dtype=float)
+        after = df["after_range"].to_numpy(dtype=bool)
+        or_high = df["or_high"].to_numpy(dtype=float)
+        or_low = df["or_low"].to_numpy(dtype=float)
 
-        day = local_dates(df).dt.normalize()
-        for _, session in df.groupby(day, sort=False):
-            positions = list(session.index)
+        day = local_dates(df).dt.normalize().to_numpy()
+        for session_day in pd.unique(day):
+            positions = np.flatnonzero(day == session_day)
             states = {
                 "long": {"active": False, "done": False},
                 "short": {"active": False, "done": False},
             }
             for pos in positions:
-                row = df.loc[pos]
-                if not bool(row["after_range"]) or not np.isfinite(row["atr"]):
+                if not after[pos] or not np.isfinite(atr_values[pos]):
                     continue
                 for suffix, sign in (("long", 1.0), ("short", -1.0)):
                     state = states[suffix]
-                    boundary = float(row["or_high"] if sign > 0
-                                     else row["or_low"])
+                    out = values[suffix]
+                    boundary = or_high[pos] if sign > 0 else or_low[pos]
                     threshold = boundary * (1 + sign * p.breakout_buffer_pct)
-                    broke = (row["close"] > threshold if sign > 0
-                             else row["close"] < threshold)
+                    broke = (close[pos] > threshold if sign > 0
+                             else close[pos] < threshold)
                     if not state["active"]:
                         if not state["done"] and broke:
                             state.update(
                                 active=True, break_pos=pos,
-                                break_atr=float(row["atr"]),
-                                break_volume=float(row["volume"]),
-                                extreme=float(row["high"] if sign > 0
-                                              else row["low"]),
+                                break_atr=atr_values[pos],
+                                break_volume=volume[pos],
+                                extreme=high[pos] if sign > 0 else low[pos],
                                 pivot=np.nan, touched=False,
                                 volume_sum=0.0, volume_count=0)
-                            df.at[pos, f"breakout_state_{suffix}"] = True
+                            out["breakout_state"][pos] = True
                         continue
 
                     bars = pos - state["break_pos"]
                     if bars > p.max_retest_bars:
-                        df.at[pos, f"timeout_failure_{suffix}"] = True
+                        out["timeout_failure"][pos] = True
                         state.update(active=False, done=True)
                         continue
-                    state["extreme"] = (max(state["extreme"], float(row["high"]))
+                    state["extreme"] = (max(state["extreme"], high[pos])
                                         if sign > 0 else
-                                        min(state["extreme"], float(row["low"])))
+                                        min(state["extreme"], low[pos]))
                     extension = sign * (state["extreme"] - boundary)
-                    depth_limit = (boundary - p.max_retest_depth_atr * row["atr"]
+                    depth_limit = (boundary - p.max_retest_depth_atr * atr_values[pos]
                                    if sign > 0 else
-                                   boundary + p.max_retest_depth_atr * row["atr"])
-                    violated = (row["close"] < depth_limit if sign > 0
-                                else row["close"] > depth_limit)
+                                   boundary + p.max_retest_depth_atr * atr_values[pos])
+                    violated = (close[pos] < depth_limit if sign > 0
+                                else close[pos] > depth_limit)
                     if violated:
-                        df.at[pos, f"depth_failure_{suffix}"] = True
+                        out["depth_failure"][pos] = True
                         state.update(active=False, done=True)
                         continue
 
                     touched_before = state["touched"]
                     zone = boundary * (1 + sign * p.retest_tolerance_pct)
-                    touched_now = (row["low"] <= zone if sign > 0
-                                   else row["high"] >= zone)
+                    touched_now = (low[pos] <= zone if sign > 0
+                                   else high[pos] >= zone)
                     if touched_now:
                         state["touched"] = True
                     state["pivot"] = (
-                        float(row["low"] if sign > 0 else row["high"])
+                        low[pos] if sign > 0 else high[pos]
                         if not np.isfinite(state["pivot"]) else
-                        (min(state["pivot"], float(row["low"])) if sign > 0
-                         else max(state["pivot"], float(row["high"]))))
+                        (min(state["pivot"], low[pos]) if sign > 0
+                         else max(state["pivot"], high[pos])))
                     pullback_avg = (state["volume_sum"] / state["volume_count"]
                                     if state["volume_count"] else np.nan)
-                    previous = df.iloc[pos - 1]
-                    candle_direction = (row["close"] > row["open"] if sign > 0
-                                        else row["close"] < row["open"])
-                    resumed = (row["close"] > previous["high"] if sign > 0
-                               else row["close"] < previous["low"])
+                    candle_direction = (close[pos] > opened[pos] if sign > 0
+                                        else close[pos] < opened[pos])
+                    resumed = (close[pos] > high[pos - 1] if sign > 0
+                               else close[pos] < low[pos - 1])
                     attempt = bool(touched_before and candle_direction and resumed)
                     extended = extension >= p.min_breakout_ext_atr * state["break_atr"]
 
-                    df.at[pos, f"breakout_state_{suffix}"] = True
-                    df.at[pos, f"wave_extension_{suffix}"] = extension
-                    df.at[pos, f"retest_pivot_{suffix}"] = state["pivot"]
-                    df.at[pos, f"breakout_volume_{suffix}"] = state["break_volume"]
-                    df.at[pos, f"pullback_avg_volume_{suffix}"] = pullback_avg
-                    df.at[pos, f"retest_bars_{suffix}"] = bars
-                    df.at[pos, f"retest_touched_{suffix}"] = state["touched"]
-                    df.at[pos, f"level_hold_{suffix}"] = True
-                    df.at[pos, f"trigger_attempt_{suffix}"] = attempt
-                    df.at[pos, f"trigger_base_{suffix}"] = attempt and extended
-                    stop = (state["pivot"] - p.stop_buffer_atr * row["atr"]
+                    out["breakout_state"][pos] = True
+                    out["wave_extension"][pos] = extension
+                    out["retest_pivot"][pos] = state["pivot"]
+                    out["breakout_volume"][pos] = state["break_volume"]
+                    out["pullback_avg_volume"][pos] = pullback_avg
+                    out["retest_bars"][pos] = bars
+                    out["retest_touched"][pos] = state["touched"]
+                    out["level_hold"][pos] = True
+                    out["trigger_attempt"][pos] = attempt
+                    out["trigger_base"][pos] = attempt and extended
+                    stop = (state["pivot"] - p.stop_buffer_atr * atr_values[pos]
                             if sign > 0 else
-                            state["pivot"] + p.stop_buffer_atr * row["atr"])
-                    df.at[pos, f"retest_stop_{suffix}"] = stop
+                            state["pivot"] + p.stop_buffer_atr * atr_values[pos])
+                    out["retest_stop"][pos] = stop
 
                     if state["touched"] and not attempt:
-                        state["volume_sum"] += float(row["volume"])
+                        state["volume_sum"] += volume[pos]
                         state["volume_count"] += 1
+
+        for suffix in ("long", "short"):
+            for col in float_cols:
+                df[f"{col}_{suffix}"] = values[suffix][col]
+            for col in bool_cols:
+                df[f"{col}_{suffix}"] = values[suffix][col]
 
     def prepare_context(self, frames: dict, context: dict) -> dict:
         add_opening_market_context(frames, context)

@@ -19,7 +19,7 @@ Builds the DAILY trading universe the scanner subscribes to:
             session when no daily series exists). ``liquidity_metric`` may
             be "traded_value" (default), "turnover" (uses the daily bar's
             turnover column when the store has one) or "volume".
-    STEP 5  select the top ``size`` (default 300).
+    STEP 5  select the top ``size`` (default 500).
 
 The result is persisted VERSIONED under ``user_data/universe/`` as
 ``dynamic-YYYY-MM-DD.json`` plus a stable pointer file ``dynamic_current.txt``
@@ -57,7 +57,7 @@ class DynamicUniverseSpec:
     """Everything configurable about the daily universe."""
 
     #: final universe size (STEP 5)
-    size: int = 300
+    size: int = 500
     #: market-cap pool cut (STEP 3)
     mcap_pool_size: int = 500
     #: liquidity ranking metric (STEP 4)
@@ -83,8 +83,8 @@ class DynamicUniverseSpec:
         return spec
 
 
-def load_mcap_pool(spec: DynamicUniverseSpec) -> List[str]:
-    """STEP 1+2: the official market-cap pool, EQ series only, in file order."""
+def load_mcap_metadata(spec: DynamicUniverseSpec) -> tuple[List[str], Dict[str, str]]:
+    """Official EQ pool plus current industry labels, in file order."""
     pattern = Path(spec.mcap_source)
     candidates = sorted(pattern.parent.glob(pattern.name))
     if not candidates:
@@ -92,15 +92,23 @@ def load_mcap_pool(spec: DynamicUniverseSpec) -> List[str]:
             f"no market-cap constituent file matches {spec.mcap_source}")
     path = candidates[-1]
     symbols: List[str] = []
+    sectors: Dict[str, str] = {}
     with path.open(encoding="utf-8-sig", newline="") as fh:
         for row in csv.DictReader(fh):
             series = (row.get("Series") or "").strip().upper()
             symbol = (row.get("Symbol") or "").strip().upper()
             if symbol and series == "EQ":
                 symbols.append(symbol)
+                sectors[symbol] = (row.get("Industry") or "UNKNOWN").strip() \
+                    or "UNKNOWN"
     logger.info("market-cap pool: %d EQ constituents from %s",
                 len(symbols), path.name)
-    return symbols
+    return symbols, sectors
+
+
+def load_mcap_pool(spec: DynamicUniverseSpec) -> List[str]:
+    """STEP 1+2 compatibility surface: EQ symbols in official file order."""
+    return load_mcap_metadata(spec)[0]
 
 
 def rank_metrics(store, symbols: Sequence[str],
@@ -143,7 +151,7 @@ def build_dynamic_universe(store, spec: DynamicUniverseSpec,
                            asof: Optional[date] = None) -> UniverseReport:
     """Run STEP 1-5 and return the selection with a full audit trail."""
     report = UniverseReport(tier="dynamic", target_size=int(spec.size))
-    pool = load_mcap_pool(spec)
+    pool, sectors = load_mcap_metadata(spec)
     excluded = {s.upper() for s in spec.exclude}
     pool = [s for s in pool if s not in excluded]
 
@@ -173,6 +181,8 @@ def build_dynamic_universe(store, spec: DynamicUniverseSpec,
 
     ranked = metrics.sort_values("liquidity", ascending=False)
     report.selected = list(ranked.index[:int(spec.size)])
+    report.sectors = {symbol: sectors.get(symbol, "UNKNOWN")
+                      for symbol in report.selected}
     report.notes.append(
         f"ranked by previous session's {spec.liquidity_metric}")
     if report.short_of_target:
@@ -223,6 +233,15 @@ def load_universe(spec: DynamicUniverseSpec,
         return None
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
+        saved = payload.get("spec", {})
+        expected = {"size": spec.size,
+                    "mcap_pool_size": spec.mcap_pool_size,
+                    "liquidity_metric": spec.liquidity_metric,
+                    "mcap_source": spec.mcap_source}
+        if any(saved.get(key) != value for key, value in expected.items()):
+            logger.info("%s was built for a different universe spec - "
+                        "rebuilding", path.name)
+            return None
         symbols = [str(s).upper() for s in payload.get("symbols", [])]
         return symbols or None
     except Exception as exc:
@@ -240,9 +259,12 @@ def load_or_build(store, spec: DynamicUniverseSpec, instruments=None,
     day = day or date.today()
     existing = load_universe(spec, day)
     if existing:
+        _, sectors = load_mcap_metadata(spec)
         report = UniverseReport(tier="dynamic", target_size=int(spec.size),
                                 selected=existing,
-                                candidates=len(existing))
+                                candidates=len(existing),
+                                sectors={s: sectors.get(s, "UNKNOWN")
+                                         for s in existing})
         report.notes.append(f"loaded from {universe_path(spec, day).name}")
         return report
     report = build_dynamic_universe(store, spec, instruments=instruments,
@@ -283,10 +305,14 @@ class DailyUniverseRefresher:
             return None
         current = list(engine.state.symbols)
         symbols = list(report.selected)
+        # Metadata belongs to the daily universe snapshot even when the
+        # selected symbols are unchanged.  Refresh it before the fast path so
+        # updated classifications cannot leave sector-risk checks stale.
+        engine.state.universe_report = report
+        engine.state.sector_by_symbol = dict(report.sectors)
         if symbols == current:
             return None
         engine.marketdata.set_symbols(symbols)
-        engine.state.universe_report = report
         if source is not None and hasattr(source, "resubscribe"):
             source.resubscribe(symbols)
         logger.info("universe refreshed for %s: %d symbols (%+d)",

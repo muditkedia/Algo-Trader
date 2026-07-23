@@ -102,7 +102,10 @@ class ProductionEngine:
         self.state = self.marketdata.state
         self.adapter = adapter or build_adapter(
             config, clock=self.clock, session=session, instruments=instruments)
-        self.risk = AccountRiskEngine(config.risk, config.kill_switch_file)
+        self.risk = AccountRiskEngine(
+            config.risk, config.kill_switch_file,
+            sector_by_symbol=lambda symbol: self.state.sector_by_symbol.get(
+                symbol))
         self.orders = OrderManager(self.adapter, self.portfolio, self.events,
                                    risk=self.risk)
         self.orchestrator = Orchestrator(self.strategies, self.state,
@@ -171,6 +174,8 @@ class ProductionEngine:
             max_requests_per_poll=config.max_requests_per_poll,
             poll_budget_seconds=config.poll_budget_seconds)
         service.state.universe_report = report
+        service.state.sector_by_symbol = dict(
+            getattr(report, "sectors", {}) if report is not None else {})
         service.state.context_symbols = context_symbols
         if state is not None:
             # keep the caller's object identity: tests hold a reference to it
@@ -178,6 +183,8 @@ class ProductionEngine:
             state.set_symbols(symbols)
             state.context_symbols = context_symbols
             state.universe_report = report
+            if report is not None:
+                state.sector_by_symbol = dict(getattr(report, "sectors", {}))
             if getattr(state, "mapping", None) is None:
                 state.mapping = service.source.mapping_report()
             service.state = state

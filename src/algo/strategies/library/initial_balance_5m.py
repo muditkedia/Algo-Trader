@@ -16,7 +16,7 @@ from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
-    add_opening_market_context, local_dates, prior_session_metrics,
+    add_opening_market_context, local_dates, shared_5m_features,
 )
 
 
@@ -91,21 +91,13 @@ class InitialBalanceBreakout(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         df["ib_high"], df["ib_low"], df["after_ib"] = opening_range(
             df, p.ib_duration_mins)
         df["ib_mid"] = (df["ib_high"] + df["ib_low"]) / 2.0
         df["ib_width"] = df["ib_high"] - df["ib_low"]
-        df["atr"] = atr(df, p.atr_period)
-        df["vwap"] = session_vwap(df)
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
-        df["ema9"], df["ema20"] = ema(df["close"], 9), ema(df["close"], 20)
         _, cpr_top, cpr_bottom = central_pivot_range(df)
         df["cpr_top"], df["cpr_bottom"] = cpr_top, cpr_bottom
-        prior_close, adt20, _, _ = prior_session_metrics(df)
-        df["prior_close"], df["adt20"] = prior_close, adt20
-        local = local_dates(df)
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         df["invalidate_long"] = df["close"] < df["vwap"]
         df["invalidate_short"] = df["close"] > df["vwap"]
         return df

@@ -1,6 +1,6 @@
 # SCAN UNIVERSE & STRATEGY ACTIVATION
 
-_Written 2026-07-20; strategy inventory updated 2026-07-22. Answers three
+_Written 2026-07-20; strategy inventory updated 2026-07-23. Answers three
 operator questions: how many symbols the engine scans and why, how the universe
 is configured, and which intraday strategies participate in scanning._
 
@@ -72,12 +72,18 @@ universe[production] 335/1000 symbols from 745 candidates
         data today - widen the sources or download more history
 ```
 
-## 3. Strategy activation: 17 registered, 17 scanning
+## 3. Strategy activation: 20 registered, 20 scanning
 
-The production library now contains only the 17 enabled intraday strategies
-(10 x 5m, 6 x 15m, 1 x 1h). All 17 declare `HoldingScope.INTRADAY`, are discovered
+The production library now contains only the 20 enabled intraday strategies
+(13 x 5m, 6 x 15m, 1 x 1h). All 20 declare `HoldingScope.INTRADAY`, are discovered
 automatically, and participate in live scanning. No daily, swing, positional,
 or overnight strategy remains registered.
+
+The default dynamic specification selects the Top 500 using the same market-cap
+candidate pool, liquidity/quality gates, ADTV ranking, daily refresh,
+persistence, and watchlist integration previously used for Top 300. See
+`docs/PHASE2_STRAT11_13_TOP500.md` for the code-only expansion and measured
+capacity assessment; no historical acquisition was performed in that phase.
 
 The engine still enforces its intraday invariant independently of registration:
 new entries stop at the cutoff and every open position is squared off before

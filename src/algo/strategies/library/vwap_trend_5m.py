@@ -14,7 +14,7 @@ from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
-    completed_15m_adx, local_dates, prior_session_metrics,
+    completed_15m_adx, local_dates, shared_5m_features,
 )
 
 
@@ -88,15 +88,11 @@ class VwapTrendContinuation(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         local = local_dates(df)
         day = local.dt.normalize()
-        df["vwap"] = session_vwap(df)
         df["vwap_slope_pct"] = df["vwap"].groupby(day).pct_change(3) * 100.0
-        df["ema9"], df["ema20"], df["ema50"] = (
-            ema(df["close"], 9), ema(df["close"], 20), ema(df["close"], 50))
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
-        df["atr"] = atr(df, p.atr_period)
+        df["ema50"] = ema(df["close"], 50)
         df["pivot_low"] = (df["low"].groupby(day).rolling(
             3, min_periods=1).min().reset_index(level=0, drop=True))
         df["pivot_high"] = (df["high"].groupby(day).rolling(
@@ -107,15 +103,12 @@ class VwapTrendContinuation(StrategyProfile):
             np.minimum(df["open"], df["close"]) - df["low"]) / candle_range
         df["upper_wick_ratio"] = (
             df["high"] - np.maximum(df["open"], df["close"])) / candle_range
-        prior_close, adt20, _, _ = prior_session_metrics(df)
-        df["prior_close"], df["adt20"] = prior_close, adt20
         adx15 = completed_15m_adx(df)
         if not adx15.empty:
             df = pd.merge_asof(df.sort_values("date"), adx15,
                                on="date", direction="backward")
         else:
             df["adx15"] = np.nan
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         df["stop_long"] = np.minimum(
             df["pivot_low"] - p.stop_pivot_buffer_atr * df["atr"],
             df["vwap"] - p.stop_vwap_buffer_atr * df["atr"])

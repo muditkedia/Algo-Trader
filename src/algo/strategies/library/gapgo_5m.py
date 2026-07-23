@@ -16,7 +16,7 @@ from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
-    add_opening_market_context, local_dates, prior_session_metrics,
+    add_opening_market_context, local_dates, shared_5m_features,
 )
 
 
@@ -90,7 +90,7 @@ class GapAndGo(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         local = local_dates(df)
         day = local.dt.normalize()
         opening_high, opening_low, after = opening_range(df, 5)
@@ -98,14 +98,8 @@ class GapAndGo(StrategyProfile):
         df["after_opening"] = after
         df["opening_open"] = df["open"].groupby(day).transform("first")
         df["opening_close"] = df["close"].groupby(day).transform("first")
-        df["vwap"] = session_vwap(df)
-        df["atr"] = atr(df, p.atr_period)
-        df["ema9"], df["ema20"] = ema(df["close"], 9), ema(df["close"], 20)
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
         df["opening_rvol"] = df["rvol"].where(~after).groupby(day).transform(
             "first")
-        prior_close, adt20, _, _ = prior_session_metrics(df)
-        df["prior_close"], df["adt20"] = prior_close, adt20
         df["gap_pct"] = df["opening_open"] / df["prior_close"] - 1.0
         gap_distance = (df["opening_open"] - df["prior_close"]).abs()
         df["retained_long"] = (
@@ -114,7 +108,6 @@ class GapAndGo(StrategyProfile):
         df["retained_short"] = (
             df["opening_high"] < df["prior_close"]
             - (1.0 - p.max_gap_fill_pct) * gap_distance)
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         df["stop_long"] = np.minimum(
             df["opening_low"], df["close"] - p.max_stop_atr * df["atr"])
         df["stop_short"] = np.maximum(

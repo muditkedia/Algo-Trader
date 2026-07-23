@@ -93,6 +93,9 @@ class UniverseReport:
     candidates: int = 0
     dropped: Dict[str, int] = field(default_factory=dict)
     notes: List[str] = field(default_factory=list)
+    #: Current constituent industry classification for risk allocation.  The
+    #: mapping is operational metadata, not a selection/ranking input.
+    sectors: Dict[str, str] = field(default_factory=dict)
 
     @property
     def size(self) -> int:
@@ -106,7 +109,8 @@ class UniverseReport:
         return {"tier": self.tier, "target_size": self.target_size,
                 "size": self.size, "candidates": self.candidates,
                 "dropped": self.dropped, "notes": self.notes,
-                "short_of_target": self.short_of_target}
+                "short_of_target": self.short_of_target,
+                "sectors": dict(self.sectors)}
 
     def summary(self) -> str:
         lines = [f"universe[{self.tier}] {self.size}/{self.target_size} symbols "

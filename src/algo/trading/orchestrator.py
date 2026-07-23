@@ -28,6 +28,9 @@ from algo.core.indicators import atr as atr_series
 from algo.core.logging import get_logger
 from algo.risk.engine import RiskParams
 from algo.trading.signals import TradingSignal, build_signal
+from algo.strategies.opening_context import (
+    add_opening_market_context, shared_5m_features,
+)
 
 logger = get_logger("trading.orchestrator")
 
@@ -73,8 +76,18 @@ class Orchestrator:
             return signals
         raw = {symbol: self.state.history(symbol, timeframe)
                for symbol in self._symbols(timeframe)}
+        minimum_history = min(strat.min_history() for strat in strategies)
         raw = {symbol: frame for symbol, frame in raw.items()
-               if not frame.empty}
+               if not frame.empty and len(frame) >= minimum_history}
+        if timeframe == "5m" and raw:
+            raw = {symbol: shared_5m_features(frame)
+                   for symbol, frame in raw.items()}
+            requested = {name for strat in strategies
+                         for name in strat.context_symbols}
+            if "NIFTY50" in requested:
+                nifty = self.state.history("NIFTY50", timeframe)
+                raw = add_opening_market_context(
+                    raw, {"NIFTY50": nifty}, inplace=False)
         for strat in strategies:
             prepared = {}
             for symbol, frame in raw.items():
@@ -104,6 +117,19 @@ class Orchestrator:
                 self.diagnostics.extend(strat.signal_diagnostics(frame, symbol))
                 signals.extend(self._evaluate_prepared(
                     strat, frame, symbol, timeframe))
+
+        return self._resolve_signals(signals)
+
+    @staticmethod
+    def _resolve_signals(signals: List[TradingSignal]) -> List[TradingSignal]:
+        """Apply declared suppression/conflict rules and portfolio ordering."""
+        # Resolve explicit same-bar strategy priority before opposite-direction
+        # confidence conflicts and global portfolio ranking.
+        suppressed = {(sig.symbol, owned)
+                      for sig in signals
+                      for owned in sig.simultaneous_priority_over}
+        signals = [sig for sig in signals
+                   if (sig.symbol, sig.strategy) not in suppressed]
 
         # Resolve opposite-direction conflicts by confidence before portfolio
         # allocation, then honor the specification priority metric globally.

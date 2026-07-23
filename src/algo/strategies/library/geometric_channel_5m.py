@@ -15,7 +15,7 @@ from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
     add_opening_market_context, completed_15m_channel_slope, local_dates,
-    prior_session_metrics, session_linear_channel,
+    session_linear_channel, shared_5m_features,
 )
 
 
@@ -99,7 +99,7 @@ class GeometricChannelContinuation(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         local = local_dates(df)
         day = local.dt.normalize()
         channel = session_linear_channel(
@@ -111,16 +111,10 @@ class GeometricChannelContinuation(StrategyProfile):
         df["channel_upper"] = channel["upper"]
         df["channel_lower"] = channel["lower"]
         df["channel_width"] = df["channel_upper"] - df["channel_lower"]
-        df["vwap"] = session_vwap(df)
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
-        df["atr"] = atr(df, p.atr_period)
         df["pivot_low"] = df["low"].groupby(day).transform(
             lambda values: values.rolling(3, min_periods=1).min())
         df["pivot_high"] = df["high"].groupby(day).transform(
             lambda values: values.rolling(3, min_periods=1).max())
-        prior_close, adt20, _, _ = prior_session_metrics(df)
-        df["prior_close"], df["adt20"] = prior_close, adt20
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         df["stop_long"] = np.minimum(
             df["channel_lower"] - p.channel_stop_buffer_atr * df["atr"],
             df["pivot_low"] - p.pivot_stop_buffer_atr * df["atr"])

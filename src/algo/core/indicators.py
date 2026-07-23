@@ -125,6 +125,107 @@ def volume_ratio(volume: pd.Series, window: int = 20) -> pd.Series:
     return volume / mean
 
 
+def donchian_channel(frame: pd.DataFrame, lookback: int = 20,
+                     groups: pd.Series | None = None
+                     ) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """Prior-only Donchian upper, lower and midpoint.
+
+    Row ``t`` uses exactly ``[t-lookback, t-1]``.  Passing session ``groups``
+    prevents an intraday channel from leaking across the market close.
+    """
+    def upper(values):
+        return values.shift(1).rolling(
+            lookback, min_periods=lookback).max()
+
+    def lower(values):
+        return values.shift(1).rolling(
+            lookback, min_periods=lookback).min()
+
+    if groups is None:
+        high = upper(frame["high"])
+        low = lower(frame["low"])
+    else:
+        high = frame["high"].groupby(groups).transform(upper)
+        low = frame["low"].groupby(groups).transform(lower)
+    return high, low, (high + low) / 2.0
+
+
+def confirmed_fractal_pivots(
+        frame: pd.DataFrame, k: int = 2,
+        groups: pd.Series | None = None) -> tuple[pd.Series, pd.Series]:
+    """Causally confirmed ``k``-left/``k``-right swing levels.
+
+    A pivot centred at row ``i`` appears only at row ``i + k``.  Therefore a
+    consumer evaluating a prefix never observes a pivot that still depends on
+    an uncompleted future bar.  Returned values are sparse price levels, not
+    booleans; non-confirmation rows are NaN.
+    """
+    if k < 1:
+        raise ValueError("fractal pivot k must be positive")
+    width = 2 * int(k) + 1
+    high_values = frame["high"].to_numpy(dtype=float)
+    low_values = frame["low"].to_numpy(dtype=float)
+    high_out = np.full(len(frame), np.nan)
+    low_out = np.full(len(frame), np.nan)
+    if groups is None:
+        partitions = [np.arange(len(frame))]
+    else:
+        keys = pd.Series(groups).reset_index(drop=True).to_numpy()
+        partitions = [np.flatnonzero(keys == key) for key in pd.unique(keys)]
+    for positions in partitions:
+        if len(positions) < width:
+            continue
+        highs = high_values[positions]
+        lows = low_values[positions]
+        high_windows = np.lib.stride_tricks.sliding_window_view(highs, width)
+        low_windows = np.lib.stride_tricks.sliding_window_view(lows, width)
+        centres = np.arange(k, len(positions) - k)
+        confirmations = positions[centres + k]
+        high_mask = highs[centres] == np.max(high_windows, axis=1)
+        low_mask = lows[centres] == np.min(low_windows, axis=1)
+        high_out[confirmations[high_mask]] = highs[centres[high_mask]]
+        low_out[confirmations[low_mask]] = lows[centres[low_mask]]
+    return (pd.Series(high_out, index=frame.index),
+            pd.Series(low_out, index=frame.index))
+
+
+def swing_structure_bias(frame: pd.DataFrame, k: int = 2,
+                         groups: pd.Series | None = None,
+                         pivot_high: pd.Series | None = None,
+                         pivot_low: pd.Series | None = None) -> pd.Series:
+    """Latest confirmed HH/HL (+1), LH/LL (-1), or indeterminate (0)."""
+    if pivot_high is None or pivot_low is None:
+        pivot_high, pivot_low = confirmed_fractal_pivots(frame, k, groups)
+    out = np.zeros(len(frame), dtype=float)
+    if groups is None:
+        partitions = [np.arange(len(frame))]
+    else:
+        keys = pd.Series(groups).reset_index(drop=True).to_numpy()
+        partitions = [np.flatnonzero(keys == key) for key in pd.unique(keys)]
+    highs: list[float]
+    lows: list[float]
+    ph, pl = pivot_high.to_numpy(), pivot_low.to_numpy()
+    for positions in partitions:
+        highs, lows = [], []
+        bias = 0.0
+        for pos in positions:
+            if np.isfinite(ph[pos]):
+                highs.append(float(ph[pos]))
+                highs = highs[-2:]
+            if np.isfinite(pl[pos]):
+                lows.append(float(pl[pos]))
+                lows = lows[-2:]
+            if len(highs) == 2 and len(lows) == 2:
+                if highs[-1] > highs[-2] and lows[-1] > lows[-2]:
+                    bias = 1.0
+                elif highs[-1] < highs[-2] and lows[-1] < lows[-2]:
+                    bias = -1.0
+                else:
+                    bias = 0.0
+            out[pos] = bias
+    return pd.Series(out, index=frame.index)
+
+
 def slot_relative_volume(frame: pd.DataFrame, sessions: int = 10) -> pd.Series:
     """Volume versus the same intraday candle slot in prior sessions.
 

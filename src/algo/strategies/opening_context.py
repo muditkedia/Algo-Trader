@@ -6,11 +6,28 @@ import numpy as np
 import pandas as pd
 
 from algo.core.indicators import (
-    adx, atr, ema, opening_range, rolling_linear_channel, session_vwap,
+    adx, atr, confirmed_fractal_pivots, donchian_channel, ema, opening_range,
+    rolling_linear_channel, session_vwap, slot_relative_volume,
+    swing_structure_bias,
 )
 from algo.strategies.cross_section import align_metric
 
 IST = "Asia/Kolkata"
+
+
+SHARED_5M_COLUMNS = frozenset({
+    "atr", "ema9", "ema20", "vwap", "rvol", "prior_close", "adt20",
+    "gap_ratio", "natr20", "bar_close_minute",
+})
+
+MARKET_CONTEXT_COLUMNS = frozenset({
+    "nifty_open", "nifty_high", "nifty_low", "nifty_close", "nifty_vwap",
+    "nifty_ema20", "nifty_gap_pct", "nifty_channel_slope_pct",
+    "nifty_ib_high", "nifty_ib_low", "nifty_or_high", "nifty_or_low",
+    "nifty_trend", "ad_ratio", "breadth_above_vwap",
+    "nifty_dc_upper20", "nifty_dc_lower20", "nifty_dc_upper10",
+    "nifty_dc_lower10", "nifty_structure",
+})
 
 
 def local_dates(frame: pd.DataFrame) -> pd.Series:
@@ -48,6 +65,42 @@ def prior_session_metrics(frame: pd.DataFrame) -> tuple[pd.Series, pd.Series,
     natr20 = (atr(daily, 14) / daily["close"] * 100.0).shift(1)
     return (day.map(prior_close), day.map(adt20), day.map(gap_ratio),
             day.map(natr20))
+
+
+def shared_5m_features(frame: pd.DataFrame, atr_period: int = 14,
+                       rvol_sessions: int = 10) -> pd.DataFrame:
+    """Copy a 5-minute frame and ensure its common causal features exist.
+
+    The production orchestrator calls this once per symbol and shares the
+    result with every 5-minute strategy.  Strategy ``prepare`` methods also
+    call it, which preserves standalone/backtest behaviour: a raw frame is
+    enriched locally, while an orchestrator-enriched frame is only copied.
+    No global cache is involved, so a completed-candle update can never reuse
+    stale values.
+    """
+    df = frame.copy().reset_index(drop=True)
+    if "atr" not in df:
+        df["atr"] = atr(df, atr_period)
+    if "ema9" not in df:
+        df["ema9"] = ema(df["close"], 9)
+    if "ema20" not in df:
+        df["ema20"] = ema(df["close"], 20)
+    if "vwap" not in df:
+        df["vwap"] = session_vwap(df)
+    if "rvol" not in df:
+        df["rvol"] = slot_relative_volume(df, rvol_sessions)
+    missing_daily = {"prior_close", "adt20", "gap_ratio", "natr20"} \
+        - set(df.columns)
+    if missing_daily:
+        prior_close, adt20, gap_ratio, natr20 = prior_session_metrics(df)
+        values = {"prior_close": prior_close, "adt20": adt20,
+                  "gap_ratio": gap_ratio, "natr20": natr20}
+        for column in missing_daily:
+            df[column] = values[column]
+    if "bar_close_minute" not in df:
+        local = local_dates(df)
+        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
+    return df
 
 
 def completed_15m_bars(frame: pd.DataFrame) -> pd.DataFrame:
@@ -93,9 +146,35 @@ def completed_15m_channel_slope(frame: pd.DataFrame,
     return bars[["date", "channel_slope_15m"]].sort_values("date")
 
 
-def add_opening_market_context(frames: dict, context: dict) -> dict:
-    """Add NIFTY alignment and live-universe breadth to prepared frames."""
+def completed_15m_structure(frame: pd.DataFrame, k: int = 2) -> pd.DataFrame:
+    """Confirmed 15-minute HH/HL or LH/LL bias, aligned at completed bars."""
+    bars = completed_15m_bars(frame)
+    if bars.empty:
+        return pd.DataFrame(columns=["date", "structure_15m"])
+    local = local_dates(bars)
+    pivot_high, pivot_low = confirmed_fractal_pivots(
+        bars, k=k, groups=local.dt.normalize())
+    bars["structure_15m"] = swing_structure_bias(
+        bars, k=k, groups=local.dt.normalize(), pivot_high=pivot_high,
+        pivot_low=pivot_low)
+    return bars[["date", "structure_15m"]].sort_values("date")
+
+
+def add_opening_market_context(frames: dict, context: dict,
+                               *, inplace: bool = True) -> dict:
+    """Add NIFTY alignment and live-universe breadth to prepared frames.
+
+    Standalone strategy callers historically receive in-place enrichment.
+    The orchestrator owns its per-scan frame mapping and requests replacement
+    instead, avoiding fragmented multi-column mutation on every symbol.
+    """
     if not frames:
+        return frames
+    # The orchestrator computes this cross-sectional block once per completed
+    # 5-minute scan.  Per-strategy calls remain for standalone/backtest use,
+    # but become an O(1) no-op when the shared columns are already present.
+    if all(MARKET_CONTEXT_COLUMNS.issubset(df.columns)
+           for df in frames.values()):
         return frames
     nifty = context.get("NIFTY50", pd.DataFrame())
     nifty_exact = pd.DataFrame()
@@ -119,6 +198,16 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
         nifty_or_high, nifty_or_low, _ = opening_range(nifty, 5)
         nifty_exact["nifty_or_high"] = nifty_or_high.to_numpy()
         nifty_exact["nifty_or_low"] = nifty_or_low.to_numpy()
+        nifty_upper20, nifty_lower20, _ = donchian_channel(
+            nifty, 20, nifty_day)
+        nifty_upper10, nifty_lower10, _ = donchian_channel(
+            nifty, 10, nifty_day)
+        nifty_exact["nifty_dc_upper20"] = nifty_upper20.to_numpy()
+        nifty_exact["nifty_dc_lower20"] = nifty_lower20.to_numpy()
+        nifty_exact["nifty_dc_upper10"] = nifty_upper10.to_numpy()
+        nifty_exact["nifty_dc_lower10"] = nifty_lower10.to_numpy()
+        nifty_exact["nifty_structure"] = swing_structure_bias(
+            nifty, 2, nifty_day).to_numpy()
         nifty_exact = nifty_exact.sort_values("date")
     trend = completed_15m_trend(nifty)
 
@@ -135,7 +224,7 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
     else:
         ad_ratio = above_vwap = pd.Series(dtype=float)
 
-    for df in frames.values():
+    for symbol, df in list(frames.items()):
         merged = df.sort_values("date").copy()
         if not nifty_exact.empty:
             merged = merged.merge(nifty_exact, on="date", how="left")
@@ -152,6 +241,11 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
             merged["nifty_ib_low"] = np.nan
             merged["nifty_or_high"] = np.nan
             merged["nifty_or_low"] = np.nan
+            merged["nifty_dc_upper20"] = np.nan
+            merged["nifty_dc_lower20"] = np.nan
+            merged["nifty_dc_upper10"] = np.nan
+            merged["nifty_dc_lower10"] = np.nan
+            merged["nifty_structure"] = np.nan
         if not trend.empty:
             merged = pd.merge_asof(merged.sort_values("date"), trend,
                                    on="date", direction="backward")
@@ -162,7 +256,13 @@ def add_opening_market_context(frames: dict, context: dict) -> dict:
         merged["breadth_above_vwap"] = (
             above_vwap.reindex(merged["date"]).to_numpy()
             if not above_vwap.empty else np.nan)
-        df.drop(columns=list(df.columns), inplace=True)
-        for col in merged.columns:
-            df[col] = merged[col].to_numpy()
+        merged = merged.reset_index(drop=True)
+        if inplace:
+            # ``prepare_context`` historically enriched the caller's prepared
+            # frame object. Keep that contract for standalone users.
+            context_columns = sorted(MARKET_CONTEXT_COLUMNS)
+            df[context_columns] = merged[context_columns].to_numpy()
+            frames[symbol] = df
+        else:
+            frames[symbol] = merged
     return frames

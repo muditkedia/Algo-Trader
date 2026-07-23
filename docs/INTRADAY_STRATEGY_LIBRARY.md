@@ -9,11 +9,11 @@ it trades, where it is implemented, and whether it is complete. It also contains
 the coverage table against the ~20 target intraday strategies (§5).
 
 **Inventory summary:** the strategy library (`src/algo/strategies/library/`)
-registers **17 intraday strategies** via auto-discovery:
+registers **20 intraday strategies** via auto-discovery:
 
 | Group | Count | Timeframe | Holding | Relevant to the intraday objective? |
 |---|---|---|---|---|
-| Intraday | **17** | 10 × 5m, 6 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
+| Intraday | **20** | 13 × 5m, 6 × 15m, 1 × 1h | same-day (MIS) | **Yes — these are the complete registered library** |
 
 _2026-07-19: five strategies added (batch 2, §2.8–2.12): `gapgo_15m`,
 `insidebar_15m`, `supertrend_15m`, `cpr_reversal_15m`, `nr7_intraday_15m` —
@@ -76,6 +76,9 @@ them; the other two declare their pre-reset profile as their own):
 | `vwap_trend_5m` | lower/wider of pullback pivot or VWAP ATR buffer | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `ema_compression_5m` | beyond compression range by 0.1 ATR, capped at 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `geometric_channel_5m` | beyond channel/pivot by ATR buffers | 1.5R 50%, dynamic channel 25%, then runner | breakeven then post-partial 2 ATR chandelier |
+| `donchian_volatility_expansion_5m` | Donchian midpoint, capped at 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
+| `swing_structure_trend_5m` | beyond pullback pivot/broken level | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
+| `volatility_contraction_5m` | beyond handle pivot, capped at 1.25 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |
 | `cpr_breakout_15m` | below the CPR bottom | floor-pivot R1 (50% partial, stop→breakeven) then R2 | none |
 | `orb_retest_5m` | beyond retest pivot by 0.2 ATR, capped at 1.25 ATR | 1.5R (1.0R Grade C), 50% | breakeven then post-partial 2 ATR chandelier |
 | `opening_drive_5m` | beyond drive candle by 0.1 ATR | 1.5R, 50% | breakeven then post-partial 2 ATR chandelier |

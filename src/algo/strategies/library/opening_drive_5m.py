@@ -14,7 +14,7 @@ from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
-    add_opening_market_context, local_dates, prior_session_metrics,
+    add_opening_market_context, local_dates, shared_5m_features,
 )
 
 
@@ -90,10 +90,7 @@ class OpeningDriveMomentum(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
-        df["atr"] = atr(df, p.atr_period)
-        df["vwap"] = session_vwap(df)
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         candle_range = (df["high"] - df["low"]).replace(0.0, np.nan)
         df["body_range_ratio"] = (df["close"] - df["open"]).abs() / candle_range
         df["lower_wick_ratio"] = (
@@ -101,11 +98,6 @@ class OpeningDriveMomentum(StrategyProfile):
         df["upper_wick_ratio"] = (
             df["high"] - np.maximum(df["open"], df["close"])) / candle_range
         df["range_atr"] = candle_range / df["atr"].replace(0.0, np.nan)
-        prior_close, adt20, gap_ratio, natr20 = prior_session_metrics(df)
-        df["prior_close"], df["adt20"], df["gap_ratio"], df["natr20"] = (
-            prior_close, adt20, gap_ratio, natr20)
-        local = local_dates(df)
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         df["drive_stop_long"] = df["low"] - p.stop_buffer_atr * df["atr"]
         df["drive_stop_short"] = df["high"] + p.stop_buffer_atr * df["atr"]
         df["invalidate_long"] = df["close"] < df["vwap"]

@@ -20,6 +20,9 @@ documented in `IMPLEMENTATION_GUIDE.md`:_
 | `gap_fill_failure_5m` | **R** | **R** | **R** | Rec | Rec | Rec | **R** | — | — | **R** | — | — | O | **R** | Rec |
 | `initial_balance_5m` | **R** | **R** | O | Rec | Rec | — | — | **R** | Rec | **R** | — | — | O | **R** | Rec |
 | `liquidity_sweep_5m` | **R** | **R** | O | **R** | Rec | — | — | **R** | Rec | **R** | — | Rec | O | **R** | Rec |
+| `donchian_volatility_expansion_5m` | **R** | **R** | O | Rec | **R** | — | — | — | — | **R** | — | Rec | O | **R** | Rec |
+| `swing_structure_trend_5m` | **R** | **R** | O | Rec | **R** | — | — | — | — | **R** | — | **R** | O | **R** | Rec |
+| `volatility_contraction_5m` | **R** | **R** | O | Rec | **R** | — | — | — | — | **R** | **R** | Rec | O | **R** | Rec |
 | `pullback_15m` | **R** | Rec | O | Rec | **R** | — | — | — | — | O | — | **R** | O | O | Rec |
 | `volexp_1h` | **R** | Rec | O | Rec | Rec | — | — | — | — | Rec | **R** | Rec | Rec | O | Rec |
 

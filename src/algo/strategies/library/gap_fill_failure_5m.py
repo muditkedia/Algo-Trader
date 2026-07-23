@@ -13,7 +13,7 @@ from algo.execution import ExecutionSpec
 from algo.strategies.base import StrategyMeta, StrategyProfile
 from algo.strategies.confidence import ConfidenceScore, clip01
 from algo.strategies.opening_context import (
-    add_opening_market_context, local_dates, prior_session_metrics,
+    add_opening_market_context, local_dates, shared_5m_features,
 )
 
 
@@ -87,12 +87,10 @@ class GapFillFailure(StrategyProfile):
 
     def prepare(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         p = self.settings
-        df = dataframe.copy().reset_index(drop=True)
+        df = shared_5m_features(dataframe, p.atr_period, p.rvol_sessions)
         local = local_dates(df)
         day = local.dt.normalize()
         df["opening_open"] = df["open"].groupby(day).transform("first")
-        prior_close, adt20, _, _ = prior_session_metrics(df)
-        df["prior_close"], df["adt20"] = prior_close, adt20
         df["gap_pct"] = df["opening_open"] / df["prior_close"] - 1.0
         df["gap_distance"] = (df["opening_open"] - df["prior_close"]).abs()
         df["pivot_low"] = df["low"].groupby(day).cummin()
@@ -103,14 +101,10 @@ class GapFillFailure(StrategyProfile):
         df["penetration_short"] = (
             (df["pivot_high"] - df["opening_open"])
             / df["gap_distance"].where(df["gap_distance"] != 0.0))
-        df["vwap"] = session_vwap(df)
         df["pivot_vwap_long"] = df["vwap"].where(
             df["low"] == df["pivot_low"]).groupby(day).ffill()
         df["pivot_vwap_short"] = df["vwap"].where(
             df["high"] == df["pivot_high"]).groupby(day).ffill()
-        df["rvol"] = slot_relative_volume(df, p.rvol_sessions)
-        df["atr"] = atr(df, p.atr_period)
-        df["bar_close_minute"] = local.dt.hour * 60 + local.dt.minute + 5
         df["stop_long"] = df["pivot_low"] - p.stop_buffer_atr * df["atr"]
         df["stop_short"] = df["pivot_high"] + p.stop_buffer_atr * df["atr"]
         df["invalidate_long"] = df["close"] <= df["prior_close"]

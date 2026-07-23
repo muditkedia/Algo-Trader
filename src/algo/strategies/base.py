@@ -66,6 +66,10 @@ class StrategyMeta:
     timed_block_group: str = ""
     timed_block_minutes: int = 0
     blocked_by_timed_groups: tuple = ()
+    #: Same-bar, same-symbol allocation priority.  If this strategy emits a
+    #: signal, simultaneous signals owned by the named strategies are removed
+    #: before directional conflict resolution and portfolio allocation.
+    simultaneous_priority_over: tuple = ()
     #: Indicator columns the entry_signal needs; the missing-column guard uses
     #: this, and the research engine records it as the strategy's contract.
     required_columns: tuple = ()

@@ -44,6 +44,12 @@ SCHEMA_VERSION = 2
 
 #: human names for the strategy ids (display only)
 STRATEGY_NAMES = {
+    "donchian_volatility_expansion_5m":
+        "Donchian Volatility Expansion (STRAT-11)",
+    "swing_structure_trend_5m":
+        "Swing Structure Trend Continuation (STRAT-12)",
+    "volatility_contraction_5m":
+        "Volatility Contraction Pattern (STRAT-13)",
     "orb_5m": "Opening Range Breakout (STRAT-01)",
     "vwap_trend_5m": "VWAP Trend Continuation (STRAT-08)",
     "ema_compression_5m": "EMA Compression Breakout (STRAT-09)",
@@ -66,6 +72,15 @@ STRATEGY_NAMES = {
 
 #: one-line description of each strategy's ENTRY trigger (display only)
 ENTRY_RULES = {
+    "donchian_volatility_expansion_5m": "A prior-only 20-bar Donchian break "
+        "with expanding ATR, bounded channel width, VWAP/EMA alignment and "
+        "high same-slot RVOL",
+    "swing_structure_trend_5m": "A confirmed HH/HL or LH/LL swing break "
+        "retested shallowly and resumed through the prior candle on renewed "
+        "same-slot RVOL",
+    "volatility_contraction_5m": "Two or more progressively shallower "
+        "fractal contraction waves broke their pivot after handle-volume "
+        "dry-up on strong same-slot RVOL",
     "orb_5m": "Buffered 5-minute opening-range break with same-slot RVOL, "
               "VWAP, EMA, regime and confidence confirmation",
     "vwap_trend_5m": "A strict EMA trend pulled shallowly into a steep VWAP "

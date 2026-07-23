@@ -76,6 +76,9 @@ class RiskLimits:
     circuit_breaker_errors: int = 5
     #: exchange lot size (1 for NSE cash equity; F&O instruments differ)
     lot_size: int = 1
+    #: combined entry notional permitted in one known sector. Symbols without
+    #: a classification remain governed by the global/per-trade caps.
+    max_sector_allocation: float = 0.25
 
     # ------------------------------------------------------- derived values
 

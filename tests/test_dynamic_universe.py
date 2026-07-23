@@ -51,6 +51,13 @@ def test_pool_keeps_only_eq_series(tmp_path):
     assert pool == ["AAA", "BBB"]
 
 
+def test_production_default_is_top_500_with_unchanged_pool_cut():
+    spec = DynamicUniverseSpec()
+    assert spec.size == 500
+    assert spec.mcap_pool_size == 500
+    assert spec.liquidity_metric == "traded_value"
+
+
 def test_selection_ranks_by_yesterdays_traded_value(tmp_path):
     _csv(tmp_path, [("AAA", "EQ"), ("BBB", "EQ"), ("CCC", "EQ"),
                     ("DDD", "EQ"), ("EEE", "EQ")])
@@ -66,6 +73,8 @@ def test_selection_ranks_by_yesterdays_traded_value(tmp_path):
     # EEE is outside the top-4 market-cap pool despite its huge liquidity
     assert report.selected == ["CCC", "DDD", "AAA"]
     assert report.candidates == 4
+    assert report.sectors == {"CCC": "Industry", "DDD": "Industry",
+                              "AAA": "Industry"}
 
 
 def test_instrument_master_filters_inactive(tmp_path):
@@ -138,6 +147,19 @@ def test_load_or_build_is_idempotent_per_day(tmp_path):
     assert any("loaded from" in n for n in second.notes)
 
 
+def test_persisted_universe_is_rebuilt_when_requested_size_changes(tmp_path):
+    _csv(tmp_path, [(symbol, "EQ") for symbol in ("AAA", "BBB", "CCC")])
+    store = _store_with_daily(tmp_path, {
+        "AAA": (10, 100), "BBB": (10, 90), "CCC": (10, 80)})
+    old = _spec(tmp_path, size=2, mcap_pool_size=3)
+    assert len(load_or_build(store, old, day=DAY).selected) == 2
+    expanded = _spec(tmp_path, size=3, mcap_pool_size=3)
+    rebuilt = load_or_build(store, expanded, day=DAY)
+    assert rebuilt.selected == ["AAA", "BBB", "CCC"]
+    payload = json.loads(universe_path(expanded, DAY).read_text())
+    assert payload["spec"]["size"] == 3
+
+
 def test_watchlist_falls_back_loudly_when_dynamic_is_empty(tmp_path, caplog):
     """The dynamic branch NEVER falls back silently: an empty selection is
     logged as an error and the static file takes over explicitly."""
@@ -204,3 +226,29 @@ def test_daily_refresher_swaps_universe_and_resubscribes(tmp_path):
     assert source.resubscribed == ["AAA", "BBB"]
     # second call the same day does nothing
     assert refresher.refresh_if_due(engine, source=source) is None
+
+
+def test_daily_refresher_updates_metadata_when_membership_is_unchanged(tmp_path):
+    _csv(tmp_path, [("AAA", "EQ"), ("BBB", "EQ")])
+    store = _store_with_daily(tmp_path, {"AAA": (10, 100), "BBB": (10, 50)})
+    spec = _spec(tmp_path, size=2)
+
+    class Clock:
+        def now(self):
+            return pd.Timestamp("2026-07-22 08:00", tz="Asia/Kolkata")
+
+    class MarketData:
+        def set_symbols(self, symbols):
+            raise AssertionError("unchanged membership must not resubscribe")
+
+    state = type("State", (), {
+        "symbols": ["AAA", "BBB"], "universe_report": None,
+        "sector_by_symbol": {},
+    })()
+    engine = type("Engine", (), {
+        "clock": Clock(), "marketdata": MarketData(), "state": state,
+    })()
+
+    assert DailyUniverseRefresher(store, spec).refresh_if_due(engine) is None
+    assert state.universe_report.selected == ["AAA", "BBB"]
+    assert state.sector_by_symbol == {"AAA": "Industry", "BBB": "Industry"}
